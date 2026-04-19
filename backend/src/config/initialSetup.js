@@ -3,6 +3,7 @@ import User from "../entity/user.entity.js";
 import Rol from "../entity/rol.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
+import Cliente from "../entity/cliente.entity.js";
 
 async function createRoles() {
   try {
@@ -23,6 +24,18 @@ async function createRoles() {
           id: 2,
           nombre: "Cliente"
         })
+      ),
+      rolesRepository.save(
+        rolesRepository.create({
+          id: 3,
+          nombre: "Supervisor"
+        })
+      ),
+      rolesRepository.save(
+        rolesRepository.create({
+          id: 4,
+          nombre: "Trabajador"
+        })
       )
     ])
     console.log("* => Roles creados exitosamente");
@@ -30,7 +43,26 @@ async function createRoles() {
     console.error("Error al crear roles:", error);
   }
 }
+async function createClients() {
+  try {
+    const clientRepository = AppDataSource.getRepository(Cliente)
 
+    const count = await clientRepository.count()
+    if (count > 0) return;
+
+    await Promise.all([
+      clientRepository.save(
+        clientRepository.create({
+          direccion: "Calle Genérica 111",
+        })
+      )
+    ])
+    console.log("* => Clientes creados exitosamente");
+  } catch (error) {
+    console.error("Error al crear clientes: ", error);
+
+  }
+}
 
 async function createUsers() {
   try {
@@ -51,8 +83,8 @@ async function createUsers() {
       ),
       userRepository.save(
         userRepository.create({
-          nombreCompleto: "Diego Sebastián Ampuero Belmar",
-          rut: "21.151.897-9",
+          nombreCompleto: "Empresa Genérica S.A.",
+          rut: "81.151.897-9",
           email: "usuario1.2026@gmail.cl",
           password: await encryptPassword("user1234"),
           rol: 2,
@@ -64,7 +96,8 @@ async function createUsers() {
           rut: "20.630.735-8",
           email: "usuario2.2026@gmail.cl",
           password: await encryptPassword("user1234"),
-          rol: 2,
+          rol: 3,
+          cliente: 1,
         }),
       ),
       userRepository.save(
@@ -73,7 +106,7 @@ async function createUsers() {
           rut: "20.738.450-K",
           email: "usuario3.2026@gmail.cl",
           password: await encryptPassword("user1234"),
-          rol: 2,
+          rol: 4,
         }),
       ),
       userRepository.save(
@@ -82,7 +115,7 @@ async function createUsers() {
           rut: "20.976.635-3",
           email: "usuario4.2026@gmail.cl",
           password: await encryptPassword("user1234"),
-          rol: 2,
+          rol: 4,
         }),
       ),
       userRepository.save(
@@ -91,7 +124,7 @@ async function createUsers() {
           rut: "21.172.447-1",
           email: "usuario5.2026@gmail.cl",
           password: await encryptPassword("user1234"),
-          rol: 2,
+          rol: 4,
         }),
       ),
       userRepository.save(
@@ -100,7 +133,7 @@ async function createUsers() {
           rut: "20.738.415-1",
           email: "usuario6.2026@gmail.cl",
           password: await encryptPassword("user1234"),
-          rol: 2,
+          rol: 4,
         }),
       ),
     ]);
@@ -110,4 +143,4 @@ async function createUsers() {
   }
 }
 
-export { createRoles, createUsers };
+export { createRoles, createClients, createUsers };

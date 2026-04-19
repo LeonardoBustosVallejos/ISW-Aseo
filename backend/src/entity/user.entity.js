@@ -1,11 +1,17 @@
 "use strict";
 import { EntitySchema } from "typeorm";
 
+/**
+ * tabla de usuarios
+ * 
+ * Cada uno tiene un rol
+ * Cada rol que no sea administrador se puede asignar a un cliente
+ */
 const UserSchema = new EntitySchema({
   name: "User",
   tableName: "users",
   columns: {
-    id: {
+    user_id: {
       type: "int",
       primary: true,
       generated: true,
@@ -31,6 +37,11 @@ const UserSchema = new EntitySchema({
       type: "varchar",
       nullable: false,
     },
+    phone: {
+      type: "varchar",
+      length: 12,
+      nullable: true
+    },
     createdAt: {
       type: "timestamp with time zone",
       default: () => "CURRENT_TIMESTAMP",
@@ -46,7 +57,7 @@ const UserSchema = new EntitySchema({
   indices: [
     {
       name: "IDX_USER",
-      columns: ["id"],
+      columns: ["user_id"],
       unique: true,
     },
     {
@@ -68,6 +79,13 @@ const UserSchema = new EntitySchema({
       nullable: false,
       onDelete: "CASCADE",
     },
+    cliente: {
+      target: "Cliente",
+      type: "many-to-one",
+      joinColumn: { name: "cliente_id" },
+      nullable: true,
+      onDelete: "CASCADE",
+    }
   }
 });
 
