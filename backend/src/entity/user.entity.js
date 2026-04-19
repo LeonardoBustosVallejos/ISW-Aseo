@@ -27,11 +27,6 @@ const UserSchema = new EntitySchema({
       nullable: false,
       unique: true,
     },
-    rol: {
-      type: "varchar",
-      length: 50,
-      nullable: false,
-    },
     password: {
       type: "varchar",
       nullable: false,
@@ -65,6 +60,15 @@ const UserSchema = new EntitySchema({
       unique: true,
     },
   ],
+  relations: {
+    rol: {
+      target: "Rol",
+      type: "many-to-one",
+      joinColumn: { name: "rol_id" },
+      nullable: false,
+      onDelete: "CASCADE",
+    },
+  }
 });
 
 export default UserSchema;
