@@ -1,14 +1,14 @@
 "use strict";
 import { Router } from "express";
 import {
-  getItems,
-  createItem
+  getItemsController,
+  createItemController
 } from "../controllers/item.controller.js";
 
 const router = Router();
 
 router
-  .get("/", getItems)
-  .post("/item-create/", createItem);
+  .get("/", getItemsController)
+  .post("/create/", createItemController);
 
 export default router;

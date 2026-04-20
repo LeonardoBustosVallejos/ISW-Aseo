@@ -19,32 +19,19 @@ export async function getItemsService() {
   }
 }
 
-export async function createItem(itemData) {
-  try {
-    const { nombre } = subjectData;
-    const { id } = subjectData;
-    if (!nombre || nombre.trim() === "") {
-      return { success: false, message: "Es necesario que el item tenga un nombre" };
-    }
-    //en la línea de abajo en vez de "Item" puede que tenga que pasar como parámetro ItemSchema
-    const ItemRepository = AppDataSource.getRepository("Item");
-    const newItem = ItemRepository.create({
-      nombre: nombre.trim(),
-      id: id ? parseInt(id) : null
-    });
-    const savedItem = await ItemRepository.save(newItem);
-    return {
-      success: true,
-      data: savedItem,
-      message: "Item creado exitósamente"
-    };
+export async function createItemService(itemData) {
+    try {
+        const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = itemData;
+        const ItemRepository = AppDataSource.getRepository(Item);
+        const newItem = ItemRepository.create({
+            nombre: nombre,
+            descripcion: descripcion,
+            disponibilidadActual: disponibilidadActual, 
+            disponibilidadTotal: disponibilidadTotal
+        });
+        const itemGuardado = await ItemRepository.save(newItem);
+        return [itemGuardado, null];
     } catch (error) {
-      console.error("[ERROR Service] Error COMPLETO en createItem:", error);
-      console.error("[ERROR Service] Stack Trace:", error.stack);
-      return {
-        success: false,
-        message: "Error creando item",
-        error: error.message
-      };
+        return [null, error.message];
     }
 }

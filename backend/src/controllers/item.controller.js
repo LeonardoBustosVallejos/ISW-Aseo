@@ -4,9 +4,15 @@ import {
   handleErrorServer,
   handleSuccess,
 } from "../handlers/responseHandlers.js";
-import { getItemsService } from "../services/item.service.js";
+import {
+  authValidation,
+  registerValidation,
+} from "../validations/auth.validation.js";
+import { getItemsService,
+         createItemService
+} from "../services/item.service.js";
 
-export async function getItems(req, res) {
+export async function getItemsController(req, res) {
   try {
     const [items, errorItems] = await getItemsService();
 
@@ -24,35 +30,12 @@ export async function getItems(req, res) {
   }
 }
 
-export async function createItem(req, res) {
+export async function createItemController(req, res) {
   try {
-    const { nombre } = req.body;
-    if (!nombre || typeof nombre !== 'string' || nombre.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: "Es necesario que el item tenga un nombre no vacío"
-      });
-    }            
-    const id = req.user && req.user.id ? req.user.id : undefined;
-    const result = await ItemService.createSubject({ nombre, id });
-    if (result.success) {
-      return res.status(201).json({
-        success: true,
-        data: result.data,
-        message: result.message
-    });
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: result.message,
-        error: process.env.NODE_ENV === 'development' ? result.error : undefined
-      });
-    }
-    } catch (error) {
-      console.error("[ERROR Controller] Error inesperado:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error"
-      });
-    }
+    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
+    const [created, err] = await createItemService({ nombre, descripcion, disponibilidadActual, disponibilidadTotal });
+    if (err) return handleErrorServer(res, 500, err);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
 }
