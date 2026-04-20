@@ -40,7 +40,8 @@ const UserSchema = new EntitySchema({
     phone: {
       type: "varchar",
       length: 12,
-      nullable: true
+      nullable: true,
+      unique: true
     },
     createdAt: {
       type: "timestamp with time zone",
@@ -68,6 +69,11 @@ const UserSchema = new EntitySchema({
     {
       name: "IDX_USER_EMAIL",
       columns: ["email"],
+      unique: true,
+    },
+    {
+      name: "IDX_USER_PHONE",
+      columns: ["phone"],
       unique: true,
     },
   ],

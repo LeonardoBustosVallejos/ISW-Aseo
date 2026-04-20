@@ -53,6 +53,7 @@ async function createClients() {
     await Promise.all([
       clientRepository.save(
         clientRepository.create({
+          nombreCliente: "Empresa Genérica S.A.",
           direccion: "Calle Genérica 111",
         })
       )
@@ -75,26 +76,27 @@ async function createUsers() {
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Diego Alexis Salazar Jara",
-          rut: "21.308.770-3",
-          email: "administrador2026@gmail.cl",
+          rut: "21308770-3",
+          email: "administrador2026@gmail.com",
           password: await encryptPassword("admin1234"),
           rol: 1,
         }),
       ),
       userRepository.save(
         userRepository.create({
-          nombreCompleto: "Empresa Genérica S.A.",
-          rut: "81.151.897-9",
-          email: "usuario1.2026@gmail.cl",
+          nombreCompleto: "CEO Genérico",
+          rut: "81151897-9",
+          email: "usuario1.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 2,
+          cliente: 1
         })
       ),
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Alexander Benjamín Marcelo Carrasco Fuentes",
-          rut: "20.630.735-8",
-          email: "usuario2.2026@gmail.cl",
+          rut: "20630735-8",
+          email: "usuario2.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 3,
           cliente: 1,
@@ -103,8 +105,8 @@ async function createUsers() {
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Pablo Andrés Castillo Fernández",
-          rut: "20.738.450-K",
-          email: "usuario3.2026@gmail.cl",
+          rut: "20738450-K",
+          email: "usuario3.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -112,8 +114,8 @@ async function createUsers() {
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Felipe Andrés Henríquez Zapata",
-          rut: "20.976.635-3",
-          email: "usuario4.2026@gmail.cl",
+          rut: "20976635-3",
+          email: "usuario4.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -121,8 +123,8 @@ async function createUsers() {
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Diego Alexis Meza Ortega",
-          rut: "21.172.447-1",
-          email: "usuario5.2026@gmail.cl",
+          rut: "21172447-1",
+          email: "usuario5.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -130,8 +132,8 @@ async function createUsers() {
       userRepository.save(
         userRepository.create({
           nombreCompleto: "Juan Pablo Rosas Martin",
-          rut: "20.738.415-1",
-          email: "usuario6.2026@gmail.cl",
+          rut: "20738415-1",
+          email: "usuario6.2026@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),

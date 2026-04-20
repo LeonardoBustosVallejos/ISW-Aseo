@@ -33,7 +33,7 @@ export const userQueryValidation = Joi.object({
         "El correo electrónico debe tener como máximo 35 caracteres.",
     })
     .custom(domainEmailValidator, "Validación dominio email"),
-    rut: Joi.string()
+  rut: Joi.string()
     .min(9)
     .max(12)
     .pattern(/^(?:(?:[1-9]\d{0}|[1-2]\d{1})(\.\d{3}){2}|[1-9]\d{6}|[1-2]\d{7}|29\.999\.999|29999999)-[\dkK]$/)
@@ -116,7 +116,7 @@ export const userBodyValidation = Joi.object({
       "string.max": "El rut debe tener como máximo 12 caracteres.",
       "string.pattern.base": "Formato rut inválido, debe ser xx.xxx.xxx-x o xxxxxxxx-x.",
     }),
-  rol: Joi.string()
+  rol_id: Joi.string()
     .min(4)
     .max(15)
     .messages({
