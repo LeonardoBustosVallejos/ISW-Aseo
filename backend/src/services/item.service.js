@@ -9,10 +9,11 @@ export async function getItemsService() {
     const items = await itemRepository.find();
 
     if (!items || items.length === 0) return [null, "No hay items"];
-
+    console.log("hay un total de %d items", items.length);
     const itemsData = items.map(({ id, ...item }) => item);
+    return [items, null];//return [itemsData, null];
 
-    return [itemsData, null];
+    //return { success: true, data: items, message: "si" }//[itemsData, null];
   } catch (error) {
     console.error("Error al obtener a los items:", error);
     return [null, "Error interno del servidor"];

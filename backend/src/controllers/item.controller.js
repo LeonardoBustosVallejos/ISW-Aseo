@@ -12,6 +12,7 @@ import { getItemsService,
          createItemService
 } from "../services/item.service.js";
 
+/*
 export async function getItemsController(req, res) {
   try {
     const [items, errorItems] = await getItemsService();
@@ -28,6 +29,40 @@ export async function getItemsController(req, res) {
       error.message,
     );
   }
+}
+*/
+
+export async function getItemsController(req, res) {
+        try {
+            const [items, error] = await getItemsService();
+            
+            if (error) return handleErrorClient(res, 404, error);
+            
+            handleSuccess(res, 200, "Items encontrados", items);
+
+            /*
+            if (result.success) {
+                return res.status(200).json({
+                    success: true,
+                    data: result.data,
+                    message: result.message
+                });
+            } else {
+                return res.status(500).json({
+                    success: false,
+                    message: result.message,
+                    error: result.error
+                });
+            }
+            */
+
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error",
+                error: error.message
+            });
+        }
 }
 
 export async function createItemController(req, res) {
