@@ -8,6 +8,7 @@ const ItemSchema = new EntitySchema({
     id: {
       type: "int",
       primary: true,
+      unique: true,
       generated: true,
     },
     nombre: {
@@ -19,15 +20,12 @@ const ItemSchema = new EntitySchema({
       type: "varchar",
       length: 512,
       nullable: false,
-      unique: true,
     },
     disponibilidadActual: {
       type: "int",
-      primary: true,
     },
     disponibilidadTotal: {
       type: "int",
-      primary: true,
     },
   },
   indices: [
