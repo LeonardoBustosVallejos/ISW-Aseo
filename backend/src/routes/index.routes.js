@@ -2,11 +2,13 @@
 import { Router } from "express";
 import userRoutes from "./user.routes.js";
 import authRoutes from "./auth.routes.js";
+import itemRoutes from "./item.routes.js";
 
 const router = Router();
 
 router
     .use("/auth", authRoutes)
-    .use("/user", userRoutes);
+    .use("/user", userRoutes)
+    .use("/item", itemRoutes);
 
 export default router;
