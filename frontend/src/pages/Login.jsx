@@ -4,11 +4,10 @@ import Form from '@components/Form';
 import useLogin from '@hooks/auth/useLogin.jsx';
 import '@styles/form.css';
 
-const Login = () => {
+const LoginForm = () => {
     const navigate = useNavigate();
     const {
-        errorEmail,
-        errorPassword,
+        errorMessage,
         errorData,
         handleInputChange
     } = useLogin();
@@ -17,7 +16,7 @@ const Login = () => {
         try {
             const response = await login(data);
             if (response.status === 'Success') {
-                navigate('/home');
+                navigate('/dashboard');
             } else if (response.status === 'Client error') {
                 errorData(response.details);
             }
@@ -34,15 +33,14 @@ const Login = () => {
                     {
                         label: "Correo electrónico",
                         name: "email",
-                        placeholder: "example@gmail.cl",
+                        placeholder: "example@gmail.com",
                         fieldType: 'input',
                         type: "email",
                         required: true,
-                        minLength: 15,
+                        minLength: 10,
                         maxLength: 30,
-                        errorMessageData: errorEmail,
                         validate: {
-                            emailDomain: (value) => value.endsWith('@gmail.cl') || 'El correo debe terminar en @gmail.cl'
+                            emailDomain: (value) => value.endsWith('@gmail.com') || 'Error en el formato del correo'
                         },
                         onChange: (e) => handleInputChange('email', e.target.value),
                     },
@@ -57,10 +55,10 @@ const Login = () => {
                         maxLength: 26,
                         pattern: /^[a-zA-Z0-9]+$/,
                         patternMessage: "Debe contener solo letras y números",
-                        errorMessageData: errorPassword,
-                        onChange: (e) => handleInputChange('password', e.target.value)
+                        onChange: (e) => handleInputChange('password', e.target.value),
                     },
                 ]}
+                LoginError={errorMessage}
                 buttonText="Iniciar sesión"
                 onSubmit={loginSubmit}
                 footerContent={
@@ -73,4 +71,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default LoginForm;
