@@ -8,8 +8,8 @@ import {
   authValidation,
   registerValidation,
 } from "../validations/auth.validation.js";
-import { getItemsService,
-         createItemService
+import { createItemService,
+        getItemsService
 } from "../services/item.service.js";
 
 /*
