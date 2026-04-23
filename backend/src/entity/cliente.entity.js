@@ -21,6 +21,10 @@ const ClienteSchema = new EntitySchema({
             length: 255,
             nullable: false,
         },
+        personalSolicitado: {
+            type: "int",
+            default: 1
+        },
         personalAsignado: {
             type: "int",
             default: 0

@@ -144,8 +144,15 @@ export const registerClienteValidation = Joi.object({
         "string.empty": "La dirección no puede estar vacía.",
         "any.required": "La dirección es obligatoria.",
         "string.min": "La dirección debe tener al menos 5 caracteres.",
-        "string.pattern.base": "El nombre de la empresa solo puede contener letras, espacios y puntos.",
-      })
+        "string.pattern.base": "La direccion de la empresa solo puede contener letras, espacios y puntos.",
+      }),
+    personalSolicitado: Joi.number()
+      .min(1)
+      .required()
+      .messages({
+        "any.required": "La cantidad de personal requerida es obligatoria.",
+        "string.min": "Se debe solicitar al menos una persona.",
+      }),
 
   }),
   supervisor: registerValidation

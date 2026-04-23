@@ -11,6 +11,13 @@ const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
   message
 });
+
+/**
+ * funcion que transforma un rut de formato xx.xxx.xxx-y a xxxxxxxx-y,
+ * solo elimina los puntos y posible 0 inicial
+ * @param {string} rut rut a transformar
+ * @returns rut en formato xxxxxxxx-y
+ */
 function cleanRut(rut) {
   return rut.replace(/\./g, "").replace(/^0+/, "");
 }
@@ -133,7 +140,7 @@ export async function registerClientService(cliente, supervisor) {
     const rolRepository = AppDataSource.getRepository(Rol)
     const clienteRepository = AppDataSource.getRepository(Cliente);
 
-    const { nombreCliente, direccion } = cliente;
+    const { nombreCliente, direccion, personalSolicitado } = cliente;
 
     //el cliente y supervisor no pueden tener el mismo rut
     if (cliente.rut === supervisor.rut) return [null, { dataInfo: "rut", message: "Rut duplicado" }]
@@ -148,7 +155,11 @@ export async function registerClientService(cliente, supervisor) {
     }
 
 
-    const nuevoCliente = clienteRepository.create({ nombreCliente: nombreCliente, direccion: direccion, });
+    const nuevoCliente = clienteRepository.create({
+      nombreCliente: nombreCliente,
+      direccion: direccion,
+      personalSolicitado: personalSolicitado
+    });
 
     //registrar en la tabla cliente
     const clienteCreado = await clienteRepository.save(nuevoCliente)
@@ -168,6 +179,10 @@ export async function registerClientService(cliente, supervisor) {
       await clienteRepository.remove(clienteCreado)
       return [null, errSupervisor];
     }
+    /**
+     * Ante cualquier error se eliminará en cascada los datos ingresados, 
+     * para evitar espacio ocupado innecesariamente
+     */
 
     return [{
       Cliente: clienteCreado,
