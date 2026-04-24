@@ -97,13 +97,14 @@ export const registerValidation = Joi.object({
     }),
   phone: Joi.string()
     .min(8)
-    .max(20)
+    .max(15)
     .pattern(/^[0-9+\s-]{8,20}$/)
+    .allow('', null)
     .messages({
-      "strin.base": "El número telefónico debe contener entre 8 y 20 dígitos,opcionalmente con +.",
+      "string.base": "El número telefónico debe contener entre 8 y 20 dígitos,opcionalmente con +.",
       "string.base": "El número telefónico debe ser de tipo texto.",
-      "string.min": "El número telefónico debe tener al menos 15 caracteres.",
-      "string.max": "El número telefónico debe tener como máximo 35 caracteres.",
+      "string.min": "El número telefónico debe tener al menos 8 caracteres.",
+      "string.max": "El número telefónico debe tener como máximo 15 caracteres.",
     }),
   rol_id: Joi.string()
     .length(1)

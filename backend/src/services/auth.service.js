@@ -34,13 +34,13 @@ export async function loginService(user) {
     });
 
     if (!userFound) {
-      return [null, createErrorMessage("email", "El correo electrónico es incorrecto")];
+      return [null, createErrorMessage("email", "Correo o contraseña incorrectos")];
     }
 
     const isMatch = await comparePassword(password, userFound.password);
 
     if (!isMatch) {
-      return [null, createErrorMessage("password", "La contraseña es incorrecta")];
+      return [null, createErrorMessage("password", "Correo o contraseña incorrectos")];
     }
 
     const payload = {
