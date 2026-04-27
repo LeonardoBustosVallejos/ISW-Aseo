@@ -2,13 +2,13 @@
 import { Router } from "express";
 import {
   createTrabajadoresController,
-  //getTrabajadoresController
+  getTrabajadoresController
 } from "../controllers/trabajadores.controller.js";
 
 const router = Router();
 
 router
-  //.get("/", getTrabajadoresController)
+  .get("/", getTrabajadoresController)
   .post("/create/", createTrabajadoresController);
 
 export default router;
