@@ -49,3 +49,16 @@ export async function deleteItemService(id) {
     return { success: false, message: "Error borrando item", error: error.message};
   }
 }
+
+export async function updateItemService(id, updateData) {
+  try {
+    const ItemRepository = AppDataSource.getRepository(Item);
+    const item = await ItemRepository.findOne({ where : {id} });
+    if (!item) return { success: false, message: "Item no encontrado" };
+    if (updateData.nombre && updateData.nombre.trim() !== "") item.nombre = updateData.nombre.trim();
+    const updatedItem = await ItemRepository.save(item);
+    return {success: true, data: updatedItem, message: "Item actualizado exitósamente"};
+  } catch (error) {
+    return {success: false, message: "Error actualizando item", error: error.message};
+  }
+}
