@@ -36,3 +36,16 @@ export async function createItemService(itemData) {
         return [null, error.message];
     }
 }
+
+export async function deleteItemService(id) {
+  try {
+    const ItemRepository = AppDataSource.getRepository(Item);
+    const result = await ItemRepository.delete(id);
+    if (result.affected === 0) {
+      return { success: false, message: "No existe un item con esa id"};
+    }
+    return { success: true, message: "Item borrado exitósamente"};
+  } catch (error) {
+    return { success: false, message: "Error borrando item", error: error.message};
+  }
+}
