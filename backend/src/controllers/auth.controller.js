@@ -64,9 +64,9 @@ export async function registerCliente(req, res) {
 
 
 
-    const [data, errorNewUser] = await registerClientService(cliente, supervisor)
+    const [data, errorNewCliente] = await registerClientService(cliente, supervisor)
 
-    if (errorNewUser) return handleErrorClient(res, 400, "Error registrando", errorNewUser);
+    if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 
     return handleSuccess(res, 201, "Usuario registrado con éxito", data);
 

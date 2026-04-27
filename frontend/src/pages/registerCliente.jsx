@@ -63,9 +63,7 @@ const RegisterClienteForm = () => {
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
-                setTimeout(() => {
-                    navigate('/dashboard');
-                }, 3000)
+                setTimeout(3000)
             } else if (response.status === 'Client error') {
                 setErrors(response.details);
             }

@@ -9,11 +9,11 @@ const contratoSchema = new EntitySchema({
             primary: true,
             generated: true,
         },
-        fecha_inicio: {
+        fechaInicio: {
             type: "date",
             nullable: false,
         },
-        fecha_fin: {
+        fechaFin: {
             type: "date",
             nullable: false,
         },
@@ -21,7 +21,11 @@ const contratoSchema = new EntitySchema({
             type: "enum",
             enum: ["VIGENTE", "TERMINADO", "ESPERA"],
             default: "ESPERA",
-        }
+        },
+        archivo: {
+            type: "varchar",
+            nullable: true //posibilidad de cambio más adelante
+        },
     },
     indices: [
         {
@@ -37,6 +41,13 @@ const contratoSchema = new EntitySchema({
             joinColumn: { name: "user_id" },
             onDelete: "CASCADE",
             nullable: false,
+        },
+        cliente: {
+            target: "Cliente",
+            type: "many-to-one",
+            joinColumn: true,
+            nullable: false, //el contrato si o si debe ser dirigido a alguien
+            onDelete: "CASCADE"
         }
     }
 });
