@@ -1,8 +1,8 @@
 "use strict";
 import { Router } from "express";
 import {
+  createItemController,
   getItemsController,
-  createItemController
 } from "../controllers/item.controller.js";
 
 const router = Router();
