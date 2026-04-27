@@ -10,18 +10,34 @@ import {
 } from "../validations/auth.validation.js";
 import {
   createTrabajadoresService,
-  getTrabajadoresService
+  getTrabajadoresService,
+  getTrabajadorService,
 } from "../services/trabajador.service.js";
 
 
 export async function getTrabajadoresController(req, res) {
   try {
 
-    const [trabajadores, errorTrabajador] = await getTrabajadoresService();
+    const [trabajadores, errorTrabajadores] = await getTrabajadoresService();
+
+    if (errorTrabajadores) return handleErrorClient(res, 404, errorTrabajadores);
+    
+    return (handleSuccess(res, 200, "Trabajadores encontrados", trabajadores));
+  }
+  catch(error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function getTrabajadorController(req, res) {
+  try {
+
+    const { id } = req.params;
+    const [trabajador, errorTrabajador] = await getTrabajadorService(id);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
     
-    return (handleSuccess(res, 200, "Trabajadores encontrados", trabajadores));
+    return (handleSuccess(res, 200, "Trabajador encontrado", trabajador));
   }
   catch(error) {
     handleErrorServer(res, 500, error.message);
@@ -35,6 +51,7 @@ export async function createTrabajadoresController(req, res) {
             rut, 
             email, 
             rol, 
+            sexo,
             competencias } = req.body;
     const [created, err] = await createTrabajadoresService({ 
             nombreCompleto, 
@@ -42,6 +59,7 @@ export async function createTrabajadoresController(req, res) {
             rut, 
             email, 
             rol, 
+            sexo,
             competencias });
     if (err) return handleErrorServer(res, 500, err);
     

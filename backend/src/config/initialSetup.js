@@ -1,5 +1,6 @@
 "use strict";
 import User from "../entity/user.entity.js";
+import Trabajador from "../entity/trabajador.entity.js"
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 
@@ -81,4 +82,119 @@ async function createUsers() {
   }
 }
 
-export { createUsers };
+async function createTrabajadores() {
+  try {
+    const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+
+    const count = await trabajadoresRepository.count();
+    if (count > 0) return;
+
+  const trabajadores = [
+    {
+      nombreCompleto: "Carlos Andrés Muñoz Rojas",
+      rut: "17.345.221-9",
+      nacimiento: "1982-04-15",
+      email: "carlos.munoz@gmail.cl",
+      rol: "trabajador",
+      sexo: "M",
+      competencias: "Limpieza de oficinas, manejo de insumos",
+    },
+    {
+      nombreCompleto: "María Fernanda Soto Pérez",
+      rut: "18.765.432-1",
+      nacimiento: "1990-11-03",
+      email: "maria.soto@gmail.cl",
+      rol: "trabajador",
+      sexo: "F",
+      competencias: "Atención al cliente, orden de bodega",
+    },
+    {
+      nombreCompleto: "Luis Alberto González Díaz",
+      rut: "16.543.210-7",
+      nacimiento: "1978-06-22",
+      email: "luis.gonzalez@gmail.cl",
+      rol: "trabajador",
+      sexo: "M",
+      competencias: "Manejo de maquinaria, logística",
+    },
+    {
+      nombreCompleto: "Camila Andrea Herrera López",
+      rut: "19.876.543-2",
+      nacimiento: "1995-09-10",
+      email: "camila.herrera@gmail.cl",
+      rol: "trabajador",
+      sexo: "F",
+      competencias: "Recepción, atención telefónica",
+    },
+    {
+      nombreCompleto: "Jorge Luis Araya Morales",
+      rut: "15.234.567-8",
+      nacimiento: "1975-02-28",
+      email: "jorge.araya@gmail.cl",
+      rol: "trabajador",
+      sexo: "M",
+      competencias: "Mantención, electricidad básica",
+    },
+    {
+      nombreCompleto: "Daniela Paz Contreras Silva",
+      rut: "20.123.456-3",
+      nacimiento: "1998-12-01",
+      email: "daniela.contreras@gmail.cl",
+      rol: "trabajador",
+      sexo: "F",
+      competencias: "Inventario, control de stock",
+    },
+    {
+      nombreCompleto: "Ricardo Antonio Vega Castro",
+      rut: "14.987.654-5",
+      nacimiento: "1970-07-19",
+      email: "ricardo.vega@gmail.cl",
+      rol: "trabajador",
+      sexo: "M",
+      competencias: "Seguridad, supervisión",
+    },
+    {
+      nombreCompleto: "Valentina Ignacia Ríos Torres",
+      rut: "21.456.789-6",
+      nacimiento: "2000-03-25",
+      email: "valentina.rios@gmail.cl",
+      rol: "trabajador",
+      sexo: "F",
+      competencias: "Caja, atención de público",
+    },
+    {
+      nombreCompleto: "Sebastián Eduardo Fuentes Navarro",
+      rut: "18.222.333-4",
+      nacimiento: "1988-05-14",
+      email: "sebastian.fuentes@gmail.cl",
+      rol: "trabajador",
+      sexo: "M",
+      competencias: "Transporte, distribución",
+    },
+    {
+      nombreCompleto: "Paula Andrea Vargas Espinoza",
+      rut: "19.111.222-5",
+      nacimiento: "1992-08-30",
+      email: "paula.vargas@gmail.cl",
+      rol: "trabajador",
+      sexo: "F",
+      competencias: "Administración, archivo",
+    }
+  ];
+    await Promise.all(
+      trabajadores.map(async (trabajador) => {
+        return trabajadoresRepository.save(
+          trabajadoresRepository.create(
+            trabajador
+          )
+        );
+      })
+    );
+
+    console.log("* => Trabajadores creados exitosamente");
+  } catch (error) {
+    console.error("Error al crear trabajadores:", error);
+  }
+}
+
+export { createUsers, createTrabajadores };
