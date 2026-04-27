@@ -70,6 +70,7 @@ export async function createItemController(req, res) {
     const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
     const [created, err] = await createItemService({ nombre, descripcion, disponibilidadActual, disponibilidadTotal });
     if (err) return handleErrorServer(res, 500, err);
+    handleSuccess(res, 201, "Items creado", created);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }
