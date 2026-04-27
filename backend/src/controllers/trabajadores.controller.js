@@ -12,6 +12,7 @@ import {
   createTrabajadoresService,
   getTrabajadoresService,
   getTrabajadorService,
+  updateTrabajadorService,
 } from "../services/trabajador.service.js";
 
 
@@ -65,6 +66,25 @@ export async function createTrabajadoresController(req, res) {
     
     return handleSuccess(res, 201, "Trabajador creado correctamente", created);
   } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
+
+export async function updateTrabajadorController(req, res) {
+  try {
+
+    const { id } = req.params;
+    const { body } = req;
+
+    const [trabajador, trabajadorError] = await updateTrabajadorService(id, body);
+    
+    if (trabajadorError) {
+      return handleErrorClient(res, 400, "Error modificando al trabajador", trabajadorError);
+    }
+    return (handleSuccess(res, 200, "Trabajador modificado correctamente", trabajador));
+  }
+  catch(error) {
     handleErrorServer(res, 500, error.message);
   }
 }
