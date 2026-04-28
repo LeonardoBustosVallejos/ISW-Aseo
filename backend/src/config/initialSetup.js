@@ -54,6 +54,7 @@ async function createClients() {
       clientRepository.save(
         clientRepository.create({
           nombreCliente: "Empresa Genérica S.A.",
+          rutCliente: "98765432-1",
           direccion: "Calle Genérica 111",
         })
       )

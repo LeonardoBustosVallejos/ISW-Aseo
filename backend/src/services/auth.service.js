@@ -6,6 +6,8 @@ import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 import Rol from "../entity/rol.entity.js";
 import Cliente from "../entity/cliente.entity.js";
+import Contacto from "../entity/contacto.entity.js";
+import { createContacto } from "./contacto.service.js";
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
@@ -70,12 +72,22 @@ export async function registerService(nuevoUsuario, cliente_id) {
     const userRepository = AppDataSource.getRepository(User);
     const rolRepository = AppDataSource.getRepository(Rol)
     const clienteRepository = AppDataSource.getRepository(Cliente);
+    const contactoRepository = AppDataSource.getRepository(Contacto)
+
+
 
     //si se entrego un id de cliente entonces verificar que ese cliente exista
     if (cliente_id) {
       const existingClient = await clienteRepository.findOne({ where: { cliente_id: cliente_id } })
       if (!existingClient) return [null, { dataInfo: "cliente_id", message: "No existe cliente" }]
     }
+    //verificar que el nuevo usuario no sea contacto de un cliente
+    const existingContacto = await contactoRepository.findOne({
+      where: [
+        { email: nuevoUsuario.email },
+        { phone: nuevoUsuario.phone }
+      ]
+    })
 
     const nuevoRol = await rolRepository.findOne({ where: [{ id: nuevoUsuario.rol_id }] })
     if (!nuevoRol) return [null, "Rol inválido"];
@@ -139,24 +151,28 @@ export async function registerClientService(cliente, supervisor) {
     const userRepository = AppDataSource.getRepository(User);
     const rolRepository = AppDataSource.getRepository(Rol)
     const clienteRepository = AppDataSource.getRepository(Cliente);
+    const contactoRepository = AppDataSource.getRepository(Contacto)
 
-    const { nombreCliente, direccion, personalSolicitado } = cliente;
+    const { nombreCliente, rutCliente, direccion, personalSolicitado, contacto } = cliente;
 
     //el cliente y supervisor no pueden tener el mismo rut
-    if (cliente.rut === supervisor.rut) return [null, { dataInfo: "rut", message: "Rut duplicado" }]
+    if (cliente.rutCliente === supervisor.rut) return [null, createErrorMessage("rut", "Rut duplicado")]
 
     //comprobacion de campos únicos
-    const existingUser = await userRepository.findOne({ where: { email: cliente.email, rut: cleanRut(cliente.rut) }, });
-    if (existingUser) return [null, createErrorMessage("rut o email", "Rut o correo electrónico en uso")];
+    const existingClient = await clienteRepository.findOne({ where: { rutCliente: cleanRut(cliente.rutCliente) }, });
+    if (existingClient) return [null, createErrorMessage("rut", "Rut en uso")];
 
-    if (cliente.phone) {
-      const existingPhoneUser = await userRepository.findOne({ where: { phone: cliente.phone } })
+    if (supervisor.phone) {
+      const existingPhoneUser = await userRepository.findOne({ where: { phone: supervisor.phone } })
+      console.log(existingPhoneUser);
+
       if (existingPhoneUser) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
     }
 
 
     const nuevoCliente = clienteRepository.create({
       nombreCliente: nombreCliente,
+      rutCliente: rutCliente,
       direccion: direccion,
       personalSolicitado: personalSolicitado
     });
@@ -165,14 +181,12 @@ export async function registerClientService(cliente, supervisor) {
     const clienteCreado = await clienteRepository.save(nuevoCliente)
     console.log(clienteCreado);
 
-    //registrar datos del nuevo cliente como usuario
-    const [usuarioCliente, errCliente] = await registerService(cliente, nuevoCliente.cliente_id)
-    if (errCliente) {
+    //registrar el contacto
+    const [contactoCreado, err] = await createContacto(contacto)
+    if (err) {
       await clienteRepository.remove(clienteCreado)
-      return [null, errCliente]
-    };
-
-
+      return [null, err]
+    }
     //registrar un nuevo usuario como supervisor del nuevo cliente
     const [usuarioSupervisor, errSupervisor] = await registerService(supervisor, nuevoCliente.cliente_id)
     if (errSupervisor) {
@@ -186,8 +200,8 @@ export async function registerClientService(cliente, supervisor) {
 
     return [{
       Cliente: clienteCreado,
-      usuarioCliente,
-      usuarioSupervisor
+      Contacto: contactoCreado,
+      usuarioSupervisor,
     }, null]
 
 

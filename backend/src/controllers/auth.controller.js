@@ -68,7 +68,7 @@ export async function registerCliente(req, res) {
 
     if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 
-    return handleSuccess(res, 201, "Usuario registrado con éxito", data);
+    return handleSuccess(res, 201, "Datos del cliente registrados con éxito", data);
 
   } catch (error) {
     handleErrorServer(res, 500, error.message);

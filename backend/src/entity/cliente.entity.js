@@ -16,6 +16,12 @@ const ClienteSchema = new EntitySchema({
             length: 255,
             nullable: false,
         },
+        rutCliente: {
+            type: "varchar",
+            length: 12,
+            nullable: false,
+            unique: true,
+        },
         direccion: {
             type: "varchar",
             length: 255,
@@ -36,5 +42,12 @@ const ClienteSchema = new EntitySchema({
         columns: ["cliente_id"],
         unique: true,
     }],
+    relations: {
+        contactos: {
+            type: "one-to-many",
+            target: "Contacto",
+            inverseSide: "cliente"
+        }
+    }
 })
 export default ClienteSchema

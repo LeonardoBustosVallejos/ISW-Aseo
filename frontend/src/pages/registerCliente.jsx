@@ -14,15 +14,16 @@ const RegisterClienteForm = () => {
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         cliente: {
-            nombreCompleto: '',
-            rut: '',
-            email: '',
-            password: '',
-            phone: '',
-            rol_id: '2',
-            personalSolicitado: '',
             nombreCliente: '',
-            direccion: ''
+            rutCliente: '',
+            personalSolicitado: '',
+            direccion: '',
+            contacto: {
+                nombreContacto: '',
+                contacto_rut: '',
+                email: '',
+                phone: '',
+            }
         },
         supervisor: {
             nombreCompleto: '',
@@ -45,9 +46,24 @@ const RegisterClienteForm = () => {
         }));
     };
 
+    const handleContactoChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            cliente: {
+                ...prev.cliente,
+                contacto: {
+                    ...prev.cliente.contacto,
+                    [name]: value
+                }
+            }
+        }));
+    };
 
     const handleChange = (e, section) => {
         const { name, value } = e.target;
+        console.log(name, value);
         setFormData((prev) => ({
             ...prev,
             [section]: {
@@ -95,43 +111,46 @@ const RegisterClienteForm = () => {
                             <h3 >Datos del Cliente</h3>
 
                             <div className="container_inputs">
-                                <label className="label">Nombre Completo (Razón Social)</label>
-                                <input type="text" name="nombreCompleto" value={formData.cliente.nombreCompleto} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="Empresa XYZ SPA" required />
+                                <label className="label">Nombre Empresa (Nombre de Fantasía)</label>
+                                <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
                             </div>
 
                             <div className="container_inputs">
-                                <label className="label">RUT</label>
-                                <input type="text" name="rut" value={formData.cliente.rut} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="76.xxx.xxx-x" required />
-                            </div>
-
-                            <div className="container_inputs">
-                                <label className="label">Teléfono</label>
-                                <input type="text" name="phone" value={formData.cliente.phone} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="912345678" />
-                            </div>
-
-                            <div className="container_inputs">
-                                <label className="label">Nombre de Fantasía</label>
-                                <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" />
+                                <label className="label">RUT de Empresa</label>
+                                <input type="text" name="rutCliente" value={formData.cliente.rutCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="76.xxx.xxx-x" required />
                             </div>
 
                             <div className="container_inputs">
                                 <label className="label">Dirección</label>
-                                <input type="text" name="direccion" value={formData.cliente.direccion} onChange={(e) => handleChange(e, 'cliente')} className="input" />
-                            </div>
-
-                            <div className="container_inputs">
-                                <label className="label">Email de contacto</label>
-                                <input type="email" name="email" value={formData.cliente.email} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
-                            </div>
-                            <div className="container_inputs">
-                                <label className="label">Password</label>
-                                <input type="password" name="password" value={formData.cliente.password} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
+                                <input type="text" name="direccion" value={formData.cliente.direccion} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
                             </div>
 
                             <div className="container_inputs">
                                 <label className="label">Personal Solicitado (Cantidad)</label>
-                                <input type="number" name="personalSolicitado" value={formData.cliente.personalSolicitado} onChange={(e) => handleChange(e, 'cliente')} className="input" />
+                                <input type="number" min={1} name="personalSolicitado" defaultValue={1} value={formData.cliente.personalSolicitado} onChange={(e) => handleChange(e, 'cliente')} className="input" />
                             </div>
+
+                            <section>
+                                <h3>Datos del Contacto</h3>
+                                <div className="container_inputs">
+                                    <label className="label">Nombre del Contacto</label>
+                                    <input type="text" name="nombreContacto" value={formData.cliente.contacto.nombreContacto} onChange={handleContactoChange} className="input" placeholder="Empresa XYZ SPA" required />
+                                </div>
+                                <div className="container_inputs">
+                                    <label className="label">RUT del Contacto</label>
+                                    <input type="text" name="contacto_rut" value={formData.cliente.contacto.contacto_rut} onChange={handleContactoChange} className="input" placeholder="76.xxx.xxx-x" required />
+                                </div>
+
+                                <div className="container_inputs">
+                                    <label className="label">Email de contacto</label>
+                                    <input type="email" name="email" value={formData.cliente.contacto.email} onChange={handleContactoChange} className="input" required />
+                                </div>
+                                <div className="container_inputs">
+                                    <label className="label">Teléfono</label>
+                                    <input type="text" name="phone" value={formData.cliente.contacto.phone} onChange={handleContactoChange} className="input" placeholder="912345678" required />
+                                </div>
+                            </section>
+
                         </section>
 
                         {/* SECCIÓN SUPERVISOR */}
