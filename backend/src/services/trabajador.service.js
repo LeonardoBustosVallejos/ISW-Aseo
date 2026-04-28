@@ -47,23 +47,26 @@ export async function updateTrabajadorService(id, body) {
     try {
         const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
+
         const trabajadorFound = await trabajadoresRepository.findOne({
-            where:
-                { id: Number(id) },
-        })
-        if (!trabajadorFound) return [null, "Trabajador no encontrado"]
-
-        /*const existingTrabajador = await trabajadoresRepository.findOne({
-        where: [{ email: body.email }],
+            where: { id: Number(id) },
         });
-        if (existingTrabajador && existingTrabajador.id !== trabajadorFound.id) {
-            return [null, "Ya existe un trabajador con el mismo email"];
-        }*/
+        if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
-        //verificar que el correo electrónico no esté registrado
-        const existingEmail = await TrabajadoresRepository.findOne({ where: [{ email: body.email }] })
-        const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: body.email }] })
-        if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
+        const existingEmail = await trabajadoresRepository.findOne({
+            where: { email: body.email },
+        });
+
+        const existingContactoEmail = await contactoRepository.findOne({
+            where: { email: body.email },
+        });
+
+        if (
+            (existingEmail && existingEmail.id !== trabajadorFound.id) ||
+            existingContactoEmail
+        ) {
+            return [null, "Email ya en uso"];
+        }
 
         const dataTrabajadorUpdate = {
             grupo: body.grupo,
@@ -79,8 +82,6 @@ export async function updateTrabajadorService(id, body) {
         const trabajadorData = await trabajadoresRepository.findOne({
             where: { id: trabajadorFound.id },
         });
-
-        if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
         if (!trabajadorData) {
             return [null, "Trabajador no encontrado después de actualizar"];
