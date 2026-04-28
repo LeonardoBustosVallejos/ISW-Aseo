@@ -4,7 +4,8 @@ import { getResumenActivos, crearActivoFijo } from "../controllers/activoFijo.co
 
 const router = Router();
 
-router.get("/cliente/:clienteId/resumen", getResumenActivos);
-router.post("/", crearActivoFijo);
+router
+    .get("/cliente/:clienteId/resumen", getResumenActivos)
+    .post("/", crearActivoFijo);
 
 export default router;
