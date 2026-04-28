@@ -4,7 +4,7 @@ import Root from '@pages/Root';
 import Error404 from '@pages/Error404';
 import { AuthProvider } from "@context/AuthContext";
 import ProtectedRoute from '@components/ProtectedRoute';
-import RegisterClienteForm from "@/pages/registerCliente";
+import RegisterClienteForm from "@pages/registerCliente";
 export default function App() {
     return (
         <Router>

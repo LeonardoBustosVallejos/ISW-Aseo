@@ -21,20 +21,20 @@ export async function getItemsService() {
 }
 
 export async function createItemService(itemData) {
-    try {
-        const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = itemData;
-        const ItemRepository = AppDataSource.getRepository(Item);
-        const newItem = ItemRepository.create({
-            nombre: nombre,
-            descripcion: descripcion,
-            disponibilidadActual: disponibilidadActual, 
-            disponibilidadTotal: disponibilidadTotal
-        });
-        const itemGuardado = await ItemRepository.save(newItem);
-        return [itemGuardado, null];
-    } catch (error) {
-        return [null, error.message];
-    }
+  try {
+    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = itemData;
+    const ItemRepository = AppDataSource.getRepository(Item);
+    const newItem = ItemRepository.create({
+      nombre: nombre,
+      descripcion: descripcion,
+      disponibilidadActual: disponibilidadActual,
+      disponibilidadTotal: disponibilidadTotal
+    });
+    const itemGuardado = await ItemRepository.save(newItem);
+    return [itemGuardado, null];
+  } catch (error) {
+    return [null, error.message];
+  }
 }
 
 export async function deleteItemService(id) {
@@ -42,23 +42,23 @@ export async function deleteItemService(id) {
     const ItemRepository = AppDataSource.getRepository(Item);
     const result = await ItemRepository.delete(id);
     if (result.affected === 0) {
-      return { success: false, message: "No existe un item con esa id"};
+      return { success: false, message: "No existe un item con esa id" };
     }
-    return { success: true, message: "Item borrado exitósamente"};
+    return { success: true, message: "Item borrado exitósamente" };
   } catch (error) {
-    return { success: false, message: "Error borrando item", error: error.message};
+    return { success: false, message: "Error borrando item", error: error.message };
   }
 }
 
 export async function updateItemService(id, updateData) {
   try {
     const ItemRepository = AppDataSource.getRepository(Item);
-    const item = await ItemRepository.findOne({ where : {id} });
+    const item = await ItemRepository.findOne({ where: { id } });
     if (!item) return { success: false, message: "Item no encontrado" };
     if (updateData.nombre && updateData.nombre.trim() !== "") item.nombre = updateData.nombre.trim();
     const updatedItem = await ItemRepository.save(item);
-    return {success: true, data: updatedItem, message: "Item actualizado exitósamente"};
+    return { success: true, data: updatedItem, message: "Item actualizado exitósamente" };
   } catch (error) {
-    return {success: false, message: "Error actualizando item", error: error.message};
+    return { success: false, message: "Error actualizando item", error: error.message };
   }
 }
