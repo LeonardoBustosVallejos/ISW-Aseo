@@ -28,18 +28,33 @@ export const registrarNuevoActivo = async (datosActivo) => {
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
 
-        const nombreLimpio = datosActivo.nombre.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const prefijoDinamico = nombreLimpio.substring(0, 3).toUpperCase();
-        const codigoGenerado = await generarCodigo(prefijoDinamico);
-        const nuevoActivo = activoFijoRepositorio.create({
-            ...datosActivo,
-            codigo_inventario: codigoGenerado
-        });
+        const prefijoCateg = {
+            "Linea Blanca": "LBL",
+            "Herramientas de Limpieza": "HRL",
+            "Mobiliario": "MOB",
+            "Electronica": "ELE"
+        };
 
-        const resultado = await activoFijoRepositorio.save(nuevoActivo);
-        return resultado;
+        const prefijoOF = prefijoCateg[datosActivo.codigo_inventario];
+
+        const cantidad = datosActivo.cantidad ? parseInt(datosActivo.cantidad): 1;
+        const activosCreados = [];
+
+        for(let i = 0; i < cantidad; i++){
+            const codigoGenerado = await generarCodigo(prefijoOF);
+            const nuevoActivo = activoFijoRepositorio.create({
+                ...datosActivo,
+                clienteId: null,
+                codigo_inventario: codigoGenerado
+            }) 
+
+            const resultado = await activoFijoRepositorio.save(nuevoActivo);
+            activosCreados.push(resultado);
+        }
+
+        return [activosCreados, null];
     }catch(error){
-        console.error("Error gigante de BD:", error); 
+        console.error("Error de Base Datos:", error); 
         return [null, error.message];
     }
 };
@@ -59,7 +74,7 @@ export const resumenActivos = async (clienteId) => {
 
         return resumen;
     }catch(error){
-    console.error("Error223:", error);
+    console.error("Error al obtener resumen", error);
     return [null, "Error223"];
     }
 };

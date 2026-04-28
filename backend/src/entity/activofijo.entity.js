@@ -26,13 +26,14 @@ const ActivoFijo = new EntitySchema({
         },
         cliente_id:{
             type:"int",
+            nullable:true,
         },
         trabajador_id:{
             type:"int",
             nullable:true,
         },
         fecha_ingreso:{
-            type: "timestamp",
+            type: "date",
             createDate:true,
         }
     },
