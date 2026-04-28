@@ -31,6 +31,16 @@ const TrabajadorSchema = new EntitySchema({
       nullable: false,
       unique: true,
     },
+    grupo: {
+      type: "varchar",
+      length: 255,
+      nullable: true,
+    },
+    antecedentes: {
+      type: "varchar",
+      length: 255,
+      nullable: true,
+    },
     rol: {
       type: "varchar",
       length: 255,
@@ -45,6 +55,11 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 255,
       nullable: true,
+    },
+    despedido: {
+      type: "boolean",
+      nullable: false,
+      default: false,
     },
     createdAt: {
       type: "timestamp with time zone",

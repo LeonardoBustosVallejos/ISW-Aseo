@@ -10,6 +10,7 @@ import {
 } from "../validations/auth.validation.js";
 import {
   createTrabajadoresService,
+  despidoTrabajadorService,
   getTrabajadoresService,
   getTrabajadorService,
   updateTrabajadorService,
@@ -51,17 +52,23 @@ export async function createTrabajadoresController(req, res) {
             nacimiento, 
             rut, 
             email, 
+            grupo,
+            antecedentes,
             rol, 
             sexo,
-            competencias } = req.body;
+            competencias,
+            despedido } = req.body;
     const [created, err] = await createTrabajadoresService({ 
             nombreCompleto, 
             nacimiento, 
             rut, 
             email, 
+            grupo,
+            antecedentes,
             rol, 
             sexo,
-            competencias });
+            competencias,
+            despedido });
     if (err) return handleErrorServer(res, 500, err);
     
     return handleSuccess(res, 201, "Trabajador creado correctamente", created);
@@ -86,5 +93,19 @@ export async function updateTrabajadorController(req, res) {
   }
   catch(error) {
     handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function despidoTrabajadorController(req, res) {
+  try {
+    const { id } = req.params;
+    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id);
+
+    if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
+    
+    return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
+  }
+  catch(error) {
+
   }
 }
