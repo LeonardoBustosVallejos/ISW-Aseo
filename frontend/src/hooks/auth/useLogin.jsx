@@ -1,20 +1,16 @@
 import { useState, useEffect } from 'react';
 
 const useLogin = () => {
-    const [errorEmail, setErrorEmail] = useState('');
-    const [errorPassword, setErrorPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [inputData, setInputData] = useState({ email: '', password: '' });
 
     useEffect(() => {
-        if (inputData.email) setErrorEmail('');
-        if (inputData.password) setErrorPassword('');
+        if (inputData.email || inputData.password) setErrorMessage('');
     }, [inputData.email, inputData.password]);
 
     const errorData = (dataMessage) => {
-        if (dataMessage.dataInfo === 'email') {
-            setErrorEmail(dataMessage.message);
-        } else if (dataMessage.dataInfo === 'password') {
-            setErrorPassword(dataMessage.message);
+        if (dataMessage.dataInfo === 'email' || dataMessage.dataInfo === 'password') {
+            setErrorMessage(dataMessage.message);
         }
     };
 
@@ -26,8 +22,7 @@ const useLogin = () => {
     };
 
     return {
-        errorEmail,
-        errorPassword,
+        errorMessage,
         inputData,
         errorData,
         handleInputChange,

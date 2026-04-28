@@ -5,12 +5,12 @@ import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 
 export async function getUserService(query) {
   try {
-    const { rut, id, email } = query;
+    const { rut, id, email, phone } = query;
 
     const userRepository = AppDataSource.getRepository(User);
 
     const userFound = await userRepository.findOne({
-      where: [{ id: id }, { rut: rut }, { email: email }],
+      where: [{ id: id }, { rut: rut }, { email: email }, { phone: phone }],
     });
 
     if (!userFound) return [null, "Usuario no encontrado"];
@@ -43,22 +43,20 @@ export async function getUsersService() {
 
 export async function updateUserService(query, body) {
   try {
-    const { id, rut, email } = query;
+    const { id, rut, email, phone } = query;
 
     const userRepository = AppDataSource.getRepository(User);
 
-    const userFound = await userRepository.findOne({
-      where: [{ id: id }, { rut: rut }, { email: email }],
-    });
+    const userFound = await getUserService(query)
 
     if (!userFound) return [null, "Usuario no encontrado"];
 
     const existingUser = await userRepository.findOne({
-      where: [{ rut: body.rut }, { email: body.email }],
+      where: [{ rut: body.rut }, { email: body.email }, { phone: body.phone }],
     });
 
     if (existingUser && existingUser.id !== userFound.id) {
-      return [null, "Ya existe un usuario con el mismo rut o email"];
+      return [null, "Ya existe un usuario con el mismo rut, email o teléfono"];
     }
 
     if (body.password) {
@@ -74,8 +72,9 @@ export async function updateUserService(query, body) {
       nombreCompleto: body.nombreCompleto,
       rut: body.rut,
       email: body.email,
-      rol: body.rol,
+      rol_id: body.rol,
       updatedAt: new Date(),
+      cliente: body.cliente_id,
     };
 
     if (body.newPassword && body.newPassword.trim() !== "") {
@@ -113,8 +112,8 @@ export async function deleteUserService(query) {
 
     if (!userFound) return [null, "Usuario no encontrado"];
 
-    if (userFound.rol === "administrador") {
-      return [null, "No se puede eliminar un usuario con rol de administrador"];
+    if (userFound.rol === "Administrador") {
+      return [null, "No se puede eliminar un usuario con rol de Administrador"];
     }
 
     const userDeleted = await userRepository.remove(userFound);

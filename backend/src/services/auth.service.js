@@ -4,29 +4,45 @@ import jwt from "jsonwebtoken";
 import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
+import Rol from "../entity/rol.entity.js";
+import Cliente from "../entity/cliente.entity.js";
+import Contacto from "../entity/contacto.entity.js";
+import { createContacto } from "./contacto.service.js";
+
+const createErrorMessage = (dataInfo, message) => ({
+  dataInfo,
+  message
+});
+
+/**
+ * funcion que transforma un rut de formato xx.xxx.xxx-y a xxxxxxxx-y,
+ * solo elimina los puntos y posible 0 inicial
+ * @param {string} rut rut a transformar
+ * @returns rut en formato xxxxxxxx-y
+ */
+function cleanRut(rut) {
+  return rut.replace(/\./g, "").replace(/^0+/, "");
+}
 
 export async function loginService(user) {
   try {
     const userRepository = AppDataSource.getRepository(User);
     const { email, password } = user;
 
-    const createErrorMessage = (dataInfo, message) => ({
-      dataInfo,
-      message
-    });
 
     const userFound = await userRepository.findOne({
-      where: { email }
+      relations: ["rol", "cliente"],
+      where: { email: email }
     });
 
     if (!userFound) {
-      return [null, createErrorMessage("email", "El correo electrónico es incorrecto")];
+      return [null, createErrorMessage("email", "Correo o contraseña incorrectos")];
     }
 
     const isMatch = await comparePassword(password, userFound.password);
 
     if (!isMatch) {
-      return [null, createErrorMessage("password", "La contraseña es incorrecta")];
+      return [null, createErrorMessage("password", "Correo o contraseña incorrectos")];
     }
 
     const payload = {
@@ -34,6 +50,7 @@ export async function loginService(user) {
       email: userFound.email,
       rut: userFound.rut,
       rol: userFound.rol,
+      cliente: userFound.cliente
     };
 
     const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
@@ -47,49 +64,139 @@ export async function loginService(user) {
   }
 }
 
-
-export async function registerService(user) {
+/**
+ * Solo el administrador puede registrar nuevos usuarios
+*/
+export async function registerService(nuevoUsuario, cliente_id) {
   try {
     const userRepository = AppDataSource.getRepository(User);
+    const rolRepository = AppDataSource.getRepository(Rol)
+    const clienteRepository = AppDataSource.getRepository(Cliente);
+    const contactoRepository = AppDataSource.getRepository(Contacto)
 
-    const { nombreCompleto, rut, email } = user;
 
-    const createErrorMessage = (dataInfo, message) => ({
-      dataInfo,
-      message
-    });
 
-    const existingEmailUser = await userRepository.findOne({
-      where: {
-        email,
-      },
-    });
-    
-    if (existingEmailUser) return [null, createErrorMessage("email", "Correo electrónico en uso")];
+    //si se entrego un id de cliente entonces verificar que ese cliente exista
+    if (cliente_id) {
+      const existingClient = await clienteRepository.findOne({ where: { cliente_id: cliente_id } })
+      if (!existingClient) return [null, { dataInfo: "cliente_id", message: "No existe cliente" }]
+    }
+    //verificar que el nuevo usuario no sea contacto de un cliente
+    const existingContacto = await contactoRepository.findOne({
+      where: [
+        { email: nuevoUsuario.email },
+        { phone: nuevoUsuario.phone }
+      ]
+    })
 
-    const existingRutUser = await userRepository.findOne({
-      where: {
-        rut,
-      },
-    });
+    const nuevoRol = await rolRepository.findOne({ where: [{ id: nuevoUsuario.rol_id }] })
+    if (!nuevoRol) return [null, "Rol inválido"];
 
-    if (existingRutUser) return [null, createErrorMessage("rut", "Rut ya asociado a una cuenta")];
+    //verificar campos únicos
+    const existingUser = await userRepository.findOne({ where: { email: nuevoUsuario.email, rut: cleanRut(nuevoUsuario.rut) }, });
+    if (existingUser) return [null, createErrorMessage("rut o email", "Rut o correo electrónico ya en uso")];
 
+    if (nuevoUsuario.phone) {
+      const existingPhoneUser = await userRepository.findOne({ where: { phone: nuevoUsuario.phone } })
+      if (existingPhoneUser) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+    }
+
+    //usuario principal
     const newUser = userRepository.create({
-      nombreCompleto,
-      email,
-      rut,
-      password: await encryptPassword(user.password),
-      rol: "usuario",
+      nombreCompleto: nuevoUsuario.nombreCompleto,
+      email: nuevoUsuario.email,
+      rut: cleanRut(nuevoUsuario.rut),
+      password: await encryptPassword(nuevoUsuario.password),
+      phone: nuevoUsuario.phone || null,
+      rol: nuevoUsuario.rol_id,
+      cliente: cliente_id || null
     });
+
 
     await userRepository.save(newUser);
 
     const { password, ...dataUser } = newUser;
 
     return [dataUser, null];
+
   } catch (error) {
     console.error("Error al registrar un usuario", error);
+    return [null, "Error interno del servidor"];
+  }
+}
+
+
+export async function registerClientService(cliente, supervisor) {
+  try {
+    const userRepository = AppDataSource.getRepository(User);
+    const rolRepository = AppDataSource.getRepository(Rol)
+    const clienteRepository = AppDataSource.getRepository(Cliente);
+    const contactoRepository = AppDataSource.getRepository(Contacto)
+
+    const { nombreCliente, rutCliente, direccion, personalSolicitado, contacto } = cliente;
+
+    //el cliente y supervisor no pueden tener el mismo rut
+    if (cliente.rutCliente === supervisor.rut) return [null, createErrorMessage("rut", "Rut duplicado")]
+
+    //comprobacion de campos únicos
+    const existingClient = await clienteRepository.findOne({ where: { rutCliente: cleanRut(cliente.rutCliente) }, });
+    if (existingClient) return [null, createErrorMessage("rut", "Rut en uso")];
+
+    if (supervisor.phone) {
+      const existingPhoneUser = await userRepository.findOne({ where: { phone: supervisor.phone } })
+      console.log(existingPhoneUser);
+
+      if (existingPhoneUser) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+    }
+
+
+    const nuevoCliente = clienteRepository.create({
+      nombreCliente: nombreCliente,
+      rutCliente: rutCliente,
+      direccion: direccion,
+      personalSolicitado: personalSolicitado
+    });
+
+    //registrar en la tabla cliente
+    const clienteCreado = await clienteRepository.save(nuevoCliente)
+    console.log(clienteCreado);
+
+    //registrar el contacto
+    const [contactoCreado, err] = await createContacto(contacto)
+    if (err) {
+      await clienteRepository.remove(clienteCreado)
+      return [null, err]
+    }
+
+    const dataSupervisor = {
+      nombreCompleto: supervisor.nombreCompleto,
+      rut: supervisor.rut,
+      email: supervisor.email,
+      password: supervisor.password,
+      phone: supervisor.phone,
+      rol_id: await rolRepository.findOne({ where: { nombre: "Supervisor" } }),
+    }
+
+    //registrar un nuevo usuario como supervisor del nuevo cliente
+    const [usuarioSupervisor, errSupervisor] = await registerService(supervisor, nuevoCliente.cliente_id)
+    if (errSupervisor) {
+      await clienteRepository.remove(clienteCreado)
+      return [null, errSupervisor];
+    }
+    /**
+     * Ante cualquier error se eliminará en cascada los datos ingresados, 
+     * para evitar espacio ocupado innecesariamente
+     */
+
+    return [{
+      Cliente: clienteCreado,
+      Contacto: contactoCreado,
+      usuarioSupervisor,
+    }, null]
+
+
+  } catch (error) {
+    console.error("Error al registrar un cliente", error);
     return [null, "Error interno del servidor"];
   }
 }

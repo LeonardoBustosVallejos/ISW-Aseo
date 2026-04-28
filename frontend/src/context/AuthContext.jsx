@@ -11,15 +11,15 @@ export function AuthProvider({ children }) {
     const user = JSON.parse(sessionStorage.getItem('usuario')) || '';
     const isAuthenticated = user ? true : false;
 
-useEffect(() => {
-    if (!isAuthenticated) {
-        navigate('/auth');
-    }
-}, [isAuthenticated, navigate]);
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login');
+        }
+    }, [isAuthenticated, navigate]);
 
-return (
-    <AuthContext.Provider value={{ isAuthenticated, user }}>
-        {children}
-    </AuthContext.Provider>
-);
+    return (
+        <AuthContext.Provider value={{ isAuthenticated, user }}>
+            {children}
+        </AuthContext.Provider>
+    );
 }

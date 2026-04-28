@@ -4,7 +4,7 @@ import '@styles/form.css';
 import HideIcon from '../assets/HideIcon.svg';
 import ViewIcon from '../assets/ViewIcon.svg';
 
-const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundColor }) => {
+const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundColor, LoginError }) => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
@@ -45,7 +45,7 @@ const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundCo
                             placeholder={field.placeholder}
                             type={field.type === 'password' && field.name === 'password' ? (showPassword ? 'text' : 'password') :
                                 field.type === 'password' && field.name === 'newPassword' ? (showNewPassword ? 'text' : 'password') :
-                                field.type}
+                                    field.type}
                             defaultValue={field.defaultValue || ''}
                             disabled={field.disabled}
                             onChange={field.onChange}
@@ -101,9 +101,16 @@ const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundCo
                     </div>
                 </div>
             ))}
+            {LoginError &&
+                <label htmlFor={LoginError}>
+                    < div className={`error-message footerContent ${LoginError ? 'visible' : ''}`}>
+                        {LoginError ? "Correo o contraseña incorrectos" : ''}
+                    </div>
+                </label>
+            }
             {buttonText && <button type="submit">{buttonText}</button>}
             {footerContent && <div className="footerContent">{footerContent}</div>}
-        </form>
+        </form >
     );
 };
 
