@@ -2,10 +2,9 @@
 import { Router } from "express";
 import {
   createItemController,
+  deleteItemController,
   getItemsController,
-  createItemController,
   updateItemController,
-  deleteItemController
 } from "../controllers/item.controller.js";
 
 const router = Router();
