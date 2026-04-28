@@ -6,7 +6,7 @@ import { convertirMinusculas } from '@helpers/formatData.js';
 export async function login(dataUser) {
     try {
         const response = await axios.post('/auth/login', {
-            email: dataUser.email, 
+            email: dataUser.email,
             password: dataUser.password
         });
         const { status, data } = response;
@@ -15,7 +15,7 @@ export async function login(dataUser) {
             const userData = { nombreCompleto, email, rut, rol };
             sessionStorage.setItem('usuario', JSON.stringify(userData));
             axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-            cookies.set('jwt-auth', data.data.token, {path:'/'});
+            cookies.set('jwt-auth', data.data.token, { path: '/' });
             return response.data
         }
     } catch (error) {
@@ -38,7 +38,21 @@ export async function register(data) {
         return error.response.data;
     }
 }
+export async function registerCliente(data) {
+    try {
+        console.log(data);
+        const { cliente, supervisor } = data
 
+        if (cliente.phone === "") cliente.phone = null;
+        if (supervisor.phone === "") supervisor.phone = null;
+
+        const response = await axios.post('/auth/registerCliente', { cliente, supervisor })
+        return response.data
+    } catch (error) {
+        console.error("Error 400 - Detalle del Backend:", error.response?.data);
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
 export async function logout() {
     try {
         await axios.post('/auth/logout');
