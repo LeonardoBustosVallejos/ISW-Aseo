@@ -95,4 +95,4 @@ const UserSchema = new EntitySchema({
   }
 });
 
-export default UserSchema;
+export default User;
