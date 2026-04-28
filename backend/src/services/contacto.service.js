@@ -104,7 +104,7 @@ export async function createContacto(contacto, cliente) {
                 { rut: contacto.contacto_rut }
             ]
         })
-        const existingTranajador = await trabajadoresRepository.findOne({ where: [{ email: contacto.email } ] })
+        const existingTranajador = await trabajadoresRepository.findOne({ where: [{ email: contacto.email }] })
 
         if (existingUser || existingTranajador) {
             return [null, createErrorMessage("contacto", "Los datos de contacto corresponden a un trabajador")]
