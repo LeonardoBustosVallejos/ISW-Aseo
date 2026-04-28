@@ -13,6 +13,7 @@ import {
   despidoTrabajadorService,
   getTrabajadoresService,
   getTrabajadorService,
+  recontratarTrabajadorService,
   updateTrabajadorService,
 } from "../services/trabajador.service.js";
 
@@ -96,16 +97,34 @@ export async function updateTrabajadorController(req, res) {
   }
 }
 
-export async function despidoTrabajadorController(req, res) {
+export async function recontratarTrabajadorController(req, res) {
   try {
     const { id } = req.params;
-    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id);
+    const { despedido } = req.body;
+    
+    const [trabajador, errorTrabajador] = await recontratarTrabajadorService(id, despedido);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
     
     return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
   }
   catch(error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
 
+export async function despidoTrabajadorController(req, res) {
+  try {
+    const { id } = req.params;
+    const { despedido } = req.body;
+    
+    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, despedido);
+
+    if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
+    
+    return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
+  }
+  catch(error) {
+    handleErrorServer(res, 500, error.message);
   }
 }
