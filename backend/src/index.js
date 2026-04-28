@@ -8,7 +8,7 @@ import passport from "passport";
 import express, { json, urlencoded } from "express";
 import { cookieKey, HOST, PORT } from "./config/configEnv.js";
 import { connectDB } from "./config/configDb.js";
-import { createUsers, createRoles, createClients } from "./config/initialSetup.js";
+import { createTrabajadores, createUsers, createRoles, createClients } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 
 async function setupServer() {
@@ -76,6 +76,7 @@ async function setupAPI() {
     await createRoles();
     await createClients();
     await createUsers();
+    await createTrabajadores();
   } catch (error) {
     console.log("Error en index.js -> setupAPI(), el error es: ", error);
   }
