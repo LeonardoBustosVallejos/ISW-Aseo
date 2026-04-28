@@ -101,26 +101,6 @@ export async function registerService(nuevoUsuario, cliente_id) {
       if (existingPhoneUser) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
     }
 
-    //verificar que, si se está creando un supervisor, 
-    const rolSupervisor = await rolRepository.findOneBy({ nombre: "Supervisor" })
-
-    //el cliente al que se le está asignando no tenga otro ya registrado
-    if (nuevoUsuario.rol_id == rolSupervisor.id && cliente_id) {
-
-      const existingSupervisor = await userRepository.findOne({
-        where: [
-          {
-            rol: { id: rolSupervisor.id },
-            cliente: { cliente_id: cliente_id },
-          }
-        ]
-      })
-      console.log(rolSupervisor);
-
-      console.log(existingSupervisor);
-
-      if (existingSupervisor) return [null, "El cliente ya tiene un supervisor"];
-    }
     //usuario principal
     const newUser = userRepository.create({
       nombreCompleto: nuevoUsuario.nombreCompleto,
@@ -187,6 +167,16 @@ export async function registerClientService(cliente, supervisor) {
       await clienteRepository.remove(clienteCreado)
       return [null, err]
     }
+
+    const dataSupervisor = {
+      nombreCompleto: supervisor.nombreCompleto,
+      rut: supervisor.rut,
+      email: supervisor.email,
+      password: supervisor.password,
+      phone: supervisor.phone,
+      rol_id: await rolRepository.findOne({ where: { nombre: "Supervisor" } }),
+    }
+
     //registrar un nuevo usuario como supervisor del nuevo cliente
     const [usuarioSupervisor, errSupervisor] = await registerService(supervisor, nuevoCliente.cliente_id)
     if (errSupervisor) {

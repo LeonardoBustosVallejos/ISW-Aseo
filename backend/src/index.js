@@ -8,7 +8,7 @@ import passport from "passport";
 import express, { json, urlencoded } from "express";
 import { cookieKey, HOST, PORT } from "./config/configEnv.js";
 import { connectDB } from "./config/configDb.js";
-import { createTrabajadores, createUsers, createRoles, createClients } from "./config/initialSetup.js";
+import { createTrabajadores, createUsers, createRoles, createClientes } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 
 async function setupServer() {
@@ -74,7 +74,7 @@ async function setupAPI() {
     await connectDB();
     await setupServer();
     await createRoles();
-    await createClients();
+    await createClientes();
     await createUsers();
     await createTrabajadores();
   } catch (error) {

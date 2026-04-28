@@ -2,6 +2,7 @@ import { AppDataSource } from "../config/configDb.js";
 import Contacto from "../entity/contacto.entity.js";
 import Cliente from "../entity/cliente.entity.js";
 import User from "../entity/user.entity.js";
+import Trabajador from "../entity/trabajador.entity.js";
 
 const createErrorMessage = (dataInfo, message) => ({
     dataInfo,
@@ -93,8 +94,9 @@ export async function createContacto(contacto, cliente) {
         const contactoRepository = AppDataSource.getRepository(Contacto)
         const clienteRepository = AppDataSource.getRepository(Cliente);
         const userRepository = AppDataSource.getRepository(User)
+        const trabajadoresRepository = AppDataSource.getRepository(Trabajador)
 
-        //verificar que el contacto no sea un trabajador
+        //verificar que el contacto no sea un trabajador o usuario
         const existingUser = await userRepository.findOne({
             where: [
                 { email: contacto.email },
@@ -102,7 +104,9 @@ export async function createContacto(contacto, cliente) {
                 { rut: contacto.contacto_rut }
             ]
         })
-        if (existingUser) return [null, createErrorMessage("contacto", "Los datos de contacto corresponden a un trabajador")]
+        const existingTranajador = await trabajadoresRepository.findOne({ where: [{ email: contacto.email }, { phone: contacto.phone }] })
+
+        if (existingUser || existingTranajador) return [null, createErrorMessage("contacto", "Los datos de contacto corresponden a un trabajador")]
 
 
         if (cliente) {
@@ -162,6 +166,7 @@ export async function updateContacto(contacto_id, data) {
 
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const userRepository = AppDataSource.getRepository(User)
+        const trabajadoresRepository = AppDataSource.getRepository(Trabajador)
 
         const [existingContacto, err1] = await getContactoByID(contacto_id)
 
@@ -172,8 +177,8 @@ export async function updateContacto(contacto_id, data) {
         //validar rut del contacto
         if (data.contacto_rut && data.contacto_rut !== existingContacto.contacto_rut) {
             const rutUser = await userRepository.findOne({ where: { rut: data.contacto_rut } })
-
-            if (rutUser) {
+            const existingTranajador = await trabajadoresRepository.findOne({ where: { rut: data.contacto_rut } })
+            if (rutUser || existingTranajador) {
                 return [null, createErrorMessage("contacto_rut", "Correo ya en uso")];
             }
         }

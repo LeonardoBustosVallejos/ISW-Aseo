@@ -44,7 +44,7 @@ async function createRoles() {
     console.error("Error al crear roles:", error);
   }
 }
-async function createClients() {
+async function createClientes() {
   try {
     const clientRepository = AppDataSource.getRepository(Cliente)
 
@@ -79,7 +79,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Diego Alexis Salazar Jara",
           rut: "21308770-3",
-          email: "administrador2026@gmail.com",
+          email: "administrador@gmail.com",
           password: await encryptPassword("admin1234"),
           rol: 1,
         }),
@@ -88,7 +88,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "CEO Genérico",
           rut: "81151897-9",
-          email: "usuario1.2026@gmail.com",
+          email: "usuario1@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 2,
           cliente: 1
@@ -98,7 +98,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Alexander Benjamín Marcelo Carrasco Fuentes",
           rut: "20630735-8",
-          email: "usuario2.2026@gmail.com",
+          email: "usuario2@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 3,
           cliente: 1,
@@ -108,7 +108,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Pablo Andrés Castillo Fernández",
           rut: "20738450-K",
-          email: "usuario3.2026@gmail.com",
+          email: "usuario3@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -117,7 +117,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Felipe Andrés Henríquez Zapata",
           rut: "20976635-3",
-          email: "usuario4.2026@gmail.com",
+          email: "usuario4@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -126,7 +126,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Diego Alexis Meza Ortega",
           rut: "21172447-1",
-          email: "usuario5.2026@gmail.com",
+          email: "usuario5@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -135,7 +135,7 @@ async function createUsers() {
         userRepository.create({
           nombreCompleto: "Juan Pablo Rosas Martin",
           rut: "20738415-1",
-          email: "usuario6.2026@gmail.com",
+          email: "usuario6@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
         }),
@@ -284,4 +284,4 @@ async function createTrabajadores() {
     console.error("Error al crear trabajadores:", error);
   }
 }
-export { createUsers, createTrabajadores };
+export { createUsers, createClientes, createRoles, createTrabajadores };
