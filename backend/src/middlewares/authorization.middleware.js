@@ -12,7 +12,7 @@ export async function isAdmin(req, res, next) {
         const userFound = await userRepository.findOne({
             relations: ["rol"],
             where:
-                [{ user_id: req.id },
+                [{ id: req.id },
                 { rut: req.rut },
                 { email: req.email },
                 { phone: req.phone }],
@@ -53,7 +53,7 @@ export async function isCliente(req, res, next) {
         const userFound = await userRepository.findOne({
             relations: ["rol"],
             where:
-                [{ user_id: id },
+                [{ id: id },
                 { rut: rut },
                 { email: email },
                 { phone: phone }],
@@ -93,7 +93,7 @@ export async function isSupervisor(req, res, next) {
         const userFound = await userRepository.findOne({
             relations: ["rol"],
             where:
-                [{ user_id: id },
+                [{ id: id },
                 { rut: rut },
                 { email: email },
                 { phone: phone }],
@@ -133,7 +133,7 @@ export async function isTrabajador(req, res, next) {
         const userFound = await userRepository.findOne({
             relations: ["rol"],
             where:
-                [{ user_id: id },
+                [{ id: id },
                 { rut: rut },
                 { email: email },
                 { phone: phone }],

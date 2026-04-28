@@ -11,7 +11,7 @@ const UserSchema = new EntitySchema({
   name: "User",
   tableName: "users",
   columns: {
-    user_id: {
+    id: {
       type: "int",
       primary: true,
       generated: true,
@@ -58,7 +58,7 @@ const UserSchema = new EntitySchema({
   indices: [
     {
       name: "IDX_USER",
-      columns: ["user_id"],
+      columns: ["id"],
       unique: true,
     },
     {
@@ -95,4 +95,4 @@ const UserSchema = new EntitySchema({
   }
 });
 
-export default User;
+export default UserSchema;

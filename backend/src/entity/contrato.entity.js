@@ -38,7 +38,7 @@ const contratoSchema = new EntitySchema({
         usuario: {
             target: "User",
             type: "many-to-one",
-            joinColumn: { name: "user_id" },
+            joinColumn: { name: "id" },
             onDelete: "CASCADE",
             nullable: false,
         },
