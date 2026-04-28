@@ -4,6 +4,7 @@ import Root from '@pages/Root';
 import Error404 from '@pages/Error404';
 import { AuthProvider } from "@context/AuthContext";
 import ProtectedRoute from '@components/ProtectedRoute';
+import RegisterClienteForm from "@/pages/registerCliente";
 export default function App() {
     return (
         <Router>
@@ -11,8 +12,11 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<LoginForm />} />
                 <Route path="/login" element={<LoginForm />} />
-                <Route path="/dashboard" element={<Root />} />
 
+                <Route element={<Root />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/registrarCliente" element={<RegisterClienteForm />} />
+                </Route>
 
 
                 <Route path="*" element={<Error404 />} />
