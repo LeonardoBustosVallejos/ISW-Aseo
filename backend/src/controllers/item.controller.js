@@ -8,9 +8,13 @@ import {
   authValidation,
   registerValidation,
 } from "../validations/auth.validation.js";
-import { createItemService,
-        getItemsService
+import { getItemsService,
+         createItemService,
+         deleteItemService,
+         updateItemService,
 } from "../services/item.service.js";
+import { AppDataSource } from "../config/configDb.js";
+import Item from "../entity/item.entity.js";
 
 /*
 export async function getItemsController(req, res) {
@@ -70,8 +74,49 @@ export async function createItemController(req, res) {
     const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
     const [created, err] = await createItemService({ nombre, descripcion, disponibilidadActual, disponibilidadTotal });
     if (err) return handleErrorServer(res, 500, err);
-
+    handleSuccess(res, 201, "Items creado", created);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function deleteItemController(req, res) {
+  const ItemRepository = AppDataSource.getRepository(Item);
+  try {
+    const { id } = req.params;
+    const itemId = parseInt(id);
+    if (isNaN(itemId)) {
+      return res.status(400).json({ success: false, message: "ID de item inválido"});
+    }
+    const result = await deleteItemService(itemId);
+    if (result.success) {
+      return res.status(200).json({ success: true, message: result.message });
+    } else {
+      return res.status(404).json({ success: false, message: result.message });
+    }
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Error interno de servidor", error: error.message });
+  }
+}
+
+export async function updateItemController(req, res) {
+  try {
+    const { id } = req.params;
+    const { nombre } = req.body;
+    const itemId = parseInt(id);
+    if (isNaN(itemId)) {
+      return res.status(400).json({ success: false, message: "ID de item inválida"});
+    }
+    if (!nombre || nombre.trim() === '') {
+      return res.status(400).json({ success: false, message: "Debe cambiarse al menos un atributo" });
+    }
+    const result = await updateItemService(itemId, { nombre });
+    if (result.success) {
+      return res.status(200).json({ success: true, data: result.data, message: result.message });
+    } else {
+      return res.status(200).json({ success: false, data: result.data, message: result.message });
+    }
+  } catch(error) {
+    return res.status(500).json({ success: false, message: "Error interno de servidor", error: error.message})
   }
 }
