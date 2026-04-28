@@ -5,7 +5,7 @@ const ItemSchema = new EntitySchema({
   name: "Item",
   tableName: "items",
   columns: {
-    item_id: {
+    id: {
       type: "int",
       primary: true,
       unique: true,
@@ -31,7 +31,7 @@ const ItemSchema = new EntitySchema({
   indices: [
     {
       name: "IDX_ITEM",
-      columns: ["item_id"],
+      columns: ["id"],
       unique: true,
     }
   ],
