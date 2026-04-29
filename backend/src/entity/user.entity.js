@@ -5,13 +5,13 @@ import { EntitySchema } from "typeorm";
  * tabla de usuarios
  * 
  * Cada uno tiene un rol
- * Cada rol que no sea administrador se puede asignar a un cliente
+ * Cada rol que no sea trabajador se puede asignar a un cliente
  */
 const UserSchema = new EntitySchema({
   name: "User",
   tableName: "users",
   columns: {
-    user_id: {
+    id: {
       type: "int",
       primary: true,
       generated: true,
@@ -58,7 +58,7 @@ const UserSchema = new EntitySchema({
   indices: [
     {
       name: "IDX_USER",
-      columns: ["user_id"],
+      columns: ["id"],
       unique: true,
     },
     {
