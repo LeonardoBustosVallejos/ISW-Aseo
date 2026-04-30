@@ -16,7 +16,7 @@ const LoginForm = () => {
         try {
             const response = await login(data);
             if (response.status === 'Success') {
-                navigate('/dashboard');
+                navigate('/home');
             } else if (response.status === 'Client error') {
                 errorData(response.details);
             }
