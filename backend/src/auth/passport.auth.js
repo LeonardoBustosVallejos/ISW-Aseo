@@ -17,7 +17,9 @@ passport.use(
       const user = await userRepository.findOne({
         where: {
           email: jwt_payload.email,
+          rol: jwt_payload.rol
         },
+        relations: ["rol"]
       });
 
       if (user) {

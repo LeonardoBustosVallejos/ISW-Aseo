@@ -5,6 +5,8 @@ import Rol from "../entity/rol.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import Cliente from "../entity/cliente.entity.js";
+import Contacto from "../entity/contacto.entity.js";
+import Sede from "../entity/sede.entity.js";
 
 async function createRoles() {
   try {
@@ -63,6 +65,70 @@ async function createClientes() {
     console.log("* => Clientes creados exitosamente");
   } catch (error) {
     console.error("Error al crear clientes: ", error);
+
+  }
+}
+async function createSedes() {
+  try {
+    const SedeRepository = AppDataSource.getRepository(Sede)
+
+    const count = await SedeRepository.count()
+    if (count > 0) return;
+
+    await Promise.all([
+      SedeRepository.save(
+        SedeRepository.create({
+          direccion: "Calle Genérica 111, Concepción",
+          personalSolicitado: 12,
+          cliente: 1
+        }),
+      ),
+      SedeRepository.save(
+        SedeRepository.create({
+          direccion: "Calle Genérica 111, Chillán",
+          personalSolicitado: 12,
+          cliente: 1
+        })
+      ),
+    ])
+    console.log("* => Clientes creados exitosamente");
+  } catch (error) {
+    console.error("Error al crear clientes: ", error);
+
+  }
+}
+
+async function createContactos() {
+  try {
+    const ContactoRepository = AppDataSource.getRepository(Contacto)
+
+    const count = await ContactoRepository.count()
+    if (count > 0) return;
+
+    await Promise.all([
+
+      ContactoRepository.save(
+        ContactoRepository.create({
+          contacto_rut: "22222222-2",
+          nombreContacto: "Contacto numero 1",
+          email: "contacto1@gmail.com",
+          phone: "+56 977777777",
+          sede: 1
+        }),
+      ),
+      ContactoRepository.save(
+        ContactoRepository.create({
+          contacto_rut: "99999999-9",
+          nombreContacto: "Contacto numero 2",
+          email: "contacto2@gmail.com",
+          phone: "+56 988888888",
+          sede: 2
+        })
+      ),
+    ])
+    console.log("* => contactos creados exitosamente");
+  } catch (error) {
+    console.error("Error al crear contactos: ", error);
 
   }
 }
@@ -284,4 +350,4 @@ async function createTrabajadores() {
     console.error("Error al crear trabajadores:", error);
   }
 }
-export { createUsers, createClientes, createRoles, createTrabajadores };
+export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes };

@@ -39,7 +39,7 @@ const UserSchema = new EntitySchema({
     },
     phone: {
       type: "varchar",
-      length: 12,
+      length: 15,
       nullable: true,
       unique: true
     },
@@ -78,6 +78,7 @@ const UserSchema = new EntitySchema({
     },
   ],
   relations: {
+    //varrios usuarios pueden tener el mismo rol
     rol: {
       target: "Rol",
       type: "many-to-one",
@@ -85,12 +86,13 @@ const UserSchema = new EntitySchema({
       nullable: false,
       onDelete: "CASCADE",
     },
+    //varios usuarios pueden trabajar para el mismo cliente o ninguno
     cliente: {
       target: "Cliente",
-      type: "many-to-one",
+      type: "many-to-none",
       joinColumn: { name: "cliente_id" },
       nullable: true,
-      onDelete: "CASCADE",
+      onDelete: null,
     }
   }
 });

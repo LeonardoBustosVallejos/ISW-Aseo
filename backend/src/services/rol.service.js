@@ -1,7 +1,7 @@
 import { AppDataSource } from "../config/configDb.js";
 import Roles from "../entity/rol.entity.js";
 
-export async function getRoles() {
+export async function getRolesService() {
     try {
         const rolRepository = await AppDataSource.getRepository(Roles)
 
@@ -14,7 +14,7 @@ export async function getRoles() {
     }
 }
 
-export async function getRolById(id) {
+export async function getRolByIdService(id) {
     try {
         const rolRepository = await AppDataSource.getRepository(Roles)
 
@@ -29,7 +29,7 @@ export async function getRolById(id) {
     }
 }
 
-export async function getRolByName(name) {
+export async function getRolByNameService(name) {
     try {
         const rolRepository = await AppDataSource.getRepository(Roles)
 
@@ -39,6 +39,7 @@ export async function getRolByName(name) {
 
         if (!buscado) return [null, "Sin coincidencia"]
 
+        return [buscado, null]
     } catch (error) {
         console.error("Error al obtener un rol:", error);
         return [null, "Error interno del servidor"];
