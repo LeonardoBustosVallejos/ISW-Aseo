@@ -13,13 +13,9 @@ const CapacitacionSchema = new EntitySchema({
         },
         id_item: {
             type: "int",
-            primary: true,
-            generated: true,
         },
         id_trabajador: {
             type: "int",
-            primary: true,
-            generated: true,
         },
         createdAt: {
             type: "timestamp with time zone",
