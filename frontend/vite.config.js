@@ -8,6 +8,11 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
+  //esto podría tener que retirarse
+  /*server: {
+    host: true,
+    hmr: true
+  },*/
   preview: {port:443, host:true},
   resolve: {
     alias: {
