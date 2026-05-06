@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useRegister from '@hooks/auth/useRegister.jsx';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
-import '@styles/form.css';
 import { registerCliente } from '@services/auth.service';
+import { Acordeon } from '../components/acordeon';
 
 
 /**
@@ -11,6 +10,8 @@ import { registerCliente } from '@services/auth.service';
  * @returns body anidado con el cliente y supervisor
  */
 const RegisterClienteForm = () => {
+    const [openSection, setOpenSection] = useState(null);
+    const [openContacto, setOpenContacto] = useState(null);
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         cliente: {
@@ -35,8 +36,55 @@ const RegisterClienteForm = () => {
         }
     });
 
+
+    const getSectionFromErrors = (errors) => {
+        if (
+            errors.nombreCliente ||
+            errors.rutCliente ||
+            errors.direccion ||
+            errors.personalSolicitado
+        ) {
+            return "cliente";
+        }
+
+        if (
+            errors.nombreContacto ||
+            errors.contacto_rut ||
+            errors.email ||
+            errors.phone
+        ) {
+            return "contacto";
+        }
+
+        if (
+            errors.nombreCompleto ||
+            errors.rut ||
+            errors.email ||
+            errors.password
+        ) {
+            return "supervisor";
+        }
+
+        return null;
+    };
+
     useEffect(() => {
-        setErrors({});
+        if (Object.keys(errors).length === 0) return;
+
+        const section = getSectionFromErrors(errors);
+
+        if (section === "cliente") {
+            setOpenSection("cliente");
+        }
+
+        if (section === "contacto") {
+            setOpenSection("cliente");   // 👈 contacto está dentro de cliente
+            setOpenContacto("contacto");
+        }
+
+        if (section === "supervisor") {
+            setOpenSection("supervisor");
+        }
     }, [formData]);
 
     const setFieldError = (field, message) => {
@@ -54,7 +102,7 @@ const RegisterClienteForm = () => {
             cliente: {
                 ...prev.cliente,
                 contacto: {
-                    ...prev.cliente.contacto,
+                    ...prev.contacto,
                     [name]: value
                 }
             }
@@ -90,108 +138,120 @@ const RegisterClienteForm = () => {
     }
 
     return (
-        <div className="container" style={{ width: 'auto', height: 'auto', padding: '40px' }}>
+        <div className="container" style={{ height: "auto", minHeight: "100%", padding: "0 0" }}>
             <div className='form'>
-                <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }} >
+                <h1>Registro de Cliente y Supervisor</h1>
+                <form onSubmit={handleSubmit} style={{ width: '100%', }} >
 
-                    <h1>Registro de Cliente y Supervisor</h1>
 
                     <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: '50px',
-                        width: '100%',
+
                         alignItems: 'flex-start',
                         justifyContent: 'center',
-                        marginBottom: '20px'
                     }}>
 
                         {/* SECCIÓN CLIENTE */}
-                        <section style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: '350px' }}>
-                            <h3 >Datos del Cliente</h3>
+                        <Acordeon title="Datos del Cliente"
+                            isOpen={openSection === "cliente"}
+                            onToggle={() => {
+                                setOpenSection(openSection === "cliente" ? null : "cliente")
+                                setOpenContacto(null)
+                            }}
+                            content={
+                                <section style={{ width: "90%" }}>
 
-                            <div className="container_inputs">
-                                <label className="label">Nombre Empresa (Nombre de Fantasía)</label>
-                                <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Nombre Empresa (Nombre de Fantasía)</label>
+                                        <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">RUT de Empresa</label>
-                                <input type="text" name="rutCliente" value={formData.cliente.rutCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="76.xxx.xxx-x" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">RUT de Empresa</label>
+                                        <input type="text" name="rutCliente" value={formData.cliente.rutCliente} onChange={(e) => handleChange(e, 'cliente')} className="input" placeholder="76.xxx.xxx-x" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">Dirección</label>
-                                <input type="text" name="direccion" value={formData.cliente.direccion} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Dirección</label>
+                                        <input type="text" name="direccion" value={formData.cliente.direccion} onChange={(e) => handleChange(e, 'cliente')} className="input" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">Personal Solicitado (Cantidad)</label>
-                                <input type="number" min={1} name="personalSolicitado" defaultValue={1} value={formData.cliente.personalSolicitado} onChange={(e) => handleChange(e, 'cliente')} className="input" />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Personal Solicitado (Cantidad)</label>
+                                        <input type="number" min={1} name="personalSolicitado" value={formData.cliente.personalSolicitado} onChange={(e) => handleChange(e, 'cliente')} className="input" />
+                                    </div>
+                                    <Acordeon title="Datos de Contacto"
+                                        isOpen={openContacto === "contacto" && openSection === "cliente"}
+                                        onToggle={() => setOpenContacto((openSection === "cliente" && openContacto === "contacto") ? null : "contacto")}
+                                        content={
+                                            <section style={{ width: "90%" }}>
+                                                <div className="container_inputs">
+                                                    <label className="label">Nombre del Contacto</label>
+                                                    <input type="text" name="nombreContacto" value={formData.cliente.contacto.nombreContacto} onChange={handleContactoChange} className="input" placeholder="Empresa XYZ SPA" required />
+                                                </div>
+                                                <div className="container_inputs">
+                                                    <label className="label">RUT del Contacto</label>
+                                                    <input type="text" name="contacto_rut" value={formData.cliente.contacto.contacto_rut} onChange={handleContactoChange} className="input" placeholder="76.xxx.xxx-x" required />
+                                                </div>
 
-                            <section>
-                                <h3>Datos del Contacto</h3>
-                                <div className="container_inputs">
-                                    <label className="label">Nombre del Contacto</label>
-                                    <input type="text" name="nombreContacto" value={formData.cliente.contacto.nombreContacto} onChange={handleContactoChange} className="input" placeholder="Empresa XYZ SPA" required />
-                                </div>
-                                <div className="container_inputs">
-                                    <label className="label">RUT del Contacto</label>
-                                    <input type="text" name="contacto_rut" value={formData.cliente.contacto.contacto_rut} onChange={handleContactoChange} className="input" placeholder="76.xxx.xxx-x" required />
-                                </div>
-
-                                <div className="container_inputs">
-                                    <label className="label">Email de contacto</label>
-                                    <input type="email" name="email" value={formData.cliente.contacto.email} onChange={handleContactoChange} className="input" required />
-                                </div>
-                                <div className="container_inputs">
-                                    <label className="label">Teléfono</label>
-                                    <input type="text" name="phone" value={formData.cliente.contacto.phone} onChange={handleContactoChange} className="input" placeholder="912345678" required />
-                                </div>
-                            </section>
-
-                        </section>
+                                                <div className="container_inputs">
+                                                    <label className="label">Email de contacto</label>
+                                                    <input type="email" name="email" value={formData.cliente.contacto.email} onChange={handleContactoChange} className="input" required />
+                                                </div>
+                                                <div className="container_inputs">
+                                                    <label className="label">Teléfono</label>
+                                                    <input type="text" name="phone" value={formData.cliente.contacto.phone} onChange={handleContactoChange} className="input" placeholder="912345678" required />
+                                                </div>
+                                            </section>
+                                        } />
+                                </section>
+                            } />
 
                         {/* SECCIÓN SUPERVISOR */}
-                        <section style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: '350px' }}>
-                            <h3 >Datos del Supervisor</h3>
+                        <Acordeon title="Datos del Supervisor"
+                            isOpen={openSection === "supervisor"}
+                            onToggle={() =>
+                                setOpenSection(openSection === "supervisor" ? null : "supervisor")
+                            }
+                            content={
+                                <section style={{ width: "90%" }}>
+                                    <h3 >Datos del Supervisor</h3>
 
-                            <div className="container_inputs">
-                                <label className="label">Nombre Completo</label>
-                                <input type="text" name="nombreCompleto" value={formData.supervisor.nombreCompleto} onChange={(e) => handleChange(e, 'supervisor')} className="input" placeholder="Juan Pérez" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Nombre Completo</label>
+                                        <input type="text" name="nombreCompleto" value={formData.supervisor.nombreCompleto} onChange={(e) => handleChange(e, 'supervisor')} className="input" placeholder="Juan Pérez" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">RUT</label>
-                                <input type="text" name="rut" value={formData.supervisor.rut} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">RUT</label>
+                                        <input type="text" name="rut" value={formData.supervisor.rut} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">Teléfono</label>
-                                <input type="text" name="phone" value={formData.supervisor.phone} onChange={(e) => handleChange(e, 'supervisor')} className="input" />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Teléfono</label>
+                                        <input type="text" name="phone" value={formData.supervisor.phone} onChange={(e) => handleChange(e, 'supervisor')} className="input" />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">Email</label>
-                                <input type="email" name="email" value={formData.supervisor.email} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
-                            </div>
+                                    <div className="container_inputs">
+                                        <label className="label">Email</label>
+                                        <input type="email" name="email" value={formData.supervisor.email} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
+                                    </div>
 
-                            <div className="container_inputs">
-                                <label className="label">Password</label>
-                                <input type="password" name="password" value={formData.supervisor.password} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
-                            </div>
-                        </section>
+                                    <div className="container_inputs">
+                                        <label className="label">Password</label>
+                                        <input type="password" name="password" value={formData.supervisor.password} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
+                                    </div>
+                                </section>
+                            } />
 
                     </div>
                     <span className={`error-message ${errors.nombreCompleto ? 'visible' : ''}`}>
                         {errors.nombreCompleto || 'Campo requerido'}
                     </span>
                     <hr />
-                    <button type="submit" onClick={handleSubmit}>Registrar</button>
+                    <button type="submit">Registrar</button>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

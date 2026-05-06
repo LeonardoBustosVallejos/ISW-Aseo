@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '@components/Navbar';
 import { AuthProvider } from '@context/AuthContext';
-
+import Sidebar from '../components/Sidebar';
+import "../styles/root.css"
 function Root() {
     return (
         <AuthProvider>
@@ -12,11 +12,17 @@ function Root() {
 
 function PageRoot() {
     return (
-        <>
-            <Navbar />
-            <Outlet />
-        </>
+        <div className='layout'>
+            <Sidebar />
+            <div className='content'>
+                <Outlet />
+            </div>
+            <main />
+        </div>
+
     );
 }
+
+
 
 export default Root;

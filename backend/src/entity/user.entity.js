@@ -5,7 +5,7 @@ import { EntitySchema } from "typeorm";
  * tabla de usuarios
  * 
  * Cada uno tiene un rol
- * Cada rol que no sea administrador se puede asignar a un cliente
+ * Cada rol que no sea trabajador se puede asignar a un cliente
  */
 const UserSchema = new EntitySchema({
   name: "User",
