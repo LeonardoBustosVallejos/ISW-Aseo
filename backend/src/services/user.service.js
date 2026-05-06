@@ -9,9 +9,18 @@ export async function getUserService(query) {
 
     const userRepository = AppDataSource.getRepository(User);
 
-    const userFound = await userRepository.findOne({
-      where: [{ id: id }, { rut: rut }, { email: email }, { phone: phone }],
-    });
+    const where = [];
+
+    if (id) where.push({ id });
+    else if (rut) where.push({ rut });
+    else if (email) where.push({ email });
+    else if (phone) where.push({ phone });
+
+    if (!where.length) {
+      return [null, "Debe proporcionar al menos un criterio de búsqueda"];
+    }
+
+    const userFound = await userRepository.findOne({ where });
 
     if (!userFound) return [null, "Usuario no encontrado"];
 
