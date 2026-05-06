@@ -147,8 +147,9 @@ export async function deleteContacto(contacto_id) {
         });
 
         //verificar que el cliente no se quede sin contactos
-        if (contactosCount <= 1) return [null, createErrorMessage("contacto", "El cliente debe tener al menos un contacto")];
-
+        if (contactosCount <= 1){
+            return [null, createErrorMessage("contacto", "El cliente debe tener al menos un contacto")];
+        }
         const deletedContacto = await contactoRepository.remove(existingContacto)
 
         return [deletedContacto, null]
