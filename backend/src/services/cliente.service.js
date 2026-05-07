@@ -9,7 +9,7 @@ import { asignarSupervisorService, deleteUserService, getUserService } from "./u
 import { registerService } from "./auth.service.js";
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
-import { getTrabajadorService } from "./trabajador.service.js";
+import { getORTrabajadorService } from "./trabajador.service.js";
 /**
  * get...s() lista de todos
  * get...By(params) estricta para un único elemento con findOne AND
@@ -146,7 +146,7 @@ export async function createContactoService(contacto, sede_id) {
 
         //verificar que el email del contacto no esté registrado en contactos, trabajadores o usuarios
         const [registerEmail, errEmail] = await getContactoByService({ email: email })
-        const [registerTrabajadorEmail, errEmailTrabajador] = await getTrabajadorService({ email: email })
+        const [registerTrabajadorEmail, errEmailTrabajador] = await getORTrabajadorService({ email: email })
         const [registerUserEmail, errEmailUser] = await getUserService({ email: email })
         if (registerEmail || registerTrabajadorEmail || registerUserEmail) return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
 
@@ -160,7 +160,7 @@ export async function createContactoService(contacto, sede_id) {
         //verificar que el rut no sea un de trabajador, cliente o usuario
         const [clienteRut, errRut] = await getClienteByService({ rutCliente: contacto_rut })
         const [existingUserRut, errUserRut] = await getUserService({ rut: contacto_rut })
-        const [existingTranajadorRut, errTrabajadorRut] = await getTrabajadorService({ rut: contacto_rut })
+        const [existingTranajadorRut, errTrabajadorRut] = await getORTrabajadorService({ rut: contacto_rut })
         if (existingTranajadorRut || clienteRut || existingUserRut) return [null, createErrorMessage("rut", "Rut ya en uso")]
 
         //preparar datos para crear el contacto
@@ -583,7 +583,7 @@ export async function registerClientService(data, trabajador_id) {
     try {
         //verificar que el trabajador exista antes de intentar registrar el cliente, para evitar registros incompletos
 
-        const [trabajador, errTrabajador] = await getTrabajadorService({ id: trabajador_id });
+        const [trabajador, errTrabajador] = await getORTrabajadorService({ id: trabajador_id });
         if (errTrabajador) return [null, errTrabajador]
 
         const clienteRepository = AppDataSource.getRepository(Cliente);

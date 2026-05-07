@@ -26,13 +26,31 @@ export async function getTrabajadoresService() {
     }
 }
 
+export async function getTrabajadorService(id) {
+    try {
+        const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        const trabajador = await TrabajadoresRepository.findOne({
+            where:
+                { id: Number(id) },
+        });
+
+        if (!trabajador) return [null, "No se encontró el trabajador"];
+
+        return [trabajador, null];
+    }
+    catch (error) {
+        console.error("Error al obtener el trabajador:", error);
+        return [null, "Error interno del servidor"];
+    }
+}
+
 /**
  * Busqueda estricta OR para obtener un trabajador por id, rut o email. 
  * Se puede usar cualquiera de estos criterios de búsqueda, pero se recomienda usar el id para una búsqueda más rápida y precisa.
  * @param data datos de búsqueda, debe contener al menos uno de los siguientes: id, rut o email
  * @returns trabajador encontrado o mensaje de error si no se encuentra o si no se proporcionó un criterio de búsqueda válido
  */
-export async function getTrabajadorService(data) {
+export async function getORTrabajadorService(data) {
     try {
         const { id, rut, email } = data;
 

@@ -36,7 +36,7 @@ export async function getTrabajadorController(req, res) {
   try {
 
     const { id } = req.params;
-    const [trabajador, errorTrabajador] = await getTrabajadorService({ id: id });
+    const [trabajador, errorTrabajador] = await getTrabajadorService(id);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
