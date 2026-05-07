@@ -579,7 +579,7 @@ export async function updateClienteService(cliente_id, data) {
     }
 }
 
-export async function registerClientService(data, trabajador_id) {
+export async function registerClienteSimpleService(data, trabajador_id) {
     try {
         //verificar que el trabajador exista antes de intentar registrar el cliente, para evitar registros incompletos
 

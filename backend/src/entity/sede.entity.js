@@ -27,6 +27,17 @@ const SedeSchema = new EntitySchema({
             type: "int",
             default: 0
         },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
     },
     relations: {
         //varias sedes pueden ser del mismo cliente

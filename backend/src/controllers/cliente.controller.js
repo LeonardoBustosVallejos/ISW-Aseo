@@ -1,5 +1,5 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClientService } from "../services/cliente.service.js";
+import { getClientesService, getContactosService, registerClienteSimpleService } from "../services/cliente.service.js";
 import { registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
@@ -31,7 +31,7 @@ export async function getContactos(req, res) {
         handleErrorServer(res, 500, error.message);
     }
 }
-export async function registerCliente(req, res) {
+export async function registerClienteSimple(req, res) {
     try {
 
         const { error } = registerClienteValidation.validate(req.body);
@@ -41,7 +41,7 @@ export async function registerCliente(req, res) {
 
 
 
-        const [data, errorNewCliente] = await registerClientService({ cliente, sede, contacto }, trabajador_id)
+        const [data, errorNewCliente] = await registerClienteSimpleService({ cliente, sede, contacto }, trabajador_id)
 
         if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 

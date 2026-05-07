@@ -22,6 +22,22 @@ const ClienteSchema = new EntitySchema({
             nullable: false,
             unique: true,
         },
+        tipoCliente: {
+            type: "enum",
+            enum: ["EMPRESA", "FILIAL"],
+            default: "EMPRESA"
+        },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
     },
     indices: [{
         name: "IDX_CLIENTE",
@@ -36,8 +52,15 @@ const ClienteSchema = new EntitySchema({
             inverseSide: "cliente"
         },
         /**
-         * relacion de cliente a si mismo para representar la relación entre cliente principal y filial.
-         * Es decir, para los casos de varias sedes con el mismo rut y bajo el mismo nombre.
+         * Relación recursiva para representar grupos empresariales,
+         * donde un cliente puede ser filial de otro cliente.
+         *
+         * Cada cliente mantiene su propio RUT.
+         *
+         * Ejemplo:
+         * Empresa X SpA (matriz)
+         * ├── Empresa X Concepción SpA
+         * └── Empresa X Chillán SpA
          */
         clientePadre: {
             type: "many-to-one",

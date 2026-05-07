@@ -1,10 +1,10 @@
 import { EntitySchema } from "typeorm";
 
-const contratoSchema = new EntitySchema({
-    name: "Contrato",
-    tableName: "contrato",
+const contratoComercialSchema = new EntitySchema({
+    name: "ContratoComercial",
+    tableName: "contrato_comercial",
     columns: {
-        contrato_id: {
+        id_contrato_comercial: {
             type: "int",
             primary: true,
             generated: true,
@@ -13,14 +13,15 @@ const contratoSchema = new EntitySchema({
             type: "date",
             nullable: false,
         },
-        fechaFin: {
+        fechaFinOriginal: {
             type: "date",
             nullable: false,
         },
         estado: {
             type: "enum",
-            enum: ["VIGENTE", "TERMINADO", "ESPERA"],
+            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA",],
             default: "ESPERA",
+            nullable: false,
         },
         monto: {
             type: "int",
@@ -28,28 +29,33 @@ const contratoSchema = new EntitySchema({
         },
         archivo: {
             type: "varchar",
+            unique: true,
             nullable: true //posibilidad de cambio más adelante
         },
         descripcion: {
             type: "text",
             default: "Sin descripción"
-        }
+        },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
     },
     indices: [
         {
-            name: "IDX_CONTRATO",
-            columns: ["id"],
+            name: "IDX_CONTRATO_COMERCIAL",
+            columns: ["id_contrato_comercial"],
             unique: true,
         },
     ],
     relations: {
-        usuario: {
-            target: "User",
-            type: "many-to-one",
-            joinColumn: { name: "id" },
-            onDelete: "CASCADE",
-            nullable: false,
-        },
         cliente: {
             target: "Cliente",
             type: "many-to-one",
@@ -61,10 +67,12 @@ const contratoSchema = new EntitySchema({
             target: "Sede",
             type: "many-to-one",
             joinColumn: { name: "sede_id" },
-            nullable: true // 🔥 IMPORTANTE
+            nullable: false //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
         }
     }
 });
+
+export default contratoComercialSchema;
 /*
 export const ContratoArchivoSchema = new EntitySchema({
     name: "ContratoArchivo",
