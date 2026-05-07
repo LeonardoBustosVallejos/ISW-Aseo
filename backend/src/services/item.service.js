@@ -55,7 +55,11 @@ export async function updateItemService(id, updateData) {
     const ItemRepository = AppDataSource.getRepository(Item);
     const item = await ItemRepository.findOne({ where: { id } });
     if (!item) return { success: false, message: "Item no encontrado" };
-    if (updateData.nombre && updateData.nombre.trim() !== "") item.nombre = updateData.nombre.trim();
+    //if (updateData.nombre && updateData.nombre.trim() !== "") item.nombre = updateData.nombre.trim();
+    item.nombre = updateData.nombre;
+    item.descripcion = updateData.descripcion;
+    item.disponibilidadActual = updateData.disponibilidadActual;
+    item.disponibilidadTotal = updateData.disponibilidadTotal;
     const updatedItem = await ItemRepository.save(item);
     return { success: true, data: updatedItem, message: "Item actualizado exitósamente" };
   } catch (error) {

@@ -32,3 +32,16 @@ export async function createCapacitacionService(capacitacionData) {
     return [null, error.message];
   }
 }
+
+export async function deleteCapacitacionService(id_capacitacion) {
+  try {
+    const CapacitacionRepository = AppDataSource.getRepository(Capacitacion);
+    const result = await CapacitacionRepository.delete(id_capacitacion);
+    if (result.affected === 0) {
+      return { success: true, message: "No existe una capacitacion con esa ID"};
+    }
+    return { success: true, message: "Capacitacion borrada exitósamente" };
+  } catch (error) {
+    return { success: false, message: "Error borrando capacitacion", error: error.message };
+  }
+}

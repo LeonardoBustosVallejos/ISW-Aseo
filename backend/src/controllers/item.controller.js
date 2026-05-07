@@ -16,26 +16,6 @@ import { getItemsService,
 import { AppDataSource } from "../config/configDb.js";
 import Item from "../entity/item.entity.js";
 
-/*
-export async function getItemsController(req, res) {
-  try {
-    const [items, errorItems] = await getItemsService();
-
-    if (errorItems) return handleErrorClient(res, 404, errorItems);
-
-    items.length === 0
-      ? handleSuccess(res, 204)
-      : handleSuccess(res, 200, "Items encontrados", items);
-  } catch (error) {
-    handleErrorServer(
-      res,
-      500,
-      error.message,
-    );
-  }
-}
-*/
-
 export async function getItemsController(req, res) {
         try {
             const [items, error] = await getItemsService();
@@ -102,7 +82,7 @@ export async function deleteItemController(req, res) {
 export async function updateItemController(req, res) {
   try {
     const { id } = req.params;
-    const { nombre } = req.body;
+    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
     const itemId = parseInt(id);
     if (isNaN(itemId)) {
       return res.status(400).json({ success: false, message: "ID de item inválida"});
@@ -110,7 +90,7 @@ export async function updateItemController(req, res) {
     if (!nombre || nombre.trim() === '') {
       return res.status(400).json({ success: false, message: "Debe cambiarse al menos un atributo" });
     }
-    const result = await updateItemService(itemId, { nombre });
+    const result = await updateItemService(itemId, { nombre, descripcion, disponibilidadActual, disponibilidadTotal });
     if (result.success) {
       return res.status(200).json({ success: true, data: result.data, message: result.message });
     } else {
