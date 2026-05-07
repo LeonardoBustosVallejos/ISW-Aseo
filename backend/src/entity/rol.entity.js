@@ -28,6 +28,13 @@ const rolSchema = new EntitySchema({
             nullable: false,
         },
     },
+    relations: {
+        users: {
+            type: "one-to-many",
+            target: "User",
+            inverseSide: "rol"
+        }
+    }
 });
 
 export default rolSchema;

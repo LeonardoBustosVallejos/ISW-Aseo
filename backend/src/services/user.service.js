@@ -305,7 +305,7 @@ export async function asignarSupervisorService(trabajador, sede_id) {
 
     const [nuevoPersonal, errUpdateSede] = await updateSedeService(sede_id, { personalAsignado: sedeFound.personalAsignado + 1 })
     if (errUpdateSede) {
-      await updateTrabajadorService(trabajador.id, { rol: "Trabajador" })
+      await updateTrabajadorService(trabajador.id, { rol: "trabajador" })
       return [null, errUpdateSede]
     }
     return [nuevoSupervisor, null];

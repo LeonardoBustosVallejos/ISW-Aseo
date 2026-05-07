@@ -19,7 +19,7 @@ const ClienteSchema = new EntitySchema({
         rutCliente: {
             type: "varchar",
             length: 15,
-            nullable: false,
+            nullable: true,        //si es filial, el rut es opcional
             unique: true,
         },
         tipoCliente: {
@@ -66,7 +66,8 @@ const ClienteSchema = new EntitySchema({
             type: "many-to-one",
             target: "Cliente",
             joinColumn: { name: "cliente_padre_id" },
-            nullable: true
+            nullable: true,
+            onDelete: "CASCADE"
         },
         filiales: {
             type: "one-to-many",

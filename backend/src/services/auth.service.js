@@ -86,8 +86,6 @@ export async function registerService(nuevoUsuario, sede_id) {
     const [existingEmailUser, errEmailUser] = await getUserService({ email: nuevoUsuario.email });
 
     if (existingEmailUser || existingEmailContacto) {
-      console.log(nuevoUsuario.email, existingEmailUser || existingEmailContacto);
-
       return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
     }
 
@@ -96,11 +94,7 @@ export async function registerService(nuevoUsuario, sede_id) {
     const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut) })
 
 
-    if (existingRutUser || existingRutContacto || existingRutCliente) {
-      console.log(existingRutUser || existingRutContacto || existingRutCliente);
-
-      return [null, createErrorMessage("rut", "Rut ya en uso")];
-    }
+    if (existingRutUser || existingRutContacto || existingRutCliente) return [null, createErrorMessage("rut", "Rut ya en uso")];
     if (nuevoUsuario.phone) {
       const [existingPhoneContacto, errPhoneContacto] = await getContactoByService({ phone: nuevoUsuario.phone })
       const [existingPhoneUser, errPhoneUser] = await getUserService({ phone: nuevoUsuario.phone })

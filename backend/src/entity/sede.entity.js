@@ -9,6 +9,12 @@ const SedeSchema = new EntitySchema({
             type: "int",
             generated: true
         },
+        rutSecundario: {
+            type: "varchar",
+            length: 15,
+            nullable: true,
+            unique: true,
+        },
         nombre_sede: {
             type: "varchar",
             length: 255,

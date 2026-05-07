@@ -31,21 +31,22 @@ export async function getContactos(req, res) {
         handleErrorServer(res, 500, error.message);
     }
 }
-export async function registerClienteSimple(req, res) {
+
+export async function registerCliente(req, res) {
     try {
 
         const { error } = registerClienteValidation.validate(req.body);
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
 
-        const { cliente, sede, contacto, trabajador_id } = req.body;
+        const { cliente, filial, sede, contacto, trabajador_id } = req.body;
 
 
 
-        const [data, errorNewCliente] = await registerClienteSimpleService({ cliente, sede, contacto }, trabajador_id)
+        const [data, errorNewCliente] = await registerClienteSimpleService({ cliente, filial, sede, contacto }, trabajador_id)
 
         if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 
-        return handleSuccess(res, 201, "Datos del cliente registrados con éxito", data);
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
 
     } catch (error) {
         handleErrorServer(res, 500, error.message);
