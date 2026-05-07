@@ -57,6 +57,16 @@ export const contactoValidation = Joi.object({
         }),
 })
 export const sedeValidation = Joi.object({
+    nombre_sede: Joi.string()
+        .min(3)
+        .max(100)
+        .required()
+        .messages({
+            "string.empty": "El nombre de la sede no puede estar vacío.",
+            "any.required": "El nombre de la sede es obligatorio.",
+            "string.min": "El nombre de la sede debe tener al menos 3 caracteres.",
+            "string.max": "El nombre de la sede debe tener como máximo 100 caracteres.",
+        }),
     direccion: Joi.string()
         .min(5)
         .required()
@@ -76,6 +86,7 @@ export const sedeValidation = Joi.object({
         }),
 })
 export const clienteValidation = Joi.object({
+    /*
     nombreCompleto: Joi.string()
         .min(10)
         .max(50)
@@ -139,6 +150,7 @@ export const clienteValidation = Joi.object({
             "string.max": "El número telefónico debe tener como máximo 15 caracteres.",
             "string.pattern.base": "Formato del número telefónico inválido.",
         }),
+        */
     nombreCliente: Joi.string()
         .min(3)
         .max(100)
@@ -163,20 +175,12 @@ export const clienteValidation = Joi.object({
             "string.max": "El rut debe tener como máximo 10 caracteres.",
             "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
         }),
-    sede: sedeValidation,
-    contacto: contactoValidation,
-    supervisor: registerValidation
 })
 
 
 export const registerClienteValidation = Joi.object({
     cliente: clienteValidation,
-    supervisor: registerValidation,
-}).custom((value, helper) => {
-    if (value.cliente.rutCliente === value.supervisor.rut) {
-        return helper.error("any.invalid");
-    }
-    return value
-}).messages({
-    "any.invalid": "El RUT del cliente y supervisor no pueden ser iguales"
-});
+    sede: sedeValidation,
+    contacto: contactoValidation,
+    trabajador_id: Joi.number().required()
+})

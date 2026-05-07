@@ -5,14 +5,16 @@ import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
 import { createErrorMessage, createSimpleMessage } from "../handlers/messages.js";
 import User from "../entity/user.entity.js";
-import { deleteUserService, getUserService } from "./user.service.js";
+import { asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
 import { registerService } from "./auth.service.js";
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
+import { getTrabajadorService } from "./trabajador.service.js";
 /**
- * get...() lista de todos
- * get...By(params) para un único elemento con findOne AND
- * find...By(params) para listas con find OR
+ * get...s() lista de todos
+ * get...By(params) estricta para un único elemento con findOne AND
+ * get...(params) estricta para un único elemento con findOne OR
+ * find...sBy(params) flexible para listas con find OR
  * where = {} AND
  * where = [] OR
  */
@@ -49,7 +51,7 @@ export async function getContactosService() {
 }
 
 /**
- * Búsqueda estricta, comparaciones exactas
+ * Búsqueda estricta AND, comparaciones exactas
  * @param query datos correspondientes a los campos de un contacto 
  * @returns un único contacto que coincida con TODOS los campos dados
  */
@@ -120,6 +122,12 @@ export async function findContactosByService(query) {
     }
 }
 
+/**
+ * 
+ * @param  contacto datos del contacto a registrar
+ * @param  sede_id ID de la sede de quien se es contacto
+ * @returns 
+ */
 export async function createContactoService(contacto, sede_id) {
     try {
         const contactoRepository = AppDataSource.getRepository(Contacto)
@@ -130,89 +138,43 @@ export async function createContactoService(contacto, sede_id) {
         const [existingSede, err] = await getSedeByService({ sede_id: sede_id })
         if (err) return [null, err]
 
+        //obtener el cliente de la sede
+        const [existingCliente, errCliente] = await getClienteByService({ cliente_id: existingSede.cliente.cliente_id })
+        if (errCliente) return [null, errCliente]
+
         const { email, phone, contacto_rut, nombreContacto } = contacto
 
-        //verificar que los datos no hayan sido registrados antes en contactos
+        //verificar que el email del contacto no esté registrado en contactos, trabajadores o usuarios
         const [registerEmail, errEmail] = await getContactoByService({ email: email })
-        if (registerEmail) {
-            console.log(registerEmail);
+        const [registerTrabajadorEmail, errEmailTrabajador] = await getTrabajadorService({ email: email })
+        const [registerUserEmail, errEmailUser] = await getUserService({ email: email })
+        if (registerEmail || registerTrabajadorEmail || registerUserEmail) return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
 
-            return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
-        }
+        //si el contacto tiene teléfono, verificar que no esté registrado en contactos, trabajadores o usuarios
         if (phone) {
             const [registerPhone, errPhone] = await getContactoByService({ phone: phone })
-            if (registerPhone) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+            const [registerUserPhone, errUserPhone] = await getUserService({ phone: phone })
+            if (registerPhone || registerUserPhone) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
         }
 
-        const [clienteRut, errCliente] = await getClienteByService({ rutCliente: contacto_rut })
-        if (clienteRut) return [null, createErrorMessage("rut", "Rut ya en uso")];
-
-        //verificar que el contacto no sea un trabajador o usuario
-        //pero si el rut es del usuario ligado a al cliente entonces los datos serán extra los correspondiente
+        //verificar que el rut no sea un de trabajador, cliente o usuario
+        const [clienteRut, errRut] = await getClienteByService({ rutCliente: contacto_rut })
         const [existingUserRut, errUserRut] = await getUserService({ rut: contacto_rut })
-        let newUserContacto = null;
+        const [existingTranajadorRut, errTrabajadorRut] = await getTrabajadorService({ rut: contacto_rut })
+        if (existingTranajadorRut || clienteRut || existingUserRut) return [null, createErrorMessage("rut", "Rut ya en uso")]
 
-
-        if (existingUserRut) {
-            const contactoUser = await getUserService({ nombreCompleto: nombreContacto })
-            if (contactoUser && contactoUser.cliente && contactoUser.id === existingUserRut.id && existingSede.cliente.cliente_id === contactoUser.cliente.cliente_id) {
-
-
-                const [existingEmailContacto, errEmail] = getContactoByService({ email: contactoUser.email })
-
-                if (contactoUser.phone) {
-                    const [existingPhoneUser, errPhone] = getContactoByService({ phone: contactoUser.phone })
-
-                    if (errPhone) {
-                        if (existingEmailContacto) {
-                            newUserContacto = await updateContactoService(existingEmailContacto.contacto_id, { phone: contactoUser.phone })
-                        } else {
-                            newUserContacto = await contactoRepository.save(
-                                contactoRepository.create({
-                                    nombreContacto: nombreContacto,
-                                    contacto_rut: contacto_rut,
-                                    email: contactoUser.email,
-                                    phone: phone,
-                                    sede: existingSede
-                                })
-                            )
-                        }
-                    } else if (errEmail) {
-                        newUserContacto = await contactoRepository.save(
-                            contactoRepository.create({
-                                nombreContacto: nombreContacto,
-                                contacto_rut: contacto_rut,
-                                email: contactoUser.email,
-                                sede: existingSede
-                            })
-                        )
-                    }
-                } else if (errEmail) {
-                    newUserContacto = await contactoRepository.save(
-                        contactoRepository.create({
-                            nombreContacto: nombreContacto,
-                            contacto_rut: contacto_rut,
-                            email: contactoUser.email,
-                            sede: existingSede
-                        })
-                    )
-                }
-            }
-        }
-        const existingTranajador = await trabajadoresRepository.findOne({ where: [{ email: email }] })
-        if (existingTranajador) return [null, createErrorMessage("contacto", "Los datos de contacto corresponden a un trabajador")]
-
-
+        //preparar datos para crear el contacto
         const nuevoContacto = contactoRepository.create({
             nombreContacto: nombreContacto,
             contacto_rut: contacto_rut,
             email: email,
             phone: phone,
-            sede: existingSede
+            sede: existingSede,
+            cliente: existingCliente
         });
-        const contactoCreado = await contactoRepository.save(nuevoContacto)
-        if (newUserContacto) return [{ contactoCreado, newUserContacto }]
-        return [contactoCreado, null]
+        await contactoRepository.save(nuevoContacto)
+
+        return [nuevoContacto, null]
 
     } catch (error) {
         console.error("Error al registrar un contacto", error);
@@ -328,18 +290,24 @@ export async function getSedesService() {
     }
 }
 
+/**
+ * Busqueda estricta AND, comparaciones exactas enlazada con cliente y contactos
+ * @param {} query 
+ * @returns 
+ */
 export async function getSedeByService(query) {
     try {
         const { sede_id, direccion, cliente_id } = query;
 
-        const sedeRepository = AppDataSource.getRepository("Sede");
+        const sedeRepository = AppDataSource.getRepository(Sede);
 
         const where = {};
 
         if (sede_id) where.sede_id = sede_id;
         if (direccion) where.direccion = direccion;
-        if (cliente_id) where.cliente = { cliente_id };
+        if (cliente_id) where.cliente = cliente_id;
 
+        if (where.length === 0) return [null, "Debe enviar al menos un criterio de busqueda"]
 
         const sede = await sedeRepository.findOne({
             relations: ["cliente", "contactos"],
@@ -358,6 +326,11 @@ export async function getSedeByService(query) {
     }
 }
 
+/**
+ * Busqueda flexible OR, comparaciones con subString enlazada con cliente y contactos
+ * @param {} query 
+ * @returns 
+ */
 export async function findSedesByService(query) {
     try {
         const { sede_id, direccion, cliente_id } = query;
@@ -395,13 +368,15 @@ export async function createSedeService(sede, cliente_id) {
     try {
         const sedeRepository = AppDataSource.getRepository(Sede);
 
-        const { direccion, personalSolicitado } = sede
+        const { nombre_sede, direccion, personalSolicitado } = sede
 
+        //verificar que el cliente exista
         const [cliente, err] = await getClienteByService({ cliente_id: cliente_id })
 
         if (err) return [null, createErrorMessage("cliente", "Cliente no existe")];
 
         const nuevaSede = sedeRepository.create({
+            nombre_sede: nombre_sede,
             direccion: direccion,
             personalSolicitado: personalSolicitado,
             cliente: cliente_id
@@ -421,17 +396,16 @@ export async function updateSedeService(sede_id, sede) {
     try {
         const sedeRepository = AppDataSource.getRepository(Sede);
 
-        const sede = await sedeRepository.findOne({
-            where: { sede_id }
-        });
+        //verificar que la sede exista
+        const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id })
+        if (errSede) return [null, errSede]
 
-        if (!sede) {
-            return [null, "Sede no encontrada"];
-        }
+        //actualizar la sede
+        await sedeRepository.update({ sede_id }, sede);
 
-        const updatedSede = sedeRepository.merge(sede, sede);
-
-        await sedeRepository.save(updatedSede);
+        // Obtener la sede actualizada
+        const [updatedSede, errUpdated] = await getSedeByService({ sede_id: sede_id });
+        if (errUpdated) return [null, "Sede no encontrada después de actualizar"];
 
         return [updatedSede, null];
 
@@ -490,7 +464,7 @@ export async function getClientesService() {
 
 
 /**
- * Búsqueda estricta, comparaciones exactas
+ * Búsqueda estricta AND, comparaciones exactas
  * @param query datos correspondientes a los campos de un contacto, excluye conexiones
  * @returns un único cliente que coincida con TODOS los campos dados
  */
@@ -605,29 +579,31 @@ export async function updateClienteService(cliente_id, data) {
     }
 }
 
-export async function registerClientService(cliente, supervisor) {
+export async function registerClientService(data, trabajador_id) {
     try {
+        //verificar que el trabajador exista antes de intentar registrar el cliente, para evitar registros incompletos
+
+        const [trabajador, errTrabajador] = await getTrabajadorService({ id: trabajador_id });
+        if (errTrabajador) return [null, errTrabajador]
+
         const clienteRepository = AppDataSource.getRepository(Cliente);
 
-        const { nombreCliente, rutCliente, nombreCompleto, rut, email, password, sede, contacto } = cliente;
+        const { cliente, sede, contacto } = data;
 
-        //el cliente y supervisor no pueden tener el mismo rut
-        if (cliente.rutCliente === supervisor.rut) return [null, createErrorMessage("rut", "Rut duplicado")]
+        const { nombreCliente, rutCliente } = cliente
 
-        //comprobacion de campos únicos
+        //el cliente, trabajador y contacto a registrar no pueden tener el mismo rut
+        if (rutCliente === trabajador.rut || rutCliente === contacto.contacto_rut || trabajador.rut === contacto.contacto_rut) {
+            return [null, createErrorMessage("rut", "Rut duplicado")]
+        }
+
+        //verificar que el rut del cliente no esté registrado en clientes, usuarios o contactos
         const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente });
         const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente });
         const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente })
-
         if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
 
-        if (supervisor.phone) {
-            const [existingPhoneUser, errPhone] = await getUserService({ phone: supervisor.phone })     //si un usuario ya lo tiene
-            const [phoneExistContacto, errPhoneContacto] = await getContactoByService({ phone: supervisor.phone })
-            if (existingPhoneUser || phoneExistContacto) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
-        }
-
-
+        //preparar los datos para crear el nuevo cliente
         const nuevoCliente = clienteRepository.create({
             nombreCliente: nombreCliente,
             rutCliente: rutCliente,
@@ -635,6 +611,19 @@ export async function registerClientService(cliente, supervisor) {
 
         //registrar en la tabla cliente
         const clienteCreado = await clienteRepository.save(nuevoCliente)
+        console.log("=> Cliente registrado");
+
+        //registrar la sede del cliente
+        const [sedeCreada, errSede] = await createSedeService(sede, clienteCreado.cliente_id);
+        if (errSede) {
+            //await deleteUserService({ id: perfilCreado.id })
+            console.error("=> Error de registro, borrando cliente");
+            await clienteRepository.remove(clienteCreado)
+            return [null, errSede]
+        }
+        console.log("\t=> Sede registrada");
+
+        /*
         const [rolCliente, errRol] = await getRolByNameService("Cliente")
         const [perfilCreado, errPerfil] = await registerService(
             {
@@ -648,40 +637,31 @@ export async function registerClientService(cliente, supervisor) {
             await clienteRepository.remove(clienteCreado)
             return [null, errPerfil]
         }
+        */
 
 
-        const [sedeCreada, errSede] = await createSedeService(sede, clienteCreado.cliente_id);
-        if (errSede) {
-            await deleteUserService({ id: perfilCreado.id })
-            await clienteRepository.remove(clienteCreado)
-            return [null, errSede]
-        }
 
 
         //registrar el contacto
-        const [contactoCreado, errContacto] = await createContactoService(contacto, clienteCreado.cliente_id)
+        const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id)
         if (errContacto) {
-            await deleteUserService({ id: perfilCreado.id })
+            //await deleteUserService({ id: perfilCreado.id })
+            console.error("=> Error de registro, borrando cliente");
             await clienteRepository.remove(clienteCreado)
             return [null, errContacto]
         }
-
-        const dataSupervisor = {
-            nombreCompleto: supervisor.nombreCompleto,
-            rut: supervisor.rut,
-            email: supervisor.email,
-            password: supervisor.password,
-            phone: supervisor.phone,
-            rol_id: await getRolByNameService("Supervisor"),
-        }
+        console.log("\t=> Contacto registrado");
 
         //registrar un nuevo usuario como supervisor del nuevo cliente
-        const [usuarioSupervisor, errSupervisor] = await registerService(supervisor, nuevoCliente.cliente_id)
+        const [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id)
         if (errSupervisor) {
-            await deleteUserService({ id: perfilCreado.id })
+            //await deleteUserService({ id: perfilCreado.id })
+            console.error("=> Error de registro, borrando cliente");
             await clienteRepository.remove(clienteCreado)
             return [null, errSupervisor];
         }
+        console.log("\t\t=> Supervisor registrado");
+
         /**
          * Ante cualquier error se eliminará en cascada los datos ingresados, 
          * para evitar espacio ocupado innecesariamente

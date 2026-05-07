@@ -7,7 +7,7 @@ import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
-import { getClienteByService, getContactoByService } from "./cliente.service.js";
+import { getClienteByService, getContactoByService, getSedeByService } from "./cliente.service.js";
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
@@ -33,7 +33,7 @@ export async function loginService(user) {
 
     const userFound = await userRepository.findOne({
       relations: ["rol"],
-      where: { email: email }
+      where: { email: email, state: "ACTIVADO" },
     });
 
     if (!userFound) {
@@ -68,13 +68,13 @@ export async function loginService(user) {
 /**
  * Solo el administrador puede registrar nuevos usuarios
 */
-export async function registerService(nuevoUsuario, cliente_id) {
+export async function registerService(nuevoUsuario, sede_id) {
   try {
     const userRepository = AppDataSource.getRepository(User);
 
     //si se entrego un id de cliente entonces verificar que ese cliente exista
-    if (cliente_id) {
-      const [existingClient, errCliente] = await getClienteByService({ cliente_id: cliente_id })
+    if (sede_id) {
+      const [existingClient, errCliente] = await getSedeByService({ id: sede_id })
       if (errCliente) return errCliente
     }
 
@@ -116,7 +116,7 @@ export async function registerService(nuevoUsuario, cliente_id) {
       password: await encryptPassword(nuevoUsuario.password),
       phone: nuevoUsuario.phone || null,
       rol: nuevoUsuario.rol_id,
-      cliente: cliente_id || null
+      sede: sede_id || null
     });
 
 

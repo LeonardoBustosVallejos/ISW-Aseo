@@ -22,10 +22,18 @@ const contratoSchema = new EntitySchema({
             enum: ["VIGENTE", "TERMINADO", "ESPERA"],
             default: "ESPERA",
         },
+        monto: {
+            type: "int",
+            default: 0,
+        },
         archivo: {
             type: "varchar",
             nullable: true //posibilidad de cambio más adelante
         },
+        descripcion: {
+            type: "text",
+            default: "Sin descripción"
+        }
     },
     indices: [
         {
@@ -48,6 +56,12 @@ const contratoSchema = new EntitySchema({
             joinColumn: true,
             nullable: false, //el contrato si o si debe ser dirigido a alguien
             onDelete: "CASCADE"
+        },
+        sede: {
+            target: "Sede",
+            type: "many-to-one",
+            joinColumn: { name: "sede_id" },
+            nullable: true // 🔥 IMPORTANTE
         }
     }
 });

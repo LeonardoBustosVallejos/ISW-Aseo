@@ -43,6 +43,12 @@ const UserSchema = new EntitySchema({
       nullable: true,
       unique: true
     },
+    state: {
+      type: "varchar",
+      length: 15,
+      enum: ["ACTIVADO", "DESACTIVADO"],
+      default: "ACTIVADO",
+    },
     createdAt: {
       type: "timestamp with time zone",
       default: () => "CURRENT_TIMESTAMP",
@@ -86,11 +92,11 @@ const UserSchema = new EntitySchema({
       nullable: false,
       onDelete: "CASCADE",
     },
-    //varios usuarios pueden trabajar para el mismo cliente o ninguno
-    cliente: {
-      target: "Cliente",
+    //varios usuarios pueden trabajar para la misma sede o ninguno
+    sede: {
+      target: "Sede",
       type: "many-to-none",
-      joinColumn: { name: "cliente_id" },
+      joinColumn: { name: "sede_id" },
       nullable: true,
       onDelete: null,
     }

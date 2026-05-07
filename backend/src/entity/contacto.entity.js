@@ -27,16 +27,21 @@ const ContactoSchema = new EntitySchema({
             type: "varchar",
             length: 255,
             nullable: false,
-            unique: true,
         },
         phone: {
             type: "varchar",
             length: 15,
             nullable: true,
-            unique: true
         },
     },
     relations: {
+        cliente: {
+            type: "many-to-one",
+            target: "Cliente",
+            joinColumn: { name: "cliente_id" },
+            nullable: false,
+            onDelete: "CASCADE"
+        },
         //varios contactos pueden ser de la misma sede
         sede: {
             type: "many-to-one",

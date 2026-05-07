@@ -35,6 +35,21 @@ const ClienteSchema = new EntitySchema({
             target: "Sede",
             inverseSide: "cliente"
         },
+        /**
+         * relacion de cliente a si mismo para representar la relación entre cliente principal y filial.
+         * Es decir, para los casos de varias sedes con el mismo rut y bajo el mismo nombre.
+         */
+        clientePadre: {
+            type: "many-to-one",
+            target: "Cliente",
+            joinColumn: { name: "cliente_padre_id" },
+            nullable: true
+        },
+        filiales: {
+            type: "one-to-many",
+            target: "Cliente",
+            inverseSide: "clientePadre"
+        }
     }
 })
 export default ClienteSchema
