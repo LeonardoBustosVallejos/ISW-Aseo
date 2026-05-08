@@ -4,11 +4,12 @@ import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Rol from "../entity/rol.entity.js";
-import { createErrorMessage } from "../handlers/messages.js";
+import { cleanRut, createErrorMessage, createSimpleMessage } from "../handlers/extras.js";
 import { getRolByNameService } from "./rol.service.js";
 import { registerService } from "./auth.service.js";
 import { updateTrabajadorService } from "./trabajador.service.js";
 import { getSedeByService, updateSedeService } from "./cliente.service.js";
+import Sede from "../entity/sede.entity.js";
 
 /**
  * Busqueda estricta OR para obtener un usuario por id, rut, email o teléfono. 
@@ -16,16 +17,17 @@ import { getSedeByService, updateSedeService } from "./cliente.service.js";
  * @param query datos para buscar al usuario (id, rut, email o teléfono)
  * @returns usuario encontrado o mensaje de error si no se encuentra o si no se proporciona ningún criterio de búsqueda
  */
-export async function getUserService(query) {
+export async function getUserService(query, manager = null) {
   try {
-    const { rut, id, email, phone } = query;
+    const { id, rut, email, phone } = query;
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const where = [];
 
     if (id) where.push({ id });
-    else if (rut) where.push({ rut });
+    else if (rut) where.push({ rut: cleanRut(rut) });
     else if (email) where.push({ email });
     else if (phone) where.push({ phone });
 
@@ -51,20 +53,21 @@ export async function getUserService(query) {
  * @param query 
  * @returns 
  */
-export async function getUserByService(query) {
+export async function getUserByService(query, manager = null) {
   try {
     const { rut, id, email, phone } = query;
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const where = {};
 
     if (id) where.id = id;
-    else if (rut) where.rut = rut;
+    else if (rut) where.rut = cleanRut(rut);
     else if (email) where.email = email;
     else if (phone) where.phone = phone;
 
-    if (!where.length) {
+    if (Object.keys(where).length === 0) {
       return [null, "Debe proporcionar al menos un criterio de búsqueda"];
     }
 
@@ -81,9 +84,10 @@ export async function getUserByService(query) {
   }
 }
 
-export async function getUsersService() {
+export async function getUsersService(manager = null) {
   try {
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const users = await userRepository.find();
 
@@ -98,23 +102,24 @@ export async function getUsersService() {
   }
 }
 
-export async function updateUserService(query, body) {
+export async function updateUserService(query, body, manager = null) {
   try {
     const { id, rut, email, phone } = query;
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     //verificar que el usuario exista
-    const userFound = await getUserService(query)
+    const [userFound, errUser] = await getUserService(query, manager)
 
-    if (!userFound) return [null, "Usuario no encontrado"];
+    if (errUser) return [null, errUser];
 
-    where = []
-    if (rut) where.push({ rut: body.rut })
-    if (email) where.push({ email: body.email })
-    if (phone) where.push({ phone: body.phone })
+    const where = []
+    if (body.rut) where.push({ rut: cleanRut(body.rut) })
+    if (body.email) where.push({ email: body.email })
+    if (body.phone) where.push({ phone: body.phone })
 
-    if (!where.length) {
+    if (Object.keys(where).length === 0) {
       return [null, "Debe proporcionar al menos un criterio de búsqueda para actualizar"];
     }
     //verificar que el nuevo rut, email o teléfono no estén registrados en otro usuario
@@ -135,7 +140,7 @@ export async function updateUserService(query, body) {
 
     const dataUserUpdate = {
       nombreCompleto: body.nombreCompleto,
-      rut: body.rut,
+      rut: cleanRut(body.rut),
       email: body.email,
       rol_id: body.rol,
       updatedAt: new Date(),
@@ -165,14 +170,15 @@ export async function updateUserService(query, body) {
   }
 }
 
-export async function deleteUserService(query) {
+export async function deleteUserService(query, manager = null) {
   try {
     const { id, rut, email } = query;
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const userFound = await userRepository.findOne({
-      where: [{ id: id }, { rut: rut }, { email: email }],
+      where: [{ id: id }, { rut: cleanRut(rut) }, { email: email }],
     });
 
     if (!userFound) return [null, "Usuario no encontrado"];
@@ -198,14 +204,14 @@ export async function deleteUserService(query) {
  * @param nuevoEstado nuevo estado del usuario ACTIVADO ó DESACTIVADO
  * @returns 
  */
-export async function cambiarEstadoUsuario(query, nuevoEstado) {
+export async function cambiarEstadoUsuario(query, nuevoEstado, manager = null) {
   try {
     const { id, rut, email } = query;
 
     if (!id && !rut && !email) return [null, "Debe proporcionar al menos un criterio de búsqueda"];
 
     //verificar que el usuario exista
-    const [userFound, err] = await getUserByService({ id, rut, email })
+    const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, manager)
     if (err) return [null, err]
 
     //verificar que el estado sea válido
@@ -214,7 +220,8 @@ export async function cambiarEstadoUsuario(query, nuevoEstado) {
     //verificar que el usuario no sea administrador
     if (userFound.rol === "Administrador") return [null, "No se puede cambiar el estado de un usuario con rol de Administrador"];
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const userUpdated = await userRepository.update({ id: userFound.id }, { state: nuevoEstado })
 
@@ -243,26 +250,27 @@ export async function cambiarEstadoUsuario(query, nuevoEstado) {
  * @param sede_id ID de la sede a la que se le asignará el supervisor 
  * @returns 
  */
-export async function asignarSupervisorService(trabajador, sede_id) {
+export async function asignarSupervisorService(trabajador, sede_id, manager = null) {
   try {
     //datos de busqueda del trabajador
     const { id, rut, email } = trabajador
 
     //verificar que la sede exista
-    const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id })
+    const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
     if (errSede) return [null, errSede]
 
     if (!id && !rut && !email) return [null, createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")]
 
-    const trabajadorRepository = AppDataSource.getRepository(Trabajador);
+    const trabajadorRepository = manager ?
+      manager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
 
-    const where = {}
+    const where = {} //AND
 
     where.despedido = false   //asegura que el trabajador no esté despedido
 
     //datos para buscar al trabajador, se puede buscar por id, rut o email
     if (id) where.id = id
-    if (rut) where.rut = rut
+    if (rut) where.rut = cleanRut(rut)
     if (email) where.email = email
 
     //verificar que el trabajador exista y no esté despedido con AND
@@ -273,11 +281,14 @@ export async function asignarSupervisorService(trabajador, sede_id) {
     if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
 
     //verificar que no exista un usuario registrado con el mismo rut o email del trabajador
-    const [existingRut, errRut] = await getUserService({ rut: trabajadorEncontrado.rut })
-    if (existingRut) return [null, createErrorMessage("rut", "Ya existe un usuario registrado con el mismo rut")]
+    const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
+    if (existingRut && existingRut.email !== trabajadorEncontrado.email) return [null, createErrorMessage("rut", "Ya existe un usuario registrado con el mismo rut")]
 
-    const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email })
-    if (existingEmail) return [null, createErrorMessage("email", "Ya existe un usuario registrado con el mismo email")]
+    const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, manager)
+    if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut) return [null, createErrorMessage("email", "Ya existe un usuario registrado con el mismo email")]
+
+    //verificar que no se exceda el límite de personal
+    if (sedeFound.personalAsignado === sedeFound.personalSolicitado) return [null, createSimpleMessage("Límite de personal alcanzado")]
 
     //obtener el rol de supervisor para asignarlo al nuevo usuario
     const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
@@ -288,26 +299,35 @@ export async function asignarSupervisorService(trabajador, sede_id) {
 
     const datosTrabajador = {
       nombreCompleto: trabajadorEncontrado.nombreCompleto,
-      rut: trabajadorEncontrado.rut,
+      rut: cleanRut(trabajadorEncontrado.rut),
       email: trabajadorEncontrado.email,
       password: emailParts,
       rol_id: rolSupervisor.id,
     }
 
-    const [nuevoSupervisor, errRegister] = await registerService(datosTrabajador, sede_id)
-
+    const [nuevoSupervisor, errRegister] = await registerService(datosTrabajador, sedeFound.sede_id, manager)
     if (errRegister) return [null, errRegister]
 
     //actualizar rol del trabajador a Supervisor
-    const [trabajadorUpdated, errUpdate] = await updateTrabajadorService(trabajadorEncontrado.id, { rol: "Supervisor" })
-    if (errUpdate) return [null, errUpdate]
-
-
-    const [nuevoPersonal, errUpdateSede] = await updateSedeService(sede_id, { personalAsignado: sedeFound.personalAsignado + 1 })
-    if (errUpdateSede) {
-      await updateTrabajadorService(trabajador.id, { rol: "trabajador" })
-      return [null, errUpdateSede]
+    const trabajadorUpdated = await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "Supervisor" })
+    if (!trabajadorUpdated) {
+      if (!manager) await deleteUserService({ id: nuevoSupervisor.id })
+      return [null, errUpdate]
     }
+    //si cumple con todo lo anterior, se asigna un nuevo supervisor a la sede, aumentando en 1 el personal asignado a la sede
+    const sedeRepository = manager ?
+      manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
+
+    const nuevoPersonal = await sedeRepository.update({ sede_id: sede_id }, { personalAsignado: sedeFound.personalAsignado + 1 })
+    if (!nuevoPersonal.affected) {
+      if (!manager) {
+        await deleteUserService({ id: nuevoSupervisor.id })
+        await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "trabajador" })
+      }
+      return [null, createSimpleMessage("No se pudo actualizar el trabajador")]
+    }
+    console.log("Personal asignado cambiado:", nuevoPersonal);
+
     return [nuevoSupervisor, null];
 
 

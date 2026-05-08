@@ -1,10 +1,10 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService } from "../services/cliente.service.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService } from "../services/cliente.service.js";
 import { registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
     try {
-        const [clientes, err] = await getClientesService()
+        const [clientes, err] = await listarClientesService()
 
         if (err) return handleErrorClient(res, 404, err)
 
