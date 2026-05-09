@@ -10,7 +10,7 @@ export async function getUserService(query) {
     const userRepository = AppDataSource.getRepository(User);
 
     const userFound = await userRepository.findOne({
-      where: [{ user_id: id }, { rut: rut }, { email: email }, { phone: phone }],
+      where: [{ id: id }, { rut: rut }, { email: email }, { phone: phone }],
     });
 
     if (!userFound) return [null, "Usuario no encontrado"];
@@ -55,7 +55,7 @@ export async function updateUserService(query, body) {
       where: [{ rut: body.rut }, { email: body.email }, { phone: body.phone }],
     });
 
-    if (existingUser && existingUser.user_id !== userFound.user_id) {
+    if (existingUser && existingUser.id !== userFound.id) {
       return [null, "Ya existe un usuario con el mismo rut, email o teléfono"];
     }
 
@@ -81,10 +81,10 @@ export async function updateUserService(query, body) {
       dataUserUpdate.password = await encryptPassword(body.newPassword);
     }
 
-    await userRepository.update({ user_id: userFound.user_id }, dataUserUpdate);
+    await userRepository.update({ id: userFound.id }, dataUserUpdate);
 
     const userData = await userRepository.findOne({
-      where: { user_id: userFound.user_id },
+      where: { id: userFound.id },
     });
 
     if (!userData) {
@@ -107,7 +107,7 @@ export async function deleteUserService(query) {
     const userRepository = AppDataSource.getRepository(User);
 
     const userFound = await userRepository.findOne({
-      where: [{ user_id: id }, { rut: rut }, { email: email }],
+      where: [{ id: id }, { rut: rut }, { email: email }],
     });
 
     if (!userFound) return [null, "Usuario no encontrado"];
