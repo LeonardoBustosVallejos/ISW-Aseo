@@ -1,11 +1,11 @@
-import { registrarNuevoActivo, resumenActivos } from "../services/activofijo.service.js";
+import { registrarNuevoActivo, resumenActivos, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
 
 export const getResumenActivos = async (req, res) => {
 
     try{
 
-        const {clienteId} = req.params;
-        const resumen = await resumenActivos(clienteId);
+        const {cliente_id} = req.params;
+        const resumen = await resumenActivos(cliente_id);
 
         return res.status(200).json({
             estado: "exito",
@@ -13,7 +13,7 @@ export const getResumenActivos = async (req, res) => {
         });
     }catch(error){
         console.error("Error al obtener el resumen:", error);
-        return res.status(500).json({ estado: "error", mensaje: "Error interno del servidor" });
+        return [null, "Error interno del servidor"];
     }
 };
 
@@ -21,25 +21,81 @@ export const crearActivoFijo = async (req, res) => {
 
     try{
 
-        const datosIngresados = req.body;
+        const datos_ingresados = req.body;
 
-        if(!datosIngresados.nombre || !datosIngresados.cliente_id){
-
+        if(!datos_ingresados.nombre){
             return res.status(400).json({
-                estado: "error",
-                mensaje: "El nombre y el ID del cliente son obligatorios"
+                estado: "error4",
             });
         }
 
-        const nuevoActivo = await registrarNuevoActivo(datosIngresados);
-
+        const nuevo_activo = await registrarNuevoActivo(datos_ingresados);
         return res.status(201).json({
             estado: "exito",
             mensaje: "Activo registrado correctamente",
-            data: nuevoActivo
+            data: nuevo_activo
         });
     }catch(error){
-        console.error("Error al crear el activo:", error);
-        return res.status(500).json({ estado: "error", mensaje: "Error interno del servidor" });
+        console.error("Error al crear el activo", error);
+        return [null, "Error interno del servidor"];
+    }
+};
+
+export const asignarActivos = async (req, res) => {
+    try {
+
+        const{cliente_id, nombre_maquina, cantidad} = req.body;
+
+        if(!cliente_id || !nombre_maquina || !cantidad) {
+            return res.status(400).json({
+                estado: "error21"
+            });
+        }
+
+        const [activos_asignados, error_servicio] = await asignarActivosCliente(cliente_id, nombre_maquina, cantidad);
+        if(error_servicio){
+            return res.status(400).json({
+                estado: "error22",
+                mensaje: error_servicio
+            });
+        }
+        return res.status(200).json({
+            estado: "exito",
+            mensaje: `Se asignaron ${activos_asignados.length}-${nombre_maquina} al cliente ${cliente_id}`,
+            data: activos_asignados
+        });
+    }catch (error){
+        console.error("Error al asignar el activo", error);
+        return [null, "Error interno del servidor"];
+    }
+};
+
+export const devolverActivos = async (req, res) => {
+    try {
+        const{cliente_id, nombre_maquina, cantidad} = req.body;
+
+        if(!cliente_id || !nombre_maquina || !cantidad){
+            return res.status(400).json({
+                estado: "error",
+            });
+        }
+
+        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, nombre_maquina, cantidad);
+        if(error_servicio){
+            return res.status(400).json({
+                estado: "error22",
+                mensaje: error_servicio
+            });
+        }
+
+        return res.status(200).json({
+            estado: "exito",
+            mensaje: `Se devolvieron ${activos_devueltos.length}-${nombre_maquina} a la bodega`,
+            data: activos_devueltos
+        });
+
+    } catch(error){
+        console.error("Error al devolver el activo", error);
+        return [null, "Error interno del servidor"];
     }
 };
