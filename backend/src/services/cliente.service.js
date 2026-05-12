@@ -3,21 +3,22 @@ import Contacto from "../entity/contacto.entity.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
-import { createErrorMessage, createSimpleMessage } from "../handlers/messages.js";
+import { cleanRut, createErrorMessage, createSimpleMessage } from "../handlers/extras.js";
 import User from "../entity/user.entity.js";
-import { deleteUserService, getUserService } from "./user.service.js";
+import { asignarSupervisorJerarquicoService, asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
 import { registerService } from "./auth.service.js";
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
+import { getORTrabajadorService } from "./trabajador.service.js";
 /**
- * get...() lista de todos
- * get...By(params) para un único elemento con findOne AND
- * find...By(params) para listas con find OR
+ * get...s() lista de todos
+ * get...By(params) estricta para un único elemento con findOne AND
+ * get...(params) estricta para un único elemento con findOne OR
+ * find...sBy(params) flexible para listas con find OR
  * where = {} AND
  * where = [] OR
  */
 
-const errorServer = [null, "Error interno del servidor"]
 /**
  * funcion que aplica el uso de ILike() para determinar si un string contiene un substring
  * se utiliza en funciones de busqueda
@@ -32,9 +33,10 @@ const contiene = (dato) => { return ILike(`%${dato}%`) }
  * 
  * @returns todos los contactos
  */
-export async function getContactosService() {
+export async function getContactosService(manager = null) {
     try {
-        const contactoRepository = AppDataSource.getRepository(Contacto);
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
 
         const contactos = await contactoRepository.find({
             relations: ["sede", "sede.cliente"],
@@ -44,26 +46,28 @@ export async function getContactosService() {
 
     } catch (error) {
         console.error("Error al obtener contactos:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
 /**
- * Búsqueda estricta, comparaciones exactas
+ * Búsqueda estricta AND, comparaciones exactas
  * @param query datos correspondientes a los campos de un contacto 
  * @returns un único contacto que coincida con TODOS los campos dados
  */
-export async function getContactoByService(query) {
+export async function getContactoByService(query, manager = null) {
     try {
 
         const { contacto_id, contacto_rut, nombreContacto, email, phone } = query
 
-        const contactoRepository = AppDataSource.getRepository(Contacto);
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
 
         const where = {}    //AND
 
         if (contacto_id) where.contacto_id = contacto_id
-        if (contacto_rut) where.contacto_rut = contacto_rut
+        if (contacto_rut) where.contacto_rut = cleanRut(contacto_rut)
         if (nombreContacto) where.nombreContacto = nombreContacto
         if (email) where.email = email
         if (phone) where.phone = phone
@@ -75,11 +79,12 @@ export async function getContactoByService(query) {
         });
         if (!contacto) return [null, createSimpleMessage("Contacto no encontrado")]
 
-        return contacto
+        return [contacto, null]
 
     } catch (error) {
         console.error("Error al obtener contacto:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -88,17 +93,18 @@ export async function getContactoByService(query) {
  * @param query datos correspondientes a los campos de un contacto 
  * @returns lista de contactos, no necesita coincidir en todos o ser igual totalmente
  */
-export async function findContactosByService(query) {
+export async function findContactosByService(query, manager = null) {
     try {
 
         const { contacto_id, contacto_rut, nombreContacto, email, phone } = query
 
-        const contactoRepository = AppDataSource.getRepository(Contacto);
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
 
         const where = []    //OR
 
-        if (contacto_id) where.push(contacto_id)
-        if (contacto_rut) where.push({ contacto_rut: contiene(contacto_rut) })
+        if (contacto_id) where.push({ contacto_id })
+        if (contacto_rut) where.push({ contacto_rut: contiene(cleanRut(contacto_rut)) })
         if (nombreContacto) where.push({ nombreContacto: contiene(nombreContacto) })
         if (email) where.push({ email: contiene(email) })
         if (phone) where.push({ phone: contiene(phone) })
@@ -116,114 +122,79 @@ export async function findContactosByService(query) {
 
     } catch (error) {
         console.error("Error al obtener contacto:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function createContactoService(contacto, sede_id) {
+/**
+ * Crea un nuevo contacto asociado a una sede y cliente, el contacto no puede tener un email o teléfono que ya esté registrado en trabajadores, usuarios o contactos, ni un rut que ya esté registrado en trabajadores, usuarios o clientes.
+ * @param  contacto datos del contacto a registrar
+ * @param  sede_id ID de la sede de quien se es contacto
+ * @returns contacto creado o mensaje de error si no se pudo crear por validación o error interno
+ */
+export async function createContactoService(contacto, sede_id, manager = null) {
     try {
-        const contactoRepository = AppDataSource.getRepository(Contacto)
-        const userRepository = AppDataSource.getRepository(User)
-        const trabajadoresRepository = AppDataSource.getRepository(Trabajador)
-
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
         //verificar que la sede exista
-        const [existingSede, err] = await getSedeByService({ sede_id: sede_id })
+        const [existingSede, err] = await getSedeByService({ sede_id: sede_id }, manager)
         if (err) return [null, err]
+
+        //obtener el cliente de la sede
+        const [existingCliente, errCliente] = await getClienteByService({ cliente_id: existingSede.cliente.cliente_id }, manager)
+        if (errCliente) return [null, errCliente]
 
         const { email, phone, contacto_rut, nombreContacto } = contacto
 
-        //verificar que los datos no hayan sido registrados antes en contactos
-        const [registerEmail, errEmail] = await getContactoByService({ email: email })
-        if (registerEmail) {
-            console.log(registerEmail);
+        //verificar que el email del contacto no esté registrado en contactos, trabajadores o usuarios
+        const [registerEmail, errEmail] = await getContactoByService({ email: email }, manager)
+        const [registerTrabajadorEmail, errEmailTrabajador] = await getORTrabajadorService({ email: email }, manager)
+        const [registerUserEmail, errEmailUser] = await getUserService({ email: email }, manager)
+        if (registerEmail || registerTrabajadorEmail || registerUserEmail) return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
 
-            return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
-        }
+        //si el contacto tiene teléfono, verificar que no esté registrado en contactos, trabajadores o usuarios
         if (phone) {
-            const [registerPhone, errPhone] = await getContactoByService({ phone: phone })
-            if (registerPhone) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+            const [registerPhone, errPhone] = await getContactoByService({ phone: phone }, manager)
+            const [registerUserPhone, errUserPhone] = await getUserService({ phone: phone }, manager)
+            if (registerPhone || registerUserPhone) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
         }
 
-        const [clienteRut, errCliente] = await getClienteByService({ rutCliente: contacto_rut })
-        if (clienteRut) return [null, createErrorMessage("rut", "Rut ya en uso")];
+        //verificar que el rut no sea un de trabajador, cliente o usuario
+        const [clienteRut, errClienteRut] = await getClienteByService({ rutCliente: cleanRut(contacto_rut) }, manager)
+        const [existingUserRut, errUserRut] = await getUserService({ rut: cleanRut(contacto_rut) }, manager)
+        const [existingTranajadorRut, errTrabajadorRut] = await getORTrabajadorService({ rut: cleanRut(contacto_rut) }, manager)
+        if (existingTranajadorRut || clienteRut || existingUserRut) return [null, createErrorMessage("rut", "Rut ya en uso")]
 
-        //verificar que el contacto no sea un trabajador o usuario
-        //pero si el rut es del usuario ligado a al cliente entonces los datos serán extra los correspondiente
-        const [existingUserRut, errUserRut] = await getUserService({ rut: contacto_rut })
-        let newUserContacto = null;
+        //verificar que si el rut ya está en contactos, entonces que la sede tambien sea la misma
+        const [existingRut, errRut] = await getContactoByService({ contacto_rut: cleanRut(contacto_rut) })
+        if (existingRut && existingRut.sede.sede_id !== sede_id) return [null, createErrorMessage("sede", "Rut ya asignado a otra sede")]
 
-
-        if (existingUserRut) {
-            const contactoUser = await getUserService({ nombreCompleto: nombreContacto })
-            if (contactoUser && contactoUser.cliente && contactoUser.id === existingUserRut.id && existingSede.cliente.cliente_id === contactoUser.cliente.cliente_id) {
-
-
-                const [existingEmailContacto, errEmail] = getContactoByService({ email: contactoUser.email })
-
-                if (contactoUser.phone) {
-                    const [existingPhoneUser, errPhone] = getContactoByService({ phone: contactoUser.phone })
-
-                    if (errPhone) {
-                        if (existingEmailContacto) {
-                            newUserContacto = await updateContactoService(existingEmailContacto.contacto_id, { phone: contactoUser.phone })
-                        } else {
-                            newUserContacto = await contactoRepository.save(
-                                contactoRepository.create({
-                                    nombreContacto: nombreContacto,
-                                    contacto_rut: contacto_rut,
-                                    email: contactoUser.email,
-                                    phone: phone,
-                                    sede: existingSede
-                                })
-                            )
-                        }
-                    } else if (errEmail) {
-                        newUserContacto = await contactoRepository.save(
-                            contactoRepository.create({
-                                nombreContacto: nombreContacto,
-                                contacto_rut: contacto_rut,
-                                email: contactoUser.email,
-                                sede: existingSede
-                            })
-                        )
-                    }
-                } else if (errEmail) {
-                    newUserContacto = await contactoRepository.save(
-                        contactoRepository.create({
-                            nombreContacto: nombreContacto,
-                            contacto_rut: contacto_rut,
-                            email: contactoUser.email,
-                            sede: existingSede
-                        })
-                    )
-                }
-            }
-        }
-        const existingTranajador = await trabajadoresRepository.findOne({ where: [{ email: email }] })
-        if (existingTranajador) return [null, createErrorMessage("contacto", "Los datos de contacto corresponden a un trabajador")]
-
-
+        //preparar datos para crear el contacto
         const nuevoContacto = contactoRepository.create({
             nombreContacto: nombreContacto,
-            contacto_rut: contacto_rut,
+            contacto_rut: cleanRut(contacto_rut),
             email: email,
             phone: phone,
-            sede: existingSede
+            sede: existingSede,
+            cliente: existingCliente
         });
-        const contactoCreado = await contactoRepository.save(nuevoContacto)
-        if (newUserContacto) return [{ contactoCreado, newUserContacto }]
-        return [contactoCreado, null]
+        await contactoRepository.save(nuevoContacto)
+
+        return [nuevoContacto, null]
 
     } catch (error) {
         console.error("Error al registrar un contacto", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
-export async function deleteContactoService(contacto_id) {
+export async function deleteContactoService(contacto_id, manager = null) {
     try {
-        const contactoRepository = AppDataSource.getRepository(Contacto)
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
 
-        const [existingContacto, err1] = await getContactoByService()
+        const [existingContacto, err1] = await getContactoByService({ contacto_id: contacto_id }, manager)
 
         if (err1) return [null, createErrorMessage("contacto_id", "No existe el contacto buscado")]
 
@@ -241,76 +212,79 @@ export async function deleteContactoService(contacto_id) {
 
     } catch (error) {
         console.error("Error al eliminar un contacto:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
-export async function updateContactoService(contacto_id, data) {
+export async function updateContactoService(contacto_id, data, manager = null) {
     try {
 
         if (data.email === "") return [null, createErrorMessage("email", "Datos inválidos")];
+        if (data.contacto_rut === "") return [null, createErrorMessage("contacto_rut", "Datos inválidos")];
 
-        if (data.phone === "") return [null, createErrorMessage("phone", "Datos inválidos")];
-
-        const contactoRepository = AppDataSource.getRepository(Contacto);
-        const trabajadoresRepository = AppDataSource.getRepository(Trabajador)
+        const { email, phone } = data
+        const contactoRepository = manager ?
+            manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
 
         //verificar que exista el contacto
-        const [currentContacto, errContacto] = await getContactoByService({ contacto_id: contacto_id })
-
+        const [currentContacto, errContacto] = await getContactoByService({ contacto_id: contacto_id }, manager)
         if (errContacto) return [null, errContacto]
 
+        /**
         //validar rut del contacto
-
-        if (data.contacto_rut && data.contacto_rut !== currentContacto.contacto_rut) {
-
-            //si se entrega un rut, es distinto al actual y está en uso
-            const [rutUser, errUser] = await getUserService({ rut: data.contacto_rut })
-            const existingTranajador = await trabajadoresRepository.findOne({ where: { rut: data.contacto_rut } })
+        if (contacto_rut && contacto_rut !== currentContacto.contacto_rut) {
+            //si se entrega un rut y es distinto al actual
+            const [rutUser, errUser] = await getUserService({ rut: contacto_rut }, manager)
+            const existingTranajador = await getORTrabajadorService({ rut: contacto_rut }, manager)
             if (rutUser || existingTranajador) {
                 return [null, createErrorMessage("rut", "Rut ya en uso")];
             }
-
-            const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: data.contacto_rut })
-            if (existingRutContacto && existingRutContacto.contacto_id !== contacto_id) {
+            //si esta en contactos pero es de otro contacto o es contacto de otro cliente
+            const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: contacto_rut }, manager)
+            if (existingRutContacto && (existingRutContacto.contacto_id !== contacto_id || existingRutContacto.cliente.cliente_id !== currentContacto.cliente.cliente_id)) {
                 return [null, createErrorMessage("rut", "Rut ya en uso")];
             }
         }
+            */
         //validar email duplicado
-        if (data.email && data.email !== currentContacto.email) {
-            const [existingEmail, errEmailContacto] = await getContactoByService({ email: data.email })
-            const [existingEmailUser, errEmailUser] = await getUserService({ email: data.email });
-
-            if (existingEmail || existingEmailUser) {
+        if (email && email !== currentContacto.email) {
+            const [existingEmail, errEmailContacto] = await getContactoByService({ email: email }, manager)
+            const [existingEmailUser, errEmailUser] = await getUserService({ email: email }, manager);
+            if ((existingEmail && existingEmail.contacto_id !== contacto_id) || existingEmailUser) {
                 return [null, createErrorMessage("email", "Correo ya en uso")];
             }
         }
 
         //validar telefono duplicado
-        if (data.phone && data.phone !== currentContacto.phone) {
-            const [existingPhone, errPhoneContacto] = await getContactoByService({ phone: data.phone })
-            const [phoneUser, errUser] = await getUserService({ phone: data.phone })
-            if (phoneExist || phoneExist) {
+        if (phone && phone !== currentContacto.phone) {
+            const [existingPhone, errPhoneContacto] = await getContactoByService({ phone: phone }, manager)
+            const [phoneUser, errUser] = await getUserService({ phone: phone }, manager)
+            if ((existingPhone && existingPhone.contacto_rut !== currentContacto.contacto_rut) || phoneUser.rut !== currentContacto.contacto_rut) {
                 return [null, createErrorMessage("phone", "Teléfono ya en uso")];
             }
         }
 
         //actualizar campos
-        const updatedContacto = contactoRepository.merge(existingContacto, data);
+        await contactoRepository.update({ contacto_id }, { email: email, phone: phone, updatedAt: new Date() });
 
-        await contactoRepository.save(updatedContacto);
+        //obtener contacto actualizado
+        const [contactoActualizado, errContactoActualizado] = await getContactoByService({ contacto_id }, manager)
+        if (errContactoActualizado) return [null, createErrorMessage("contacto", "No se encontró el contacto después de actualizar")]
 
-        return [updatedContacto, null];
+        return [contactoActualizado, null];
 
     } catch (error) {
         console.error("Error al actualizar contacto:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
 //funciones relacionadas a las sedes
-export async function getSedesService() {
+export async function getSedesService(manager = null) {
     try {
-        const sedeRepository = AppDataSource.getRepository(Sede);
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
         const sedes = await sedeRepository.find({
             relations: ["cliente", "contactos"]
@@ -324,22 +298,31 @@ export async function getSedesService() {
 
     } catch (error) {
         console.error("Error al obtener sedes:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function getSedeByService(query) {
+/**
+ * Busqueda estricta AND, comparaciones exactas enlazada con cliente y contactos
+ * @param {} query 
+ * @returns 
+ */
+export async function getSedeByService(query, manager = null) {
     try {
-        const { sede_id, direccion, cliente_id } = query;
+        const { sede_id, direccion, cliente_id, rutSecundario } = query;
 
-        const sedeRepository = AppDataSource.getRepository("Sede");
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
         const where = {};
 
         if (sede_id) where.sede_id = sede_id;
         if (direccion) where.direccion = direccion;
-        if (cliente_id) where.cliente = { cliente_id };
+        if (cliente_id) where.cliente = cliente_id;
+        if (rutSecundario) where.rutSecundario = rutSecundario;
 
+        if (Object.keys(where).length === 0) return [null, "Debe enviar al menos un criterio de busqueda"]
 
         const sede = await sedeRepository.findOne({
             relations: ["cliente", "contactos"],
@@ -354,21 +337,29 @@ export async function getSedeByService(query) {
 
     } catch (error) {
         console.error("Error al obtener sede:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function findSedesByService(query) {
+/**
+ * Busqueda flexible OR, comparaciones con subString enlazada con cliente y contactos
+ * @param {} query 
+ * @returns 
+ */
+export async function findSedesByService(query, manager = null) {
     try {
-        const { sede_id, direccion, cliente_id } = query;
+        const { sede_id, direccion, cliente_id, rutSecundario } = query;
 
-        const sedeRepository = AppDataSource.getRepository(Sede);
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
         const where = [];
 
         if (sede_id) where.push({ sede_id });
         if (direccion) where.push({ direccion: contiene(direccion) });
         if (cliente_id) where.push({ cliente: { cliente_id } });
+        if (rutSecundario) where.push({ rutSecundario: cleanRut(rutSecundario) })
 
         if (!where.length) {
             return [null, "Debe enviar al menos un criterio"];
@@ -387,23 +378,42 @@ export async function findSedesByService(query) {
 
     } catch (error) {
         console.error("Error al buscar sedes:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function createSedeService(sede, cliente_id) {
+export async function createSedeService(sede, cliente_id, manager = null) {
     try {
-        const sedeRepository = AppDataSource.getRepository(Sede);
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
-        const { direccion, personalSolicitado } = sede
+        const { nombre_sede, direccion, personalSolicitado, rutSecundario } = sede
 
-        const [cliente, err] = await getClienteByService({ cliente_id: cliente_id })
-
+        //verificar que el cliente exista
+        const [cliente, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
         if (err) return [null, createErrorMessage("cliente", "Cliente no existe")];
 
+        if (cleanRut(rutSecundario)) {
+            //si el rut ya está registrado a otro cliente
+            const [existingRut, errRut] = await getSedeByService({ rutSecundario: cleanRut(rutSecundario) }, manager)
+            if (existingRut && existingRut.cliente.cliente_id !== cliente_id) return [null, createErrorMessage("rutSecundario", "Rut secundario no valido")];
+        }
+
+        //verificar exclusividad del rut con personas
+        const [existingUser, errUser] = await getUserService({ rut: cleanRut(rutSecundario) }, manager)
+        const [existingTrabajador, errTrabajador] = await getORTrabajadorService({ rut: cleanRut(rutSecundario) }, manager)
+        let existingContactoRut = null, errContactoRut = null
+        if (cleanRut(rutSecundario)) {
+            [existingContactoRut, errContactoRut] = await getContactoByService({ contacto_rut: cleanRut(rutSecundario) }, manager)
+        }
+        if (existingUser || existingTrabajador || existingContactoRut) return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
+
         const nuevaSede = sedeRepository.create({
+            nombre_sede: nombre_sede,
             direccion: direccion,
             personalSolicitado: personalSolicitado,
+            rutSecundario: cleanRut(rutSecundario) || null,
             cliente: cliente_id
         });
 
@@ -413,37 +423,70 @@ export async function createSedeService(sede, cliente_id) {
 
     } catch (error) {
         console.error("Error al crear sede:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function updateSedeService(sede_id, sede) {
+export async function updateSedeService(sede_id, data, manager = null) {
     try {
-        const sedeRepository = AppDataSource.getRepository(Sede);
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
-        const sede = await sedeRepository.findOne({
-            where: { sede_id }
-        });
+        const { nombre_sede, direccion, personalSolicitado } = data
+        const rutSecundario = cleanRut(data.rutSecundario)
 
-        if (!sede) {
-            return [null, "Sede no encontrada"];
+        //verificar que la sede exista
+        const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
+        if (errSede) return [null, errSede]
+
+        if (rutSecundario && rutSecundario !== cleanRut(sedeFound.rutSecundario)) {
+            //si el rut ya está registrado una sede de otro cliente
+            const [existingRut, errRut] = await getSedeByService({ rutSecundario: rutSecundario }, manager)
+            if (
+                existingRut &&
+                existingRut.sede_id !== sede_id &&
+                existingRut.cliente.cliente_id !== sedeFound.cliente.cliente_id
+            ) return [null, createErrorMessage("rutSecundario", "Rut secundario no válido")];
         }
 
-        const updatedSede = sedeRepository.merge(sede, sede);
+        const [existingUser, errUser] = await getUserService({ rut: rutSecundario }, manager)
+        const [existingTrabajador, errTrabajador] = await getORTrabajadorService({ rut: rutSecundario }, manager)
+        let existingContactoRut = null, errContactoRut = null
+        if (rutSecundario) {
+            [existingContactoRut, errContactoRut] = await getContactoByService({ contacto_rut: rutSecundario }, manager)
+        }
+        if (existingUser || existingTrabajador || existingContactoRut) return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
 
-        await sedeRepository.save(updatedSede);
+
+
+        //actualizar la sede
+        await sedeRepository.update({ sede_id },
+            {
+                nombre_sede: nombre_sede,
+                direccion: direccion,
+                personalSolicitado: personalSolicitado,
+                rutSecundario: rutSecundario || null,
+                updatedAt: new Date(),
+            });
+
+        // Obtener la sede actualizada
+        const [updatedSede, errUpdated] = await getSedeByService({ sede_id: sede_id }, manager);
+        if (errUpdated) return [null, "Sede no encontrada después de actualizar"];
 
         return [updatedSede, null];
 
     } catch (error) {
         console.error("Error al actualizar sede:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function deleteSedeService(sede_id) {
+export async function deleteSedeService(sede_id, manager = null) {
     try {
-        const sedeRepository = AppDataSource.getRepository(Sede);
+        const sedeRepository = manager ?
+            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
 
         const sede = await sedeRepository.findOne({
             where: { sede_id },
@@ -464,48 +507,74 @@ export async function deleteSedeService(sede_id) {
 
     } catch (error) {
         console.error("Error al eliminar sede:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 //funciones relacionadas a los clientes
 
 /**
- * 
+ * Muestra todos los clientes, se prioriza los tipo EMPRESA, ya que las filiales están anidadas en estas
  * @returns todos los clientes o mensage de error
  */
-export async function getClientesService() {
+export async function getClientesService(manager = null) {
     try {
-        const clienteRepository = AppDataSource.getRepository(Cliente)
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
 
-        const clientes = await clienteRepository.find({ relations: ["sede"] })
+        const clientes = await clienteRepository.find({ relations: ["filiales", "sede"], where: { tipoCliente: "EMPRESA" } })
 
         if (!clientes || clientes.length === 0) return [null, "No hay clientes"];
 
         return [clientes, null]
     } catch (error) {
         console.error("Error al obtener clientes:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
+export async function listarClientesService(manager = null) {
+    try {
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
+
+        const clientes = await clienteRepository.createQueryBuilder("cliente")
+            .where("cliente.tipoCliente = :tipo", { tipo: "EMPRESA" })
+            .leftJoinAndSelect("cliente.filiales", "filial")
+            .leftJoinAndSelect("cliente.sede", "sedes")
+            .leftJoinAndSelect("sedes.contactos", "contactos")
+
+            .leftJoinAndSelect("filial.sede", "filialSede")
+            .leftJoin("filialSede.contactos", "sedeContactos").getMany()
+
+        if (!clientes || clientes.length === 0) return [null, "No hay clientes"];
+
+        return [clientes, null]
+    } catch (error) {
+        console.error("Error al obtener clientes:", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
 
 /**
- * Búsqueda estricta, comparaciones exactas
+ * Búsqueda estricta AND, comparaciones exactas
  * @param query datos correspondientes a los campos de un contacto, excluye conexiones
  * @returns un único cliente que coincida con TODOS los campos dados
  */
-export async function getClienteByService(query) {
+export async function getClienteByService(query, manager = null) {
     try {
-        const clienteRepository = AppDataSource.getRepository(Cliente)
-        const { cliente_id, nombreCliente, rutCliente, direccion, personalSolicitado, personalAsignado } = query
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
+        const { cliente_id, nombreCliente, rutCliente, tipoCliente } = query
 
         const where = {}    //AND
         if (cliente_id) where.cliente_id = cliente_id
-        if (direccion) where.direccion = direccion
         if (nombreCliente) where.nombreCliente = nombreCliente
-        if (personalAsignado) where.personalAsignado = personalAsignado
-        if (personalSolicitado) where.personalSolicitado = personalSolicitado
-        if (rutCliente) where.rutCliente = rutCliente
+        if (rutCliente) where.rutCliente = cleanRut(rutCliente)
+        if (tipoCliente) where.tipoCliente = tipoCliente
 
         const cliente = await clienteRepository.findOne({ relations: ["sede"], where })
 
@@ -515,17 +584,19 @@ export async function getClienteByService(query) {
 
     } catch (error) {
         console.error("Error al obtener el cliente:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 /**
  * Filtro acumulativo, búsqueda flexible, comparacion con subString
- * @param query datos correspondientes a los campos de un contacto 
+ * @param query datos correspondientes a los campos de un contacto, con los de sede anidados
  * @returns lista de contactos, no necesita coincidir en todos o ser igual totalmente
  */
-export async function findClienteByService(query) {
+export async function findClienteByService(query, manager = null) {
     try {
-        const clienteRepository = AppDataSource.getRepository(Cliente)
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
         const { nombreCliente, rutCliente, sede } = query
 
         const where = {}    //AND
@@ -534,9 +605,9 @@ export async function findClienteByService(query) {
         if (rutCliente) where.rutCliente = contiene(rutCliente)
 
         if (sede) {
-            if (sede.direccion) where.sede.direccion = contiene(direccion)
-            if (sede.personalAsignado) where.sede.personalAsignado = contiene(personalAsignado)
-            if (sede.personalSolicitado) where.sede.personalSolicitado = contiene(personalSolicitado)
+            if (sede.direccion) where.sede.direccion = contiene(sede.direccion)
+            if (sede.personalAsignado) where.sede.personalAsignado = contiene(sede.personalAsignado)
+            if (sede.personalSolicitado) where.sede.personalSolicitado = contiene(sede.personalSolicitado)
         }
 
         const cliente = await clienteRepository.find({ relations: ["sede"], where })
@@ -548,18 +619,19 @@ export async function findClienteByService(query) {
 
     } catch (error) {
         console.error("Error al obtener el cliente:", error);
-        return errorServer
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function deleteCliente(query) {
+export async function deleteCliente(cliente_id, manager = null) {
     try {
-        const { cliente_id } = query
-        const [clienteFound, err] = await getClienteByService({ cliente_id: cliente_id })
+        const [clienteFound, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
 
         if (err) return err
 
-        const clienteRepository = AppDataSource.getRepository(Cliente)
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
         const clienteDeleted = await clienteRepository.remove(clienteFound)
 
@@ -567,25 +639,31 @@ export async function deleteCliente(query) {
 
     } catch (error) {
         console.error("Error al eliminar un cliente:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function updateClienteService(cliente_id, data) {
+export async function updateClienteService(cliente_id, data, manager = null) {
     try {
-        const clienteRepository = AppDataSource.getRepository(Cliente);
+        const { nombreCliente, tipoCliente } = data
+        const rutCliente = cleanRut(data.rutCliente)
+        if (nombreCliente === "") return [null, createErrorMessage("nombreCliente", "Datos inválidos")];
+        if (rutCliente === "") return [null, createErrorMessage("rutCliente", "Datos inválidos")];
+        if (tipoCliente === "") return [null, createErrorMessage("tipoCliente", "Datos inválidos")];
 
-        const cliente = await clienteRepository.findOne({
-            where: { cliente_id }
-        });
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
-        if (!cliente) {
+        const [cliente, errCliente] = await getClienteByService({ cliente_id })
+
+        if (errCliente) {
             return [null, createErrorMessage("cliente", "No encontrado")];
         }
-
-        if (data.rutCliente && data.rutCliente !== cliente.rutCliente) {
+        //si se entrega un rut, es distinto al actual y está en uso
+        if (rutCliente && rutCliente !== cleanRut(cliente.rutCliente)) {
             const existente = await clienteRepository.findOne({
-                where: { rutCliente: data.rutCliente }
+                where: { rutCliente: rutCliente }
             });
 
             if (existente) {
@@ -593,109 +671,318 @@ export async function updateClienteService(cliente_id, data) {
             }
         }
 
-        const updatedCliente = clienteRepository.merge(cliente, data);
-
-        await clienteRepository.save(updatedCliente);
+        await clienteRepository.update({ cliente_id }, { nombreCliente: nombreCliente, rutCliente: rutCliente, tipoCliente: tipoCliente, updatedAt: new Date() });
+        const [updatedCliente, errUpdate] = await getClienteByService({ cliente_id }, manager)
+        if (errUpdate) return [null, "Cliente no encontrado después de actualizar: " + errUpdate]
 
         return [updatedCliente, null];
 
     } catch (error) {
         console.error("Error al actualizar cliente:", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
-export async function registerClientService(cliente, supervisor) {
+/**
+ * Crea un cliente sin sede ni contacto, se utiliza para validar y crear clientes
+ * @param {*} cliente datos del cliente a crear. nombreCliente y rutCliente
+ * @param {*} clientePadre_id ID del cliente padre, si se entrega el cliente a crear es filial, sino el ID es nulo
+ * @returns 
+ */
+async function createCliente(cliente, clientePadre_id = null, manager = null) {
     try {
-        const clienteRepository = AppDataSource.getRepository(Cliente);
+        const { nombreCliente } = cliente
+        const rutCliente = cleanRut(cliente.rutCliente)
 
-        const { nombreCliente, rutCliente, nombreCompleto, rut, email, password, sede, contacto } = cliente;
+        if (!nombreCliente || !rutCliente) return [null, createErrorMessage("cliente", "Datos incompletos")]
 
-        //el cliente y supervisor no pueden tener el mismo rut
-        if (cliente.rutCliente === supervisor.rut) return [null, createErrorMessage("rut", "Rut duplicado")]
-
-        //comprobacion de campos únicos
-        const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente });
-        const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente });
-        const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente })
-
-        if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
-
-        if (supervisor.phone) {
-            const [existingPhoneUser, errPhone] = await getUserService({ phone: supervisor.phone })     //si un usuario ya lo tiene
-            const [phoneExistContacto, errPhoneContacto] = await getContactoByService({ phone: supervisor.phone })
-            if (existingPhoneUser || phoneExistContacto) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+        if (clientePadre_id) {
+            const [clientePadreVerif, errClientePadreVerif] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
+            if (errClientePadreVerif) return [null, errClientePadreVerif]
+            if (clientePadreVerif.tipoCliente !== "EMPRESA") return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
         }
 
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
+        const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente }, manager);
+        const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
+        const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
+        if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
+
+        //preparar los datos para crear el nuevo cliente
         const nuevoCliente = clienteRepository.create({
             nombreCliente: nombreCliente,
             rutCliente: rutCliente,
+            tipoCliente: clientePadre_id ? "FILIAL" : "EMPRESA",
+            clientePadre: clientePadre_id //nulo si el cliente padre no fue entregado
         });
 
-        //registrar en la tabla cliente
-        const clienteCreado = await clienteRepository.save(nuevoCliente)
-        const [rolCliente, errRol] = await getRolByNameService("Cliente")
-        const [perfilCreado, errPerfil] = await registerService(
-            {
-                nombreCompleto: nombreCompleto,
-                rut: rut,
-                email: email,
-                password: password,
-                rol_id: rolCliente.id
-            })
-        if (errPerfil) {
-            await clienteRepository.remove(clienteCreado)
-            return [null, errPerfil]
-        }
+        const clienteCreado = await clienteRepository.save(nuevoCliente);
 
-
-        const [sedeCreada, errSede] = await createSedeService(sede, clienteCreado.cliente_id);
-        if (errSede) {
-            await deleteUserService({ id: perfilCreado.id })
-            await clienteRepository.remove(clienteCreado)
-            return [null, errSede]
-        }
-
-
-        //registrar el contacto
-        const [contactoCreado, errContacto] = await createContactoService(contacto, clienteCreado.cliente_id)
-        if (errContacto) {
-            await deleteUserService({ id: perfilCreado.id })
-            await clienteRepository.remove(clienteCreado)
-            return [null, errContacto]
-        }
-
-        const dataSupervisor = {
-            nombreCompleto: supervisor.nombreCompleto,
-            rut: supervisor.rut,
-            email: supervisor.email,
-            password: supervisor.password,
-            phone: supervisor.phone,
-            rol_id: await getRolByNameService("Supervisor"),
-        }
-
-        //registrar un nuevo usuario como supervisor del nuevo cliente
-        const [usuarioSupervisor, errSupervisor] = await registerService(supervisor, nuevoCliente.cliente_id)
-        if (errSupervisor) {
-            await deleteUserService({ id: perfilCreado.id })
-            await clienteRepository.remove(clienteCreado)
-            return [null, errSupervisor];
-        }
-        /**
-         * Ante cualquier error se eliminará en cascada los datos ingresados, 
-         * para evitar espacio ocupado innecesariamente
-         */
-
-        return [{
-            Cliente: clienteCreado,
-            Contacto: contactoCreado,
-            usuarioSupervisor,
-        }, null]
-
+        return [clienteCreado, null];
 
     } catch (error) {
         console.error("Error al registrar un cliente", error);
-        return errorServer;
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
+
+/**
+ * Funcion para registrar un cliente o filial de forma simple, con la posibilidad de asignar un supervisor desde el registro, 
+ * pero sin necesidad de crear un perfil para el cliente o filial, ni asignar un contrato comercial al momento del registro
+ * @param {*} data datos correspondiente al cliente, sede y contacto de un cliente/filial
+ * @param {*} clientePadre_id ID de cliente padre, si se entrega el cliente a crear es filial, sino el ID es nulo
+ * @param {*} trabajador_id ID de trabajador a asignar como supervisor del cliente, este campo es opcional, si no se entrega el cliente se registrará sin supervisor asignado
+ * @returns datos registrados o mensaje de error, en caso de error se eliminarán los datos ingresados para evitar registros incompletos o espacio ocupado innecesariamente
+ */
+export async function registerClienteSimpleService(data, trabajador_id = null) {
+    try {
+        return await AppDataSource.transaction(async manager => {
+            //verificar que el trabajador exista antes de intentar registrar el cliente, para evitar registros incompletos
+
+
+            const { cliente, filial, sede, contacto } = data;
+
+            if (!cliente || !sede || !contacto) throw createErrorMessage("cliente/sede/contacto", "Datos incompletos")
+
+            let trabajador = null, errTrabajador = null
+            if (trabajador_id) {
+                [trabajador, errTrabajador] = await getORTrabajadorService({ id: trabajador_id });
+                if (errTrabajador) throw errTrabajador
+                if (trabajador.rol !== "trabajador") throw createErrorMessage("trabajador_id", "El trabajador entregado no califica para ser supervisor")
+            }
+            //el cliente, posible filial, posible trabajador y contacto a registrar no pueden tener el mismo rut
+            if ((filial && cleanRut(filial.rutCliente) === cleanRut(cliente.rutCliente)) ||                                                 //verificacion de filial para cliente
+                (trabajador && (cleanRut(cliente.rutCliente) === cleanRut(trabajador.rut) || cleanRut(trabajador.rut) === cleanRut(contacto.contacto_rut))) ||  //verificacion con trabajador para supervisor
+                cleanRut(cliente.rutCliente) === cleanRut(contacto.contacto_rut))                                                           //verificacion de contacto para cliente
+                throw createErrorMessage("rut", "Rut duplicado")
+
+
+            //verificar el rut con las sedes, que no esté registrado en una sede de otro cliente
+            const [existingSedeRut, errSedeRut] = await getSedeByService({ rutSecundario: cleanRut(cliente.rutCliente) }, manager)
+            if (existingSedeRut) throw createErrorMessage("rut", "Rut ya en uso")
+
+            if (filial && Object.keys(filial).length > 0) {
+                const [existingSedeRutFilial, errSedeRutFilial] = await getSedeByService({ rutSecundario: cleanRut(filial.rutCliente) }, manager)
+
+                if (existingSedeRutFilial) throw createErrorMessage("rut", "Rut ya en uso")
+            }
+
+
+            //registrar en la tabla cliente
+            const [clienteCreado, errClienteCreado] = await createCliente(cliente, null, manager)
+            if (errClienteCreado) throw errClienteCreado
+            console.log("=> Cliente registrado");
+
+            let filialCreada = null, errFilial = null
+            if (filial && Object.keys(filial).length > 0) {
+                //si se entrega una filial, se registra como cliente con clientePadre_id del cliente recién creado
+                [filialCreada, errFilial] = await createCliente(filial, clienteCreado.cliente_id, manager)
+                if (errFilial) {
+                    console.error("=> Error de registro");
+                    throw errFilial;
+                }
+            }
+            //registrar la sede del cliente
+            const [sedeCreada, errSede] = await createSedeService(sede, filialCreada ? filialCreada.cliente_id : clienteCreado.cliente_id, manager);
+            if (errSede) {
+                //await deleteUserService({ id: perfilCreado.id })
+                console.error("=> Error de registro");
+                throw errSede;
+
+            }
+            console.log("\t=> Sede registrada");
+
+            /*
+            const [rolCliente, errRol] = await getRolByNameService("Cliente")
+            const [perfilCreado, errPerfil] = await registerService(
+                {
+                    nombreCompleto: nombreCompleto,
+                    rut: rut,
+                    email: email,
+                    password: password,
+                    rol_id: rolCliente.id
+                })
+            if (errPerfil) {
+                return [null, errPerfil]
+            }
+            */
+
+            //registrar el contacto
+            const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, manager)
+            if (errContacto) {
+                //await deleteUserService({ id: perfilCreado.id })
+                console.error("=> Error de registro");
+                throw errContacto;
+
+            }
+            console.log("\t=> Contacto registrado");
+
+            //registrar un nuevo usuario como supervisor del nuevo cliente
+            let usuarioSupervisor = null, errSupervisor = null
+            if (trabajador_id) {
+                [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id, manager)
+                if (errSupervisor) {
+                    //await deleteUserService({ id: perfilCreado.id })
+                    console.error("=> Error de registro:", errSupervisor);
+                    throw errSupervisor;
+
+                }
+                console.log("\t=> Supervisor registrado");
+            }
+            if (!trabajador_id) {
+                console.log("\t=> No se asignó supervisor");
+            }
+
+            return [{
+                Cliente: clienteCreado,
+                Filial: filialCreada,
+                Sede: sedeCreada,
+                Contacto: contactoCreado,
+                usuarioSupervisor,
+            }, null]
+
+
+
+
+
+        })
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+    }
+}
+
+
+//Funciones compuestas para registro jerarquico
+
+/**
+ * Función para registrar un cliente o filial de forma jerárquica, con la posibilidad de asignar un supervisor desde el registro, pero sin necesidad de crear un perfil para el cliente o filial, ni asignar un contrato comercial al momento del registro, esta función se puede llamar recursivamente para registrar filiales anidadas
+ * @param {*} cliente datos básicos del cliente con posibles filiales (subClientes) anidadas
+ * @param {*} sedes Lista de sedes del cliente a registrar
+ * @param {*} clientePadre_id ID opcional de un cliente al que se es afiliado
+ * @param {*} manager espacio temporal en la base de datos
+ * @returns Lista de cliente agregado y todos sus componentes
+ */
+export async function registerClienteJerarquicoService(cliente, sedes, clientePadre_id = null, manager = null) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+
+            const { nombreCliente, rutCliente, filiales } = cliente
+            if (!nombreCliente || !rutCliente) throw createErrorMessage("nombreCliente/rutCliente", "Datos incompletos o repetidos")
+
+            const [clientePadre, errorPadre] = await createCliente({ nombreCliente, rutCliente }, clientePadre_id, transactionManager)
+            if (errorPadre) throw errorPadre
+
+            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
+            if (errSedes) throw errSedes
+
+
+            const filialResponse = []
+            if ((Array.isArray(filiales) && filiales.length > 0)) {
+                for (const filial of filiales) {
+                    const [filialesCreadas, errFiliales] = await registerClienteJerarquicoService(filial, filial.sedes, clientePadre.cliente_id, transactionManager)
+                    if (errFiliales) throw errFiliales
+                    filialResponse.push(filialesCreadas)
+                }
+            }
+
+            return [
+                {
+                    ...clientePadre,
+                    sedes: sedesCreadas,
+                    filiales: filialResponse
+                }
+                , null]
+
+        }
+
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+    }
+}
+export async function registerSedesJerarquicoService(sedes, cliente_id, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const sedesCreadas = []
+
+            for (const sede of sedes || []) {
+                //extraer los datos de la sede a agregar
+                const { nombre_sede, direccion, personalSolicitado, trabajadores, contactos } = sede
+                if (!nombre_sede || !direccion) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
+
+                //registrar en el espacio temporal la sede recorrida
+                const [sedeCreada, errorSedes] = await createSedeService(
+                    { nombre_sede, direccion, personalSolicitado, },
+                    cliente_id,
+                    transactionManager)
+                if (errorSedes) throw errorSedes
+
+                //constante que almacenará la una sede y la lista de contactos y supervisores
+                const sedeResponse = {
+                    ...sedeCreada,
+                    supervisores: [],
+                    contactos: []
+                }
+
+                //registrar los contactos de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
+                const [contactosCreados, errContactos] = await registerContactoJerarquicoService(contactos, sedeCreada.sede_id, transactionManager)
+                if (errContactos) throw errContactos
+                sedeResponse.contactos = contactosCreados
+
+                //registrar los supervisores de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
+                const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, transactionManager)
+                if (errSupervisores) throw errSupervisores
+                sedeResponse.supervisores = supervisores
+
+            }
+            return [sedesCreadas, null]
+        }
+
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+
+    }
+}
+export async function registerContactoJerarquicoService(contactos, sede_id, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const contactosCreados = []
+            //recorrer la lista de contactos entregada
+            for (const contacto of contactos || []) {
+                const { nombreContacto, contacto_rut, email, phone } = contacto
+                const [contactoCreado, errContacto] = await createContactoService(
+                    { nombreContacto, contacto_rut, email, phone },
+                    sede_id,
+                    transactionManager)
+                if (errContacto) throw errContacto
+
+                contactosCreados.push(contactoCreado)
+            }
+            return [contactosCreados, null]
+        }
+
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
     }
 }

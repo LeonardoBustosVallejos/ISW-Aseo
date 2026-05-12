@@ -3,6 +3,7 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Contacto from "../entity/contacto.entity.js";
+import { getContactoByService } from "./cliente.service.js";
 
 
 export async function getTrabajadoresService() {
@@ -43,6 +44,37 @@ export async function getTrabajadorService(id) {
     }
 }
 
+/**
+ * Busqueda estricta OR para obtener un trabajador por id, rut o email. 
+ * Se puede usar cualquiera de estos criterios de búsqueda, pero se recomienda usar el id para una búsqueda más rápida y precisa.
+ * @param data datos de búsqueda, debe contener al menos uno de los siguientes: id, rut o email
+ * @returns trabajador encontrado o mensaje de error si no se encuentra o si no se proporcionó un criterio de búsqueda válido
+ */
+export async function getORTrabajadorService(data) {
+    try {
+        const { id, rut, email } = data;
+
+        if (!id && !rut && !email) return [null, "Debe proporcionar al menos un criterio de búsqueda"]
+
+        const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
+
+        const where = [];
+        if (id) where.push({ id });
+        if (rut) where.push({ rut });
+        if (email) where.push({ email })
+
+        const trabajador = await TrabajadoresRepository.findOne({ where });
+
+        if (!trabajador) return [null, "No se encontró el trabajador"];
+
+        return [trabajador, null];
+    }
+    catch (error) {
+        console.error("Error al obtener el trabajador:", error);
+        return [null, "Error interno del servidor"];
+    }
+}
+
 export async function updateTrabajadorService(id, body) {
     try {
         const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
@@ -53,21 +85,12 @@ export async function updateTrabajadorService(id, body) {
         });
         if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
-        const existingEmail = await trabajadoresRepository.findOne({
-            where: { email: body.email },
-        });
-
-        const existingContactoEmail = await contactoRepository.findOne({
-            where: { email: body.email },
-        });
-
-        if (
-            (existingEmail && existingEmail.id !== trabajadorFound.id) ||
-            existingContactoEmail
-        ) {
-            return [null, "Email ya en uso"];
+        //verificar que el correo electrónico no esté registrado
+        if (body.email) {
+            const existingEmail = await trabajadoresRepository.findOne({ where: [{ email: body.email }] })
+            const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: body.email }] })
+            if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
         }
-
         const dataTrabajadorUpdate = {
             grupo: body.grupo,
             antecedentes: body.antecedentes,

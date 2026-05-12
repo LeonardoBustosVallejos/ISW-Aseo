@@ -78,6 +78,7 @@ async function createSedes() {
     await Promise.all([
       SedeRepository.save(
         SedeRepository.create({
+          nombre_sede: "Nombre Ciudad 1",
           direccion: "Calle Genérica 111, Concepción",
           personalSolicitado: 12,
           cliente: 1
@@ -85,6 +86,7 @@ async function createSedes() {
       ),
       SedeRepository.save(
         SedeRepository.create({
+          nombre_sede: "Nombre Ciudad 2",
           direccion: "Calle Genérica 111, Chillán",
           personalSolicitado: 12,
           cliente: 1
@@ -113,6 +115,7 @@ async function createContactos() {
           nombreContacto: "Contacto numero 1",
           email: "contacto1@gmail.com",
           phone: "+56 977777777",
+          cliente: 1,
           sede: 1
         }),
       ),
@@ -122,6 +125,7 @@ async function createContactos() {
           nombreContacto: "Contacto numero 2",
           email: "contacto2@gmail.com",
           phone: "+56 988888888",
+          cliente: 1,
           sede: 2
         })
       ),

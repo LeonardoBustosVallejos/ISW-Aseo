@@ -7,7 +7,8 @@ import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
-import { getClienteByService, getContactoByService } from "./cliente.service.js";
+import { getClienteByService, getContactoByService, getSedeByService } from "./cliente.service.js";
+import { cleanRut } from "../handlers/extras.js";
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
@@ -19,12 +20,7 @@ const createErrorMessage = (dataInfo, message) => ({
  * @param {string} rut rut a transformar
  * @returns rut en formato xxxxxxxx-y
  */
-function cleanRut(rut) {
-  return rut
-    .replace(/\./g, "")                 //quitar puntos
-    .replace(/^0+/, "")                 //quitar 0 inicial
-    .toUpperCase()                     //reemplazar k minúscula por mayúscula si tiene
-}
+
 export async function loginService(user) {
   try {
     const userRepository = AppDataSource.getRepository(User);
@@ -33,7 +29,7 @@ export async function loginService(user) {
 
     const userFound = await userRepository.findOne({
       relations: ["rol"],
-      where: { email: email }
+      where: { email: email, state: "ACTIVADO" },
     });
 
     if (!userFound) {
@@ -68,42 +64,37 @@ export async function loginService(user) {
 /**
  * Solo el administrador puede registrar nuevos usuarios
 */
-export async function registerService(nuevoUsuario, cliente_id) {
+export async function registerService(nuevoUsuario, sede_id = null, manager = null) {
   try {
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = manager ?
+      manager.getRepository(User) : AppDataSource.getRepository(User);
 
-    //si se entrego un id de cliente entonces verificar que ese cliente exista
-    if (cliente_id) {
-      const [existingClient, errCliente] = await getClienteByService({ cliente_id: cliente_id })
-      if (errCliente) return errCliente
+    //si se entrego un id de sede entonces verificar que esa sede exista
+    if (sede_id) {
+      const [existingClient, errCliente] = await getSedeByService({ sede_id: sede_id }, manager)
+      if (errCliente) return [null, errCliente]
     }
 
     const [nuevoRol, errRol] = await getRolByIdService(nuevoUsuario.rol_id)
-    if (errRol) return errRol;
+    if (errRol) return [null, errRol];
 
     //verificar que el los datos del nuevo usuario no estén en un contacto o usuario
-    const [existingEmailContacto, errEmailContacto] = await getContactoByService({ email: nuevoUsuario.email })
-    const [existingEmailUser, errEmailUser] = await getUserService({ email: nuevoUsuario.email });
+    const [existingEmailContacto, errEmailContacto] = await getContactoByService({ email: nuevoUsuario.email }, manager)
+    const [existingEmailUser, errEmailUser] = await getUserService({ email: nuevoUsuario.email }, manager);
 
     if (existingEmailUser || existingEmailContacto) {
-      console.log(nuevoUsuario.email, existingEmailUser || existingEmailContacto);
-
       return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
     }
 
-    const [existingRutUser, errRutUser] = await getUserService({ rut: cleanRut(nuevoUsuario.rut) });
-    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: cleanRut(nuevoUsuario.rut) })
-    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut) })
+    const [existingRutUser, errRutUser] = await getUserService({ rut: cleanRut(nuevoUsuario.rut) }, manager);
+    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: cleanRut(nuevoUsuario.rut) }, manager)
+    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut) }, manager)
 
 
-    if (existingRutUser || existingRutContacto || existingRutCliente) {
-      console.log(existingRutUser || existingRutContacto || existingRutCliente);
-
-      return [null, createErrorMessage("rut", "Rut ya en uso")];
-    }
+    if (existingRutUser || existingRutContacto || existingRutCliente) return [null, createErrorMessage("rut", "Rut ya en uso")];
     if (nuevoUsuario.phone) {
-      const [existingPhoneContacto, errPhoneContacto] = await getContactoByService({ phone: nuevoUsuario.phone })
-      const [existingPhoneUser, errPhoneUser] = await getUserService({ phone: nuevoUsuario.phone })
+      const [existingPhoneContacto, errPhoneContacto] = await getContactoByService({ phone: nuevoUsuario.phone }, manager)
+      const [existingPhoneUser, errPhoneUser] = await getUserService({ phone: nuevoUsuario.phone }, manager)
 
       if (existingPhoneUser || existingPhoneContacto) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
     }
@@ -116,7 +107,7 @@ export async function registerService(nuevoUsuario, cliente_id) {
       password: await encryptPassword(nuevoUsuario.password),
       phone: nuevoUsuario.phone || null,
       rol: nuevoUsuario.rol_id,
-      cliente: cliente_id || null
+      sede: sede_id
     });
 
 

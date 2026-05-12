@@ -16,7 +16,25 @@ const rolSchema = new EntitySchema({
             nullable: false,
             unique: true,
         },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
     },
+    relations: {
+        users: {
+            type: "one-to-many",
+            target: "User",
+            inverseSide: "rol"
+        }
+    }
 });
 
 export default rolSchema;

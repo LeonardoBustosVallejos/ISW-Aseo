@@ -9,6 +9,17 @@ const SedeSchema = new EntitySchema({
             type: "int",
             generated: true
         },
+        rutSecundario: {
+            type: "varchar",
+            length: 15,
+            nullable: true,
+            unique: true,
+        },
+        nombre_sede: {
+            type: "varchar",
+            length: 255,
+            nullable: false,
+        },
         direccion: {
             type: "varchar",
             length: 255,
@@ -21,6 +32,17 @@ const SedeSchema = new EntitySchema({
         personalAsignado: {
             type: "int",
             default: 0
+        },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
         },
     },
     relations: {

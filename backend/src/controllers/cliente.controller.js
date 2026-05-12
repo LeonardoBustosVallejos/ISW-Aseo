@@ -1,10 +1,10 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClientService } from "../services/cliente.service.js";
-import { registerClienteValidation } from "../validations/cliente.validation.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService } from "../services/cliente.service.js";
+import { registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
     try {
-        const [clientes, err] = await getClientesService()
+        const [clientes, err] = await listarClientesService()
 
         if (err) return handleErrorClient(res, 404, err)
 
@@ -31,22 +31,37 @@ export async function getContactos(req, res) {
         handleErrorServer(res, 500, error.message);
     }
 }
+
 export async function registerCliente(req, res) {
     try {
 
         const { error } = registerClienteValidation.validate(req.body);
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
 
-        const { cliente, supervisor } = req.body;
+        const { cliente, filial, sede, contacto, trabajador_id } = req.body;
 
 
 
-        const [data, errorNewCliente] = await registerClientService(cliente, supervisor)
+        const [data, errorNewCliente] = await registerClienteSimpleService({ cliente, filial, sede, contacto }, trabajador_id)
 
         if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 
-        return handleSuccess(res, 201, "Datos del cliente registrados con éxito", data);
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
 
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function registrarClienteJerarquico(req, res) {
+    try {
+        const { cliente, sedes } = req.body;
+        const { error } = registerClienteJerarquicoValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+        const [data, errorNewCliente] = await registerClienteJerarquicoService(cliente, sedes)
+        if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
+
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
     } catch (error) {
         handleErrorServer(res, 500, error.message);
     }

@@ -19,8 +19,24 @@ const ClienteSchema = new EntitySchema({
         rutCliente: {
             type: "varchar",
             length: 15,
-            nullable: false,
+            nullable: true,        //si es filial, el rut es opcional
             unique: true,
+        },
+        tipoCliente: {
+            type: "enum",
+            enum: ["EMPRESA", "FILIAL"],
+            default: "EMPRESA"
+        },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
         },
     },
     indices: [{
@@ -35,6 +51,34 @@ const ClienteSchema = new EntitySchema({
             target: "Sede",
             inverseSide: "cliente"
         },
+        /**
+         * Relación recursiva para representar grupos empresariales,
+         * donde un cliente puede ser filial de otro cliente.
+         *
+         * Cada cliente mantiene su propio RUT.
+         *
+         * Ejemplo:
+         * cliente
+         *  ├── atributos
+         *  ├── sedes[]
+         *  │     └── contactos[]
+         *  └── filiales[]
+         *      ├── atributos
+         *      └── sedes[]
+         *              └── contactos[]
+         */
+        clientePadre: {
+            type: "many-to-one",
+            target: "Cliente",
+            joinColumn: { name: "cliente_padre_id" },
+            nullable: true,
+            onDelete: "CASCADE"
+        },
+        filiales: {
+            type: "one-to-many",
+            target: "Cliente",
+            inverseSide: "clientePadre"
+        }
     }
 })
 export default ClienteSchema

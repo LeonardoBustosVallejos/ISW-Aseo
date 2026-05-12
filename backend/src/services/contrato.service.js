@@ -4,7 +4,7 @@ import Clientes from "../entity/cliente.entity.js";
 import UserSchema from "../entity/user.entity.js";
 
 
-export async function createContratoService(data) {
+export async function createContratoComercialService(data, sede_id, cliente_id) {
     try {
         const contratoRepository = AppDataSource.getRepository(Contrato);
         const clienteRepository = AppDataSource.getRepository(Clientes);
