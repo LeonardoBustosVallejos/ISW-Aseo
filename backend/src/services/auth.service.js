@@ -87,8 +87,8 @@ export async function registerService(nuevoUsuario, sede_id = null, manager = nu
     }
 
     const [existingRutUser, errRutUser] = await getUserService({ rut: cleanRut(nuevoUsuario.rut) }, manager);
-    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: cleanRut(nuevoUsuario.rut), manager })
-    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut), manager })
+    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: cleanRut(nuevoUsuario.rut) }, manager)
+    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut) }, manager)
 
 
     if (existingRutUser || existingRutContacto || existingRutCliente) return [null, createErrorMessage("rut", "Rut ya en uso")];

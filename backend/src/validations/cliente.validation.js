@@ -47,7 +47,7 @@ export const contactoValidation = Joi.object({
         .min(8)
         .max(15)
         .pattern(/^(?:\+56|56)?\s?(?:9\d{8}|[2-7]\d{8})$/)
-        .required()
+        .default(null)
         .messages({
             "string.base": "El número telefónico debe contener entre 11 y 15 dígitos,opcionalmente con +.",
             "string.min": "El número telefónico debe tener al menos 8 caracteres.",
@@ -70,6 +70,7 @@ export const sedeValidation = Joi.object({
         .min(9)
         .max(10)
         .pattern(/^(\d{7,8}-[\dkK])$/)
+        .default(null)
         .messages({
             "string.empty": "El rut no puede estar vacío.",
             "string.base": "El rut debe ser de tipo string.",
@@ -164,7 +165,7 @@ export const clienteValidation = Joi.object({
     nombreCliente: Joi.string()
         .min(3)
         .max(100)
-        .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ.\s]+$/)
+        .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9&().,\-\s]+$/)
         .messages({
             "string.empty": "El nombre de la empresa no puede estar vacío.",
             "any.required": "El nombre de la empresa es obligatorio.",
@@ -193,3 +194,76 @@ export const registerClienteValidation = Joi.object({
     contacto: contactoValidation,
     trabajador_id: Joi.number()
 })
+
+
+//validaciones para registro jerarquico
+
+export const sedeJerarquicoValidation = Joi.object({
+    nombre_sede: Joi.string()
+        .min(3)
+        .max(100)
+        .required()
+        .messages({
+            "string.empty": "El nombre de la sede no puede estar vacío.",
+            "any.required": "El nombre de la sede es obligatorio.",
+            "string.min": "El nombre de la sede debe tener al menos 3 caracteres.",
+            "string.max": "El nombre de la sede debe tener como máximo 100 caracteres.",
+        }),
+    rutSecundario: Joi.string()
+        .min(9)
+        .max(10)
+        .pattern(/^(\d{7,8}-[\dkK])$/)
+        .default(null)
+        .messages({
+            "string.empty": "El rut no puede estar vacío.",
+            "string.base": "El rut debe ser de tipo string.",
+            "string.min": "El rut debe tener como mínimo 9 caracteres.",
+            "string.max": "El rut debe tener como máximo 10 caracteres.",
+            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+        }),
+    direccion: Joi.string()
+        .min(5)
+        .required()
+        .pattern(/^[a-záéíóúA-ZÁÉÍÓÚÜñÑ0-9.,\s]+$/)
+        .messages({
+            "string.empty": "La dirección no puede estar vacía.",
+            "any.required": "La dirección es obligatoria.",
+            "string.min": "La dirección debe tener al menos 5 caracteres.",
+            "string.pattern.base": "La direccion de la empresa solo puede contener letras, espacios y puntos.",
+        }),
+    personalSolicitado: Joi.number()
+        .min(1)
+        .required()
+        .messages({
+            "any.required": "La cantidad de personal requerida es obligatoria.",
+            "string.min": "Se debe solicitar al menos una persona.",
+        }),
+    contactos: Joi.array()
+        .items(contactoValidation)
+        .min(1).required(),
+    trabajadores: Joi.array()
+        .items(Joi.number().integer().positive())
+        .default([]),
+})
+
+
+export const clienteJerarquicoValidation = clienteValidation.keys({
+
+    sedes: Joi.array()
+        .items(sedeJerarquicoValidation)
+        .default([]),
+
+    filiales: Joi.array()
+        .items(Joi.link('#clienteJerarquico'))
+        .default([])
+}).id('clienteJerarquico')
+
+export const registerClienteJerarquicoValidation = Joi.object({
+
+    cliente: clienteJerarquicoValidation
+        .required(),
+
+    sedes: Joi.array()
+        .items(sedeJerarquicoValidation)
+        .default([])
+}).id("clienteJerarquicoValidation")

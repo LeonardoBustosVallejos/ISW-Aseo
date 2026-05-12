@@ -5,7 +5,7 @@ import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
 import { cleanRut, createErrorMessage, createSimpleMessage } from "../handlers/extras.js";
 import User from "../entity/user.entity.js";
-import { asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
+import { asignarSupervisorJerarquicoService, asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
 import { registerService } from "./auth.service.js";
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
@@ -19,7 +19,6 @@ import { getORTrabajadorService } from "./trabajador.service.js";
  * where = [] OR
  */
 
-const errorServer = [null, "Error interno del servidor"]
 /**
  * funcion que aplica el uso de ILike() para determinar si un string contiene un substring
  * se utiliza en funciones de busqueda
@@ -48,7 +47,7 @@ export async function getContactosService(manager = null) {
     } catch (error) {
         console.error("Error al obtener contactos:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -85,7 +84,7 @@ export async function getContactoByService(query, manager = null) {
     } catch (error) {
         console.error("Error al obtener contacto:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -124,7 +123,7 @@ export async function findContactosByService(query, manager = null) {
     } catch (error) {
         console.error("Error al obtener contacto:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -187,7 +186,7 @@ export async function createContactoService(contacto, sede_id, manager = null) {
     } catch (error) {
         console.error("Error al registrar un contacto", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 export async function deleteContactoService(contacto_id, manager = null) {
@@ -214,7 +213,7 @@ export async function deleteContactoService(contacto_id, manager = null) {
     } catch (error) {
         console.error("Error al eliminar un contacto:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 export async function updateContactoService(contacto_id, data, manager = null) {
@@ -277,7 +276,7 @@ export async function updateContactoService(contacto_id, data, manager = null) {
     } catch (error) {
         console.error("Error al actualizar contacto:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -300,7 +299,7 @@ export async function getSedesService(manager = null) {
     } catch (error) {
         console.error("Error al obtener sedes:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -339,7 +338,7 @@ export async function getSedeByService(query, manager = null) {
     } catch (error) {
         console.error("Error al obtener sede:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -348,7 +347,7 @@ export async function getSedeByService(query, manager = null) {
  * @param {} query 
  * @returns 
  */
-export async function findSedesByService(query, manager) {
+export async function findSedesByService(query, manager = null) {
     try {
         const { sede_id, direccion, cliente_id, rutSecundario } = query;
 
@@ -380,7 +379,7 @@ export async function findSedesByService(query, manager) {
     } catch (error) {
         console.error("Error al buscar sedes:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -414,7 +413,7 @@ export async function createSedeService(sede, cliente_id, manager = null) {
             nombre_sede: nombre_sede,
             direccion: direccion,
             personalSolicitado: personalSolicitado,
-            rutSecundario: cleanRut(rutSecundario),
+            rutSecundario: cleanRut(rutSecundario) || null,
             cliente: cliente_id
         });
 
@@ -425,7 +424,7 @@ export async function createSedeService(sede, cliente_id, manager = null) {
     } catch (error) {
         console.error("Error al crear sede:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -467,7 +466,7 @@ export async function updateSedeService(sede_id, data, manager = null) {
                 nombre_sede: nombre_sede,
                 direccion: direccion,
                 personalSolicitado: personalSolicitado,
-                rutSecundario: rutSecundario,
+                rutSecundario: rutSecundario || null,
                 updatedAt: new Date(),
             });
 
@@ -480,7 +479,7 @@ export async function updateSedeService(sede_id, data, manager = null) {
     } catch (error) {
         console.error("Error al actualizar sede:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -509,7 +508,7 @@ export async function deleteSedeService(sede_id, manager = null) {
     } catch (error) {
         console.error("Error al eliminar sede:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 //funciones relacionadas a los clientes
@@ -531,7 +530,7 @@ export async function getClientesService(manager = null) {
     } catch (error) {
         console.error("Error al obtener clientes:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -555,7 +554,7 @@ export async function listarClientesService(manager = null) {
     } catch (error) {
         console.error("Error al obtener clientes:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -586,7 +585,7 @@ export async function getClienteByService(query, manager = null) {
     } catch (error) {
         console.error("Error al obtener el cliente:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 /**
@@ -594,7 +593,7 @@ export async function getClienteByService(query, manager = null) {
  * @param query datos correspondientes a los campos de un contacto, con los de sede anidados
  * @returns lista de contactos, no necesita coincidir en todos o ser igual totalmente
  */
-export async function findClienteByService(query, manager) {
+export async function findClienteByService(query, manager = null) {
     try {
         const clienteRepository = manager ?
             manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
@@ -621,7 +620,7 @@ export async function findClienteByService(query, manager) {
     } catch (error) {
         console.error("Error al obtener el cliente:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -641,7 +640,7 @@ export async function deleteCliente(cliente_id, manager = null) {
     } catch (error) {
         console.error("Error al eliminar un cliente:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -681,7 +680,53 @@ export async function updateClienteService(cliente_id, data, manager = null) {
     } catch (error) {
         console.error("Error al actualizar cliente:", error);
         if (manager) throw error
-        return errorServer
+        return [null, "Error interno del servidor"]
+    }
+}
+
+/**
+ * Crea un cliente sin sede ni contacto, se utiliza para validar y crear clientes
+ * @param {*} cliente datos del cliente a crear. nombreCliente y rutCliente
+ * @param {*} clientePadre_id ID del cliente padre, si se entrega el cliente a crear es filial, sino el ID es nulo
+ * @returns 
+ */
+async function createCliente(cliente, clientePadre_id = null, manager = null) {
+    try {
+        const { nombreCliente } = cliente
+        const rutCliente = cleanRut(cliente.rutCliente)
+
+        if (!nombreCliente || !rutCliente) return [null, createErrorMessage("cliente", "Datos incompletos")]
+
+        if (clientePadre_id) {
+            const [clientePadreVerif, errClientePadreVerif] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
+            if (errClientePadreVerif) return [null, errClientePadreVerif]
+            if (clientePadreVerif.tipoCliente !== "EMPRESA") return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+        }
+
+        const clienteRepository = manager ?
+            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
+
+        const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente }, manager);
+        const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
+        const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
+        if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
+
+        //preparar los datos para crear el nuevo cliente
+        const nuevoCliente = clienteRepository.create({
+            nombreCliente: nombreCliente,
+            rutCliente: rutCliente,
+            tipoCliente: clientePadre_id ? "FILIAL" : "EMPRESA",
+            clientePadre: clientePadre_id //nulo si el cliente padre no fue entregado
+        });
+
+        const clienteCreado = await clienteRepository.save(nuevoCliente);
+
+        return [clienteCreado, null];
+
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
     }
 }
 
@@ -809,52 +854,135 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
     } catch (error) {
         console.error("Error al registrar un cliente", error);
         if (Array.isArray(error)) return error;
-        return errorServer
+        return [null, "Error interno del servidor"]
     }
 }
 
+
+//Funciones compuestas para registro jerarquico
+
 /**
- * Crea un cliente sin sede ni contacto, se utiliza para validar y crear clientes
- * @param {*} cliente datos del cliente a crear
- * @param {*} clientePadre_id ID del cliente padre, si se entrega el cliente a crear es filial, sino el ID es nulo
- * @returns 
+ * Función para registrar un cliente o filial de forma jerárquica, con la posibilidad de asignar un supervisor desde el registro, pero sin necesidad de crear un perfil para el cliente o filial, ni asignar un contrato comercial al momento del registro, esta función se puede llamar recursivamente para registrar filiales anidadas
+ * @param {*} cliente datos básicos del cliente con posibles filiales (subClientes) anidadas
+ * @param {*} sedes Lista de sedes del cliente a registrar
+ * @param {*} clientePadre_id ID opcional de un cliente al que se es afiliado
+ * @param {*} manager espacio temporal en la base de datos
+ * @returns Lista de cliente agregado y todos sus componentes
  */
-async function createCliente(cliente, clientePadre_id = null, manager = null) {
+export async function registerClienteJerarquicoService(cliente, sedes, clientePadre_id = null, manager = null) {
     try {
-        const { nombreCliente } = cliente
-        const rutCliente = cleanRut(cliente.rutCliente)
 
-        if (!nombreCliente || !rutCliente) return [null, createErrorMessage("cliente", "Datos incompletos")]
+        const execute = async (transactionManager) => {
 
-        if (clientePadre_id) {
-            const [clientePadreVerif, errClientePadreVerif] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
-            if (errClientePadreVerif) return [null, errClientePadreVerif]
-            if (clientePadreVerif.tipoCliente !== "EMPRESA") return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+
+            const { nombreCliente, rutCliente, filiales } = cliente
+            if (!nombreCliente || !rutCliente) throw createErrorMessage("nombreCliente/rutCliente", "Datos incompletos o repetidos")
+
+            const [clientePadre, errorPadre] = await createCliente({ nombreCliente, rutCliente }, clientePadre_id, transactionManager)
+            if (errorPadre) throw errorPadre
+
+            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
+            if (errSedes) throw errSedes
+
+
+            const filialResponse = []
+            if ((Array.isArray(filiales) && filiales.length > 0)) {
+                for (const filial of filiales) {
+                    const [filialesCreadas, errFiliales] = await registerClienteJerarquicoService(filial, filial.sedes, clientePadre.cliente_id, transactionManager)
+                    if (errFiliales) throw errFiliales
+                    filialResponse.push(filialesCreadas)
+                }
+            }
+
+            return [
+                {
+                    ...clientePadre,
+                    sedes: sedesCreadas,
+                    filiales: filialResponse
+                }
+                , null]
+
         }
 
-        const clienteRepository = manager ?
-            manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
+        if (manager) return await execute(manager)
 
-        const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente }, manager);
-        const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
-        const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
-        if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
-
-        //preparar los datos para crear el nuevo cliente
-        const nuevoCliente = clienteRepository.create({
-            nombreCliente: nombreCliente,
-            rutCliente: rutCliente,
-            tipoCliente: clientePadre_id ? "FILIAL" : "EMPRESA",
-            clientePadre: clientePadre_id //nulo si el cliente padre no fue entregado
-        });
-
-        const clienteCreado = await clienteRepository.save(nuevoCliente);
-
-        return [clienteCreado, null];
-
+        return await AppDataSource.transaction(execute)
     } catch (error) {
         console.error("Error al registrar un cliente", error);
-        if (manager) throw error
-        return errorServer
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+    }
+}
+export async function registerSedesJerarquicoService(sedes, cliente_id, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const sedesCreadas = []
+
+            for (const sede of sedes || []) {
+                //extraer los datos de la sede a agregar
+                const { nombre_sede, direccion, personalSolicitado, trabajadores, contactos } = sede
+                if (!nombre_sede || !direccion) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
+
+                //registrar en el espacio temporal la sede recorrida
+                const [sedeCreada, errorSedes] = await createSedeService(
+                    { nombre_sede, direccion, personalSolicitado, },
+                    cliente_id,
+                    transactionManager)
+                if (errorSedes) throw errorSedes
+
+                //constante que almacenará la una sede y la lista de contactos y supervisores
+                const sedeResponse = {
+                    ...sedeCreada,
+                    supervisores: [],
+                    contactos: []
+                }
+
+                //registrar los contactos de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
+                const [contactosCreados, errContactos] = await registerContactoJerarquicoService(contactos, sedeCreada.sede_id, transactionManager)
+                if (errContactos) throw errContactos
+                sedeResponse.contactos = contactosCreados
+
+                //registrar los supervisores de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
+                const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, transactionManager)
+                if (errSupervisores) throw errSupervisores
+                sedeResponse.supervisores = supervisores
+
+            }
+            return [sedesCreadas, null]
+        }
+
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+
+    }
+}
+export async function registerContactoJerarquicoService(contactos, sede_id, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const contactosCreados = []
+            //recorrer la lista de contactos entregada
+            for (const contacto of contactos || []) {
+                const { nombreContacto, contacto_rut, email, phone } = contacto
+                const [contactoCreado, errContacto] = await createContactoService(
+                    { nombreContacto, contacto_rut, email, phone },
+                    sede_id,
+                    transactionManager)
+                if (errContacto) throw errContacto
+
+                contactosCreados.push(contactoCreado)
+            }
+            return [contactosCreados, null]
+        }
+
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
     }
 }

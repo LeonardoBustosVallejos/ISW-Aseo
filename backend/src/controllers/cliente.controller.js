@@ -1,6 +1,6 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService } from "../services/cliente.service.js";
-import { registerClienteValidation } from "../validations/cliente.validation.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService } from "../services/cliente.service.js";
+import { registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
     try {
@@ -48,6 +48,20 @@ export async function registerCliente(req, res) {
 
         return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
 
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function registrarClienteJerarquico(req, res) {
+    try {
+        const { cliente, sedes } = req.body;
+        const { error } = registerClienteJerarquicoValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+        const [data, errorNewCliente] = await registerClienteJerarquicoService(cliente, sedes)
+        if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
+
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
     } catch (error) {
         handleErrorServer(res, 500, error.message);
     }

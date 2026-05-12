@@ -58,9 +58,14 @@ const ClienteSchema = new EntitySchema({
          * Cada cliente mantiene su propio RUT.
          *
          * Ejemplo:
-         * Empresa X SpA (matriz)
-         * ├── Empresa X Concepción SpA
-         * └── Empresa X Chillán SpA
+         * cliente
+         *  ├── atributos
+         *  ├── sedes[]
+         *  │     └── contactos[]
+         *  └── filiales[]
+         *      ├── atributos
+         *      └── sedes[]
+         *              └── contactos[]
          */
         clientePadre: {
             type: "many-to-one",

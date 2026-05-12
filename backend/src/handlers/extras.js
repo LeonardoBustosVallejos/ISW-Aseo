@@ -8,6 +8,8 @@ export const createSimpleMessage = (message) => ({
 })
 
 export function cleanRut(rut) {
+    if (!rut)
+        return "";
     return rut
         .replace(/\./g, "")                 //quitar puntos
         .replace(/^0+/, "")                 //quitar 0 inicial
