@@ -28,7 +28,7 @@ import { getORTrabajadorService } from "./trabajador.service.js";
 const contiene = (dato) => { return ILike(`%${dato}%`) }
 
 
-//Funciones relacionadas a Contactos
+//Funciones CRUD relacionadas a Contactos
 /**
  * 
  * @returns todos los contactos
@@ -280,7 +280,7 @@ export async function updateContactoService(contacto_id, data, manager = null) {
     }
 }
 
-//funciones relacionadas a las sedes
+//funciones CRUD relacionadas a las sedes
 export async function getSedesService(manager = null) {
     try {
         const sedeRepository = manager ?
@@ -511,7 +511,7 @@ export async function deleteSedeService(sede_id, manager = null) {
         return [null, "Error interno del servidor"]
     }
 }
-//funciones relacionadas a los clientes
+//funciones CRUD relacionadas a los clientes
 
 /**
  * Muestra todos los clientes, se prioriza los tipo EMPRESA, ya que las filiales están anidadas en estas
@@ -729,7 +729,13 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
         return [null, "Error interno del servidor"]
     }
 }
+/*=====FIN FUNCIONES CRUD======*/
 
+
+/**
+ * Funciones con Simple en el nombre son funciones que realizan un proceso sin jerarquias
+ * Son utilizadas principalmente para pruebas
+ */
 
 /**
  * Funcion para registrar un cliente o filial de forma simple, con la posibilidad de asignar un supervisor desde el registro, 
@@ -851,6 +857,42 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
 
 
         })
+    } catch (error) {
+        console.error("Error al registrar un cliente", error);
+        if (Array.isArray(error)) return error;
+        return [null, "Error interno del servidor"]
+    }
+}
+
+export async function registerSedeSimpleService(sede, contacto, cliente_id, trabajador_id = null, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const { nombre_sede, direccion, rutSecundario, personalSolicitado } = sede
+            if (!nombre_sede || !direccion || !cliente_id) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
+
+            //no se hacen validaciones porque estan dentro de la funcion createSedeService
+            const [sedeCreada, errSede] = await createSedeService(sede, cliente_id, transactionManager)
+            if (errSede) throw errSede
+
+            const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, transactionManager)
+            if (errContacto) throw errContacto
+
+            let usuarioSupervisor = null, errSupervisor = null
+            if (trabajador_id) {
+                [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id, transactionManager)
+                if (errSupervisor) throw errSupervisor
+            }
+
+            return [{
+                ...sedeCreada,
+                contacto: contactoCreado,
+                supervisor: usuarioSupervisor
+            }, null]
+
+        }
+
+        if (manager) return await execute(manager)
+        return AppDataSource.transaction(execute)
     } catch (error) {
         console.error("Error al registrar un cliente", error);
         if (Array.isArray(error)) return error;

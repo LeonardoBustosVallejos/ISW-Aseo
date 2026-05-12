@@ -1,6 +1,6 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService } from "../services/cliente.service.js";
-import { registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, createSedeService, registerSedeSimpleService } from "../services/cliente.service.js";
+import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
     try {
@@ -16,6 +16,21 @@ export async function getClientes(req, res) {
     }
 }
 
+export async function createSede(req, res) {
+    try {
+        const { error } = createSedeValidation.validate(req.body);
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const { cliente_id, sede, contacto, trabajador_id } = req.body
+
+        const [data, err] = await registerSedeSimpleService(sede, contacto, cliente_id, trabajador_id)
+        if (err) handleErrorClient(res, 400, err)
+
+        return handleSuccess(res, 201, "Sede registrada con éxito", data)
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
 
 
 
