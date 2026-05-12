@@ -200,9 +200,10 @@ export async function deleteUserService(query, manager = null) {
 /**
  * 
  * @param query datos utilizados para una busqueda estricta
+ * @param {false} estado 
  * @returns 
  */
-export async function cambiarEstadoUsuario(query, manager = null) {
+export async function cambiarEstadoUsuario(query, estado = false, manager = null) {
   try {
     const { id, rut, email } = query;
 
@@ -218,7 +219,7 @@ export async function cambiarEstadoUsuario(query, manager = null) {
     const userRepository = manager ?
       manager.getRepository(User) : AppDataSource.getRepository(User);
 
-    const userUpdated = await userRepository.update({ id: userFound.id }, { isActive: !userFound.isActive })
+    const userUpdated = await userRepository.update({ id: userFound.id }, { isActive: estado })
 
     if (!userUpdated.affected) return [null, "No se pudo actualizar el estado del usuario"]
 
@@ -519,7 +520,7 @@ async function reactivarSupervisorService(trabajador, manager = null) {
 
     } else if (nuevoSupervisor && nuevoSupervisor.isActive === false) {
       //si existe pero está desactivado, se reactiva
-      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
+      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, manager)
       if (errEstado) return [null, errEstado]
 
       //retornar el perfil del supervisor reactivado
@@ -614,7 +615,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
 
     } else if (nuevoSupervisor && nuevoSupervisor.state === "DESACTIVADO") {
       //si existe pero está desactivado, se reactiva
-      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, "ACTIVADO", manager)
+      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, manager)
       if (errEstado) return [null, errEstado]
       nuevoSupervisor = nuevoEstado
 
