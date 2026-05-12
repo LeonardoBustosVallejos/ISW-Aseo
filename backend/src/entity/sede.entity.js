@@ -1,4 +1,5 @@
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanSedeEntity } from "../cleaners/cliente.cleaner.js";
 
 const SedeSchema = new EntitySchema({
     name: "Sede",
@@ -44,6 +45,14 @@ const SedeSchema = new EntitySchema({
             onUpdate: "CURRENT_TIMESTAMP",
             nullable: false,
         },
+    },
+    listeners: {
+        BeforeInsert(entity) {
+            cleanSedeEntity(entity)
+        },
+        BeforeUpdate(entity) {
+            cleanSedeEntity(entity)
+        }
     },
     relations: {
         //varias sedes pueden ser del mismo cliente

@@ -1,5 +1,6 @@
 "use strict";
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanUserEntity } from "../cleaners/user.cleaner.js";
 
 /**
  * tabla de usuarios
@@ -60,6 +61,14 @@ const UserSchema = new EntitySchema({
       onUpdate: "CURRENT_TIMESTAMP",
       nullable: false,
     },
+  },
+  listeners: {
+    BeforeInsert(entity) {
+      cleanUserEntity(entity)
+    },
+    BeforeUpdate(entity) {
+      cleanUserEntity(entity)
+    }
   },
   indices: [
     {

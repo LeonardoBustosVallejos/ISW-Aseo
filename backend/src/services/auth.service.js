@@ -8,7 +8,7 @@ import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
 import { getClienteByService, getContactoByService, getSedeByService } from "./cliente.service.js";
-import { cleanRut } from "../handlers/extras.js";
+import { cleanRut } from "../cleaners/extras.js";
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,

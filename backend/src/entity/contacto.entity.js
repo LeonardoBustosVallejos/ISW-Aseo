@@ -1,4 +1,5 @@
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanContactoEntity } from "../cleaners/cliente.cleaner.js";
 
 /**
  * esquema de tabla de contactos de las empresas
@@ -33,6 +34,14 @@ const ContactoSchema = new EntitySchema({
             length: 15,
             nullable: true,
         },
+    },
+    listeners: {
+        BeforeInsert(entity) {
+            cleanContactoEntity(entity)
+        },
+        BeforeUpdate(entity) {
+            cleanContactoEntity(entity)
+        }
     },
     relations: {
         cliente: {

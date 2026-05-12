@@ -1,4 +1,5 @@
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanClienteEntity } from "../cleaners/cliente.cleaner.js";
 /**
  * Tabla de los clientes, se relaciona con los usuarios a traves de un supervisor
  */
@@ -39,6 +40,15 @@ const ClienteSchema = new EntitySchema({
             nullable: false,
         },
     },
+    listeners: {
+        BeforeInsert(entity) {
+            cleanClienteEntity(entity)
+        },
+        BeforeUpdate(entity) {
+            cleanClienteEntity(entity)
+        },
+    },
+
     indices: [{
         name: "IDX_CLIENTE",
         columns: ["cliente_id"],
@@ -81,4 +91,7 @@ const ClienteSchema = new EntitySchema({
         }
     }
 })
+
+
+
 export default ClienteSchema

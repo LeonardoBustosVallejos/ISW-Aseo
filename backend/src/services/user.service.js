@@ -4,7 +4,7 @@ import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Rol from "../entity/rol.entity.js";
-import { cleanRut, createErrorMessage, createSimpleMessage } from "../handlers/extras.js";
+import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
 import { getRolByNameService } from "./rol.service.js";
 import { registerService } from "./auth.service.js";
 import { updateTrabajadorService } from "./trabajador.service.js";

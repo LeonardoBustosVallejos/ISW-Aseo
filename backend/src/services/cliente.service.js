@@ -3,7 +3,7 @@ import Contacto from "../entity/contacto.entity.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
-import { cleanRut, createErrorMessage, createSimpleMessage } from "../handlers/extras.js";
+import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
 import User from "../entity/user.entity.js";
 import { asignarSupervisorJerarquicoService, asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
 import { registerService } from "./auth.service.js";
