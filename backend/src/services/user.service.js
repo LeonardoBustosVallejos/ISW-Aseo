@@ -3,13 +3,12 @@ import User from "../entity/user.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import Trabajador from "../entity/trabajador.entity.js";
-import Rol from "../entity/rol.entity.js";
 import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
 import { getRolByNameService } from "./rol.service.js";
 import { registerService } from "./auth.service.js";
-import { updateTrabajadorService } from "./trabajador.service.js";
-import { getSedeByService, updateSedeService } from "./cliente.service.js";
+import { getClienteByService, getSedeByService, } from "./cliente.service.js";
 import Sede from "../entity/sede.entity.js";
+import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
 
 /**
  * Busqueda estricta OR para obtener un usuario por id, rut, email o teléfono. 
@@ -201,10 +200,9 @@ export async function deleteUserService(query, manager = null) {
 /**
  * 
  * @param query datos utilizados para una busqueda estricta
- * @param nuevoEstado nuevo estado del usuario ACTIVADO ó DESACTIVADO
  * @returns 
  */
-export async function cambiarEstadoUsuario(query, nuevoEstado, manager = null) {
+export async function cambiarEstadoUsuario(query, manager = null) {
   try {
     const { id, rut, email } = query;
 
@@ -214,16 +212,13 @@ export async function cambiarEstadoUsuario(query, nuevoEstado, manager = null) {
     const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, manager)
     if (err) return [null, err]
 
-    //verificar que el estado sea válido
-    if (nuevoEstado !== "ACTIVADO" && nuevoEstado !== "DESACTIVADO") return [null, createErrorMessage("state", "Estado no válido")]
-
     //verificar que el usuario no sea administrador
-    if (userFound.rol === "Administrador") return [null, "No se puede cambiar el estado de un usuario con rol de Administrador"];
+    if (userFound.rol.nombre === "Administrador") return [null, "No se puede cambiar el estado de un usuario con rol de Administrador"];
 
     const userRepository = manager ?
       manager.getRepository(User) : AppDataSource.getRepository(User);
 
-    const userUpdated = await userRepository.update({ id: userFound.id }, { state: nuevoEstado })
+    const userUpdated = await userRepository.update({ id: userFound.id }, { isActive: !userFound.isActive })
 
     if (!userUpdated.affected) return [null, "No se pudo actualizar el estado del usuario"]
 
@@ -245,11 +240,301 @@ export async function cambiarEstadoUsuario(query, nuevoEstado, manager = null) {
 }
 
 /**
- * Asigna el rol de supervisor a un trabajador y lo registra como usuario en la base de datos, asociándolo a la sede correspondiente
- * @param trabajador Datos que se usarán para buscar al trabajador que se asignará como supervisor 
- * @param sede_id ID de la sede a la que se le asignará el supervisor 
+ * Funcion que entrega el historial de personal asignado 
+ * @param {*} query
+ * @param {null} manager 
+ * @returns lista de personal
+ */
+export async function getHistorialAsignacionService(query, manager = null) {
+  try {
+    const { cliente_id, sede_id } = query
+    const AsignadoRepository = manager ?
+      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+
+    const where = {}
+    if (sede_id) where.sede.sede_id = sede_id
+    if (cliente_id) where.cliente.cliente_id = cliente_id
+
+    const asignados = await AsignadoRepository.find({ where });
+    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+
+    return [asignados, null]
+  } catch (error) {
+    console.error("Error al obtener a los trabajadores asignados:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
+
+export async function getAsignadosService(sede_id = null, manager = null) {
+  try {
+    //verificar que la sede exista
+    if (sede_id) {
+      const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
+      if (errSede) return [null, errSede]
+    }
+
+    const AsignadoRepository = manager ?
+      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+
+    const where = {}
+    where.estado = "ASIGNADO"
+    if (sede_id) where.sede.sede_id = sede_id
+
+    const asignados = await AsignadoRepository.find({ where });
+    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+
+    return [asignados, null]
+  } catch (error) {
+    console.error("Error al obtener a los trabajadores asignados:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
+export async function getSupervisoresService(sede_id = null, estado = null, manager = null) {
+  try {
+    if (estado && estado !== "ASIGNADO" && estado !== "REMOVIDO" && estado !== "FINALIZADO") return [null, createErrorMessage("estado", "Estado no válido")]
+    const AsignadoRepository = manager ?
+      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+
+    const where = {}
+    where.rol = "SUPERVISOR"
+    if (estado) where.estado = estado
+    if (sede_id) where.sede = { sede_id }
+
+    const asignados = await AsignadoRepository.findOne({ where });
+    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+
+    return [asignados, null]
+
+  } catch (error) {
+    console.error("Error al obtener a los trabajadores asignados:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
+export async function getAsignadoByService(trabajador, estado = null, sede_id = null, manager = null) {
+  try {
+    const { id, rut, email } = trabajador
+
+    if (estado && estado !== "ASIGNADO" && estado !== "REMOVIDO" && estado !== "FINALIZADO") return [null, createErrorMessage("estado", "Estado no válido")]
+
+    const AsignadoRepository = manager ?
+      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+
+    const where = {}
+    if (estado) where.estado = estado
+    if (sede_id) where.sede = { sede_id }
+    if (id || rut || email) {
+      where.trabajador = {}
+
+      if (id) where.trabajador.id = id
+      if (rut) where.trabajador.rut = cleanRut(rut)
+      if (email) where.trabajador.email = email
+    }
+
+    const asignados = await AsignadoRepository.findOne({ where });
+    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+
+    return [asignados, null]
+  } catch (error) {
+    console.error("Error al obtener a los trabajadores asignados:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
+
+
+/**
+ * 
+ * @param {*} trabajador datos del trabajador a asignar, id, rut o email, debe incluir el rol que cumplirá
+ * @param {*} cliente_id id del cliente al que se asignará, si no corresponde al cliente de la sede entonces se verifica que esté en la jerarquía
+ * @param {*} sede_id id de la sede a la que se asignará, se verifica que exista y que no se exceda el límite de personal solicitado, además se aumenta en 1 el personal asignado a la sede
+ * @param {*} manager 
  * @returns 
  */
+export async function asignarPersonalService(trabajador, cliente_id, sede_id, manager = null) {
+  try {
+    const execute = async (transactionManager) => {
+      /**parte referencial del body
+     * {
+     *  trabajador:{
+     *    id:<>,
+     *    rut:<>,
+     *    email:<>,
+     *    rol: "SUPERVISOR" o "TRABAJADOR"
+     *   }
+     * }
+     */
+      const { id, rut, email, rol } = trabajador
+      if (!id && !rut && !email) throw createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")
+
+      if (rol !== "SUPERVISOR" && rol !== "TRABAJADOR") throw createErrorMessage("rol", "Rol no válido")
+
+      const trabajadorRepository = transactionManager ?
+        transactionManager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
+
+      const where = {} //AND
+
+      //datos para buscar al trabajador, se puede buscar por id, rut o email
+      if (id) where.id = id
+      if (rut) where.rut = rut
+      if (email) where.email = email
+      where.despedido = false   //asegura que el trabajador no esté despedido
+
+      //verificar que el trabajador exista y no esté despedido con AND
+      const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
+      if (!trabajadorEncontrado) throw createErrorMessage("trabajador", "Trabajador no encontrado")
+
+      //verificar que la sede exista
+      const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, transactionManager)
+      if (errSede) throw errSede
+
+      /*cliente de la sede encontrada*/
+      let clienteSede = sedeFound.cliente
+
+      //verificar que la sede sea del cliente o el cliente_id es padre del cliente de la sede
+      let [clienteEntregado, errCliente] = await getClienteByService({ cliente_id }, transactionManager)
+      if (errCliente) throw errCliente
+
+      //si el cliente entregado no es el mismo que el de la sede, entonces se verifica que el cliente de la sede esté en la jerarquía del cliente entregado
+      if (clienteEntregado.cliente_id !== clienteSede.cliente_id) {
+        //recorrer la gerarquia hace encontrar el cliente dueño del id entregado
+        while (clienteSede.clientePadre && clienteSede.cliente_id !== cliente_id) {
+          clienteSede = clienteSede.clientePadre
+        }
+        if (clienteSede.cliente_id !== cliente_id) throw createErrorMessage("cliente_id", "La sede no pertenece al cliente o su jerarquia")
+      }
+      const cuposDisponibles = sedeFound.personalSolicitado - sedeFound.personalAsignado
+      //verificar que no se exceda el límite de personal
+      if (cuposDisponibles <= 0) throw createErrorMessage("trabajadores", `Solo quedan ${cuposDisponibles} cupos disponibles`)
+
+      //verificar que no esté asignado ya a esta sede
+      const [estaAsignado, noAsignado] = await getAsignadoByService(trabajador, "ASIGNADO", sedeFound.sede_id, transactionManager)
+      if (estaAsignado) throw createErrorMessage("trabajador", "El trabajador ya está asignado a esta sede")
+
+      let [userAsignado, errAsignacion] = [null, null]
+      if (rol === "SUPERVISOR") {
+        [userAsignado, errAsignacion] = await reactivarSupervisorService({ id, rut, email }, transactionManager)
+        if (errAsignacion) throw errAsignacion
+      }
+
+
+      const AsignadoRepository = transactionManager ?
+        transactionManager.getRepository(TrabajadoresAsignados) : AppDataSource.getRepository(TrabajadoresAsignados)
+
+      const newAsignado = AsignadoRepository.create({
+        estado: "ASIGNADO",
+        rol: rol,
+        trabajador: trabajadorEncontrado,
+        usuario: userAsignado,
+        sede: sedeFound,
+        cliente: clienteEntregado,
+      })
+
+      await AsignadoRepository.save(newAsignado)
+
+      const sedeRepository = transactionManager ?
+        transactionManager.getRepository(Sede) : AppDataSource.getRepository(Sede)
+
+      await sedeRepository.increment({ sede_id }, "personalAsignado", 1)
+
+      return [newAsignado, null]
+
+    }
+
+    if (manager) return execute(manager)
+
+    return AppDataSource.transaction(execute)
+
+  } catch (error) {
+    console.error("Error al asignar un trabajador", error);
+    if (Array.isArray(error)) return error;
+    return [null, "Error interno del servidor"]
+  }
+}
+
+/**
+ * Reactiva el usuario de un trabajador o lo registra en la base de datos
+ * @param trabajador Datos que se usarán para buscar al trabajador que se asignará como supervisor
+ * @returns perfil de usuario del nuevo supervisor o mensaje de error
+ */
+async function reactivarSupervisorService(trabajador, manager = null) {
+  try {
+    //datos de busqueda del trabajador
+    const { id, rut, email } = trabajador
+
+    if (!id && !rut && !email) return [null, createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")]
+
+    const trabajadorRepository = manager ?
+      manager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
+
+    const where = {} //AND
+
+    where.despedido = false   //asegura que el trabajador no esté despedido
+
+    //datos para buscar al trabajador, se puede buscar por id, rut o email
+    if (id) where.id = id
+    if (rut) where.rut = rut
+    if (email) where.email = email
+
+    //verificar que el trabajador exista y no esté despedido con AND
+    const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
+    if (!trabajadorEncontrado) return [null, createErrorMessage("trabajador", "Trabajador no encontrado")];
+    /*
+        // verificar que el trabajador no sea ya supervisor
+        if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
+    */
+    //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
+    const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
+    if (existingRut && existingRut.email !== trabajadorEncontrado.email) return [null, createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")]
+
+    const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, manager)
+    if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut) return [null, createErrorMessage("email", "Ya existe un otro registrado con el mismo email")]
+
+    //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
+
+    //verificar que si existe un usuario entonces ver si está activo
+    let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, manager)
+
+    if (errRegister) {
+
+      //si no existe un usuario se registra
+
+      //obtener el rol de supervisor para asignarlo al nuevo usuario
+      const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
+      if (errRol) return [null, errRol]
+
+      //seleccionar el correo antes del @ para usarlo como contraseña temporal
+      const emailParts = trabajadorEncontrado.email.split("@")[0]
+
+      //registrar el nuevo usuario del supervisor
+      const [nuevoPerfil, errPerfil] = await registerService({
+        nombreCompleto: trabajadorEncontrado.nombreCompleto,
+        rut: cleanRut(trabajadorEncontrado.rut),
+        email: trabajadorEncontrado.email,
+        password: emailParts,
+        rol_id: rolSupervisor.id,
+      }, manager)
+      if (errPerfil) return [null, errPerfil]
+
+      //retornar el perfil del nuevo supervisor
+      return [nuevoPerfil, null]
+
+    } else if (nuevoSupervisor && nuevoSupervisor.isActive === false) {
+      //si existe pero está desactivado, se reactiva
+      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
+      if (errEstado) return [null, errEstado]
+
+      //retornar el perfil del supervisor reactivado
+      return [nuevoEstado, null]
+
+    }
+    //if(nuevoSupervisor && nuevoSupervisor.isActive)
+    return [nuevoSupervisor, null];
+
+
+  } catch (error) {
+    console.error("Error al asignar un supervisor:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
 export async function asignarSupervisorService(trabajador, sede_id, manager = null) {
   try {
     //datos de busqueda del trabajador
@@ -322,7 +607,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
         email: trabajadorEncontrado.email,
         password: emailParts,
         rol_id: rolSupervisor.id,
-      }, sedeFound.sede_id, manager)
+      }, manager)
       if (errPerfil) return [null, errPerfil]
       nuevoSupervisor = nuevoPerfil
       usuarioCreado = true
@@ -375,6 +660,51 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
   }
 }
 
+export async function updateEstadoTrabajadorAsignado(trabajador, sede_id, estado, manager = null) {
+  try {
+    const execute = async (transactionManager) => {
+
+      const estadosValidos = ["ASIGNADO", "REMOVIDO", "FINALIZADO"]
+      if (!estadosValidos.includes(estado)) return [null, createErrorMessage("estado", "Estado no válido")]
+
+      const [trabajadorAsignado, errAsignacion] = await getAsignadoByService(trabajador, "ASIGNADO", sede_id, transactionManager)
+      if (errAsignacion) throw errAsignacion
+
+      //evitar dejar sede sin supervisor
+      if (trabajadorAsignado.rol === "SUPERVISOR") {
+        const [supervisores, errSupervisores] = await getSupervisoresService(sede_id, "ASIGNADO", transactionManager)
+        if (supervisores.length <= 1) throw createErrorMessage("supervisor", "La sede debe tener al menos un supervisor asignado")
+      }
+      const asignadoRepository = transactionManager.getRepository(TrabajadoresAsignados)
+
+      await asignadoRepository.update(
+        { id_asignacion: trabajadorAsignado.id_asignacion },
+        {
+          estado: estado,
+          fechaTermino: estado !== "ASIGNADO" ? new Date() : null
+        })
+
+
+      const sedeRepository = transactionManager.getRepository(Sede)
+      await sedeRepository.decrement({ sede_id }, "personalAsignado", 1)
+      const asignacionActualizada = await asignadoRepository.findOne({
+        where: { id_asignacion: trabajadorAsignado.id_asignacion },
+        relations: ["trabajador", "usuario", "cliente", "sede"]
+      })
+      return [asignacionActualizada, null]
+    }
+
+    if (manager) return execute(manager)
+
+    return AppDataSource.transaction(execute)
+  } catch (error) {
+    console.error("Error al actualizar asignación", error);
+    if (Array.isArray(error)) return error;
+    return [null, "Error interno del servidor"]
+  }
+}
+
+
 export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, manager = null) {
   try {
     const execute = async (transactionManager) => {
@@ -401,7 +731,7 @@ export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, 
     if (manager) return await execute(manager)
     return await AppDataSource.transaction(execute)
   } catch (error) {
-    console.error("Error al registrar un cliente", error);
+    console.error("Error al asignar un supervisor", error);
     if (Array.isArray(error)) return error;
     return [null, "Error interno del servidor"]
   }
