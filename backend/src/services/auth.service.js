@@ -29,7 +29,7 @@ export async function loginService(user) {
 
     const userFound = await userRepository.findOne({
       relations: ["rol"],
-      where: { email: email, state: "ACTIVADO" },
+      where: { email: email, isActive: true },
     });
 
     if (!userFound) {
