@@ -41,10 +41,17 @@ export async function getContactosService(manager = null) {
         const contactos = await contactoRepository.find({
             relations: ["sede", "sede.cliente"],
         });
-        if (!contactos || contactos.length === 0) return [null, "No hay contactos"];
+        if (!contactos || contactos.length === 0) {
+            return [null, createErrorMessage("contactos", "No hay contactos")]
+        }
         return [contactos, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener contactos", error[1]);
+            return error
+        }
         console.error("Error al obtener contactos:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -77,12 +84,18 @@ export async function getContactoByService(query, manager = null) {
             relations: ["sede", "sede.cliente"],
             where
         });
-        if (!contacto) return [null, createSimpleMessage("Contacto no encontrado")]
-
+        if (!contacto) {
+            return [null, createErrorMessage("contacto", "Contacto no encontrado")]
+        }
         return [contacto, null]
 
     } catch (error) {
-        console.error("Error al obtener contacto:", error);
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener un contacto", error[1]);
+            return error
+        }
+        console.error("Error al obtener un contacto:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
     }
@@ -121,7 +134,12 @@ export async function findContactosByService(query, manager = null) {
 
 
     } catch (error) {
-        console.error("Error al obtener contacto:", error);
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener contactos", error[1]);
+            return error
+        }
+        console.error("Error al obtener contactos:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
     }
@@ -139,11 +157,17 @@ export async function createContactoService(contacto, sede_id, manager = null) {
             manager.getRepository(Contacto) : AppDataSource.getRepository(Contacto);
         //verificar que la sede exista
         const [existingSede, err] = await getSedeByService({ sede_id: sede_id }, manager)
-        if (err) return [null, err]
+        if (err) {
+            if (manager) throw [null, err]
+            return [null, err]
+        }
 
         //obtener el cliente de la sede
         const [existingCliente, errCliente] = await getClienteByService({ cliente_id: existingSede.cliente.cliente_id }, manager)
-        if (errCliente) return [null, errCliente]
+        if (errCliente) {
+            if (manager) throw [null, errCliente]
+            return [null, errCliente]
+        }
 
         const { email, phone, contacto_rut, nombreContacto } = contacto
 
@@ -151,25 +175,35 @@ export async function createContactoService(contacto, sede_id, manager = null) {
         const [registerEmail, errEmail] = await getContactoByService({ email: email }, manager)
         const [registerTrabajadorEmail, errEmailTrabajador] = await getORTrabajadorService({ email: email }, manager)
         const [registerUserEmail, errEmailUser] = await getUserService({ email: email }, manager)
-        if (registerEmail || registerTrabajadorEmail || registerUserEmail) return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
+        if (registerEmail || registerTrabajadorEmail || registerUserEmail) {
+            if (manager) throw [null, createErrorMessage("email", "Correo electrónico ya en uso")]
+            return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
+        }
 
         //si el contacto tiene teléfono, verificar que no esté registrado en contactos, trabajadores o usuarios
         if (phone) {
             const [registerPhone, errPhone] = await getContactoByService({ phone: phone }, manager)
             const [registerUserPhone, errUserPhone] = await getUserService({ phone: phone }, manager)
-            if (registerPhone || registerUserPhone) return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")];
+            if (registerPhone || registerUserPhone) {
+                if (manager) throw [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")]
+                return [null, createErrorMessage("phone", "Teléfono ya asociado a una cuenta")]
+            };
         }
 
         //verificar que el rut no sea un de trabajador, cliente o usuario
         const [clienteRut, errClienteRut] = await getClienteByService({ rutCliente: cleanRut(contacto_rut) }, manager)
         const [existingUserRut, errUserRut] = await getUserService({ rut: cleanRut(contacto_rut) }, manager)
         const [existingTranajadorRut, errTrabajadorRut] = await getORTrabajadorService({ rut: cleanRut(contacto_rut) }, manager)
-        if (existingTranajadorRut || clienteRut || existingUserRut) return [null, createErrorMessage("rut", "Rut ya en uso")]
-
+        if (existingTranajadorRut || clienteRut || existingUserRut) {
+            if (manager) throw [null, createErrorMessage("rut", "Rut ya en uso")]
+            return [null, createErrorMessage("rut", "Rut ya en uso")]
+        }
         //verificar que si el rut ya está en contactos, entonces que la sede tambien sea la misma
         const [existingRut, errRut] = await getContactoByService({ contacto_rut: cleanRut(contacto_rut) })
-        if (existingRut && existingRut.sede.sede_id !== sede_id) return [null, createErrorMessage("sede", "Rut ya asignado a otra sede")]
-
+        if (existingRut && existingRut.sede.sede_id !== sede_id) {
+            if (manager) throw [null, createErrorMessage("sede", "Rut ya asignado a otra sede")]
+            return [null, createErrorMessage("sede", "Rut ya asignado a otra sede")]
+        }
         //preparar datos para crear el contacto
         const nuevoContacto = contactoRepository.create({
             nombreContacto: nombreContacto,
@@ -184,6 +218,11 @@ export async function createContactoService(contacto, sede_id, manager = null) {
         return [nuevoContacto, null]
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al registrar un contacto", error[1]);
+            return error
+        }
         console.error("Error al registrar un contacto", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -196,7 +235,10 @@ export async function deleteContactoService(contacto_id, manager = null) {
 
         const [existingContacto, err1] = await getContactoByService({ contacto_id: contacto_id }, manager)
 
-        if (err1) return [null, createErrorMessage("contacto_id", "No existe el contacto buscado")]
+        if (err1) {
+            if (manager) throw [null, createErrorMessage("contacto_id", "No existe el contacto buscado")]
+            return [null, createErrorMessage("contacto_id", "No existe el contacto buscado")]
+        }
 
         //comprobar cuantos contactos tiene el cliente que tiene éste contacto
         const contactosCount = await contactoRepository.count({
@@ -204,13 +246,20 @@ export async function deleteContactoService(contacto_id, manager = null) {
         });
 
         //verificar que el cliente no se quede sin contactos
-        if (contactosCount <= 1) return [null, createErrorMessage("contacto", "El cliente debe tener al menos un contacto")];
-
+        if (contactosCount <= 1) {
+            if (manager) throw [null, createErrorMessage("contacto", "El cliente debe tener al menos un contacto")];
+            return [null, createErrorMessage("contacto", "El cliente debe tener al menos un contacto")];
+        }
         const deletedContacto = await contactoRepository.remove(existingContacto)
 
         return [deletedContacto, null]
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al eliminar un contacto", error[1]);
+            return error
+        }
         console.error("Error al eliminar un contacto:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -219,8 +268,14 @@ export async function deleteContactoService(contacto_id, manager = null) {
 export async function updateContactoService(contacto_id, data, manager = null) {
     try {
 
-        if (data.email === "") return [null, createErrorMessage("email", "Datos inválidos")];
-        if (data.contacto_rut === "") return [null, createErrorMessage("contacto_rut", "Datos inválidos")];
+        if (data.email === "") {
+            if (manager) throw [null, createErrorMessage("email", "Datos inválidos")];
+            return [null, createErrorMessage("email", "Datos inválidos")];
+        }
+        if (data.contacto_rut === "") {
+            if (manager) throw [null, createErrorMessage("contacto_rut", "Datos inválidos")];
+            return [null, createErrorMessage("contacto_rut", "Datos inválidos")];
+        }
 
         const { email, phone } = data
         const contactoRepository = manager ?
@@ -228,7 +283,10 @@ export async function updateContactoService(contacto_id, data, manager = null) {
 
         //verificar que exista el contacto
         const [currentContacto, errContacto] = await getContactoByService({ contacto_id: contacto_id }, manager)
-        if (errContacto) return [null, errContacto]
+        if (errContacto) {
+            if (manager) throw [null, errContacto]
+            return [null, errContacto]
+        }
 
         /**
         //validar rut del contacto
@@ -251,6 +309,7 @@ export async function updateContactoService(contacto_id, data, manager = null) {
             const [existingEmail, errEmailContacto] = await getContactoByService({ email: email }, manager)
             const [existingEmailUser, errEmailUser] = await getUserService({ email: email }, manager);
             if ((existingEmail && existingEmail.contacto_id !== contacto_id) || existingEmailUser) {
+                if (manager) throw [null, createErrorMessage("email", "Correo ya en uso")];
                 return [null, createErrorMessage("email", "Correo ya en uso")];
             }
         }
@@ -261,6 +320,7 @@ export async function updateContactoService(contacto_id, data, manager = null) {
             const [phoneUser, errUser] = await getUserService({ phone: phone }, manager)
             if ((existingPhone && existingPhone.contacto_rut !== currentContacto.contacto_rut) ||
                 (phoneUser && phoneUser.rut !== currentContacto.contacto_rut)) {
+                if (manager) throw [null, createErrorMessage("phone", "Teléfono ya en uso")];
                 return [null, createErrorMessage("phone", "Teléfono ya en uso")];
             }
         }
@@ -270,11 +330,18 @@ export async function updateContactoService(contacto_id, data, manager = null) {
 
         //obtener contacto actualizado
         const [contactoActualizado, errContactoActualizado] = await getContactoByService({ contacto_id }, manager)
-        if (errContactoActualizado) return [null, createErrorMessage("contacto", "No se encontró el contacto después de actualizar")]
-
+        if (errContactoActualizado) {
+            if (manager) throw [null, createErrorMessage("contacto", "No se encontró el contacto después de actualizar")]
+            return [null, createErrorMessage("contacto", "No se encontró el contacto después de actualizar")]
+        }
         return [contactoActualizado, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al actualizar un contacto", error[1]);
+            return error
+        }
         console.error("Error al actualizar contacto:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -292,12 +359,17 @@ export async function getSedesService(manager = null) {
         });
 
         if (!sedes.length) {
-            return [null, "No hay sedes"];
+            return [null, createErrorMessage("sedes", "No hay sedes")]
         }
 
         return [sedes, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener sedes", error[1]);
+            return error
+        }
         console.error("Error al obtener sedes:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -323,8 +395,9 @@ export async function getSedeByService(query, manager = null) {
         if (cliente_id) where.cliente = { cliente_id: cliente_id };
         if (rutSecundario) where.rutSecundario = rutSecundario;
 
-        if (Object.keys(where).length === 0) return [null, "Debe enviar al menos un criterio de busqueda"]
-
+        if (Object.keys(where).length === 0) {
+            return [null, "Debe enviar al menos un criterio de busqueda"]
+        }
         const sede = await sedeRepository.findOne({
             relations: ["cliente", "contactos", "cliente.clientePadre"],
             where
@@ -337,6 +410,11 @@ export async function getSedeByService(query, manager = null) {
         return [sede, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener sedes", error[1]);
+            return error
+        }
         console.error("Error al obtener sede:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -363,6 +441,7 @@ export async function findSedesByService(query, manager = null) {
         if (rutSecundario) where.push({ rutSecundario: cleanRut(rutSecundario) })
 
         if (!where.length) {
+            if (manager) throw [null, "Debe enviar al menos un criterio"];
             return [null, "Debe enviar al menos un criterio"];
         }
 
@@ -372,12 +451,18 @@ export async function findSedesByService(query, manager = null) {
         });
 
         if (!sedes.length) {
+            if (manager) throw [null, "No se encontraron sedes"];
             return [null, "No se encontraron sedes"];
         }
 
         return [sedes, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al buscar sedes", error[1]);
+            return error
+        }
         console.error("Error al buscar sedes:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -392,12 +477,17 @@ async function createSede(sede, cliente_id, manager) {
 
         //verificar que el cliente exista
         const [cliente, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
-        if (err) return [null, createErrorMessage("cliente", "Cliente no existe")];
-
+        if (err) {
+            if (manager) throw [null, createErrorMessage("cliente", "Cliente no existe")];
+            return [null, createErrorMessage("cliente", "Cliente no existe")];
+        }
         if (cleanRut(rutSecundario)) {
             //si el rut ya está registrado a otro cliente
             const [existingRut, errRut] = await getSedeByService({ rutSecundario: cleanRut(rutSecundario) }, manager)
-            if (existingRut && existingRut.cliente.cliente_id !== cliente_id) return [null, createErrorMessage("rutSecundario", "Rut secundario no valido")];
+            if (existingRut && existingRut.cliente.cliente_id !== cliente_id) {
+                if (manager) throw [null, createErrorMessage("rutSecundario", "Rut secundario no valido")];
+                return [null, createErrorMessage("rutSecundario", "Rut secundario no valido")];
+            }
         }
 
         //verificar exclusividad del rut con personas
@@ -407,8 +497,10 @@ async function createSede(sede, cliente_id, manager) {
         if (cleanRut(rutSecundario)) {
             [existingContactoRut, errContactoRut] = await getContactoByService({ contacto_rut: cleanRut(rutSecundario) }, manager)
         }
-        if (existingUser || existingTrabajador || existingContactoRut) return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
-
+        if (existingUser || existingTrabajador || existingContactoRut) {
+            if (manager) throw [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
+            return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
+        }
         const nuevaSede = sedeRepository.create({
             nombre_sede: nombre_sede,
             direccion: direccion,
@@ -422,6 +514,11 @@ async function createSede(sede, cliente_id, manager) {
         return [sedeCreada, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al crear sede", error[1]);
+            return error
+        }
         console.error("Error al crear sede:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -438,7 +535,10 @@ export async function updateSedeService(sede_id, data, manager = null) {
 
         //verificar que la sede exista
         const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
-        if (errSede) return [null, errSede]
+        if (errSede) {
+            if (manager) throw [null, errSede]
+            return [null, errSede]
+        }
 
         if (rutSecundario && rutSecundario !== cleanRut(sedeFound.rutSecundario)) {
             //si el rut ya está registrado una sede de otro cliente
@@ -447,7 +547,10 @@ export async function updateSedeService(sede_id, data, manager = null) {
                 existingRut &&
                 existingRut.sede_id !== sede_id &&
                 existingRut.cliente.cliente_id !== sedeFound.cliente.cliente_id
-            ) return [null, createErrorMessage("rutSecundario", "Rut secundario no válido")];
+            ) {
+                if (manager) throw [null, createErrorMessage("rutSecundario", "Rut secundario no válido")];
+                return [null, createErrorMessage("rutSecundario", "Rut secundario no válido")];
+            }
         }
 
         const [existingUser, errUser] = await getUserService({ rut: rutSecundario }, manager)
@@ -456,8 +559,10 @@ export async function updateSedeService(sede_id, data, manager = null) {
         if (rutSecundario) {
             [existingContactoRut, errContactoRut] = await getContactoByService({ contacto_rut: rutSecundario }, manager)
         }
-        if (existingUser || existingTrabajador || existingContactoRut) return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
-
+        if (existingUser || existingTrabajador || existingContactoRut) {
+            if (manager) throw [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
+            return [null, createErrorMessage("rutSecundario", "Rut secundario ya en uso")];
+        }
 
 
         //actualizar la sede
@@ -472,11 +577,18 @@ export async function updateSedeService(sede_id, data, manager = null) {
 
         // Obtener la sede actualizada
         const [updatedSede, errUpdated] = await getSedeByService({ sede_id: sede_id }, manager);
-        if (errUpdated) return [null, "Sede no encontrada después de actualizar"];
-
+        if (errUpdated) {
+            if (manager) throw [null, "Sede no encontrada después de actualizar"];
+            return [null, "Sede no encontrada después de actualizar"];
+        }
         return [updatedSede, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al actualizar sede", error[1]);
+            return error
+        }
         console.error("Error al actualizar sede:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -494,10 +606,12 @@ export async function deleteSedeService(sede_id, manager = null) {
         });
 
         if (!sede) {
+            if (manager) throw [null, "Sede no encontrada"];
             return [null, "Sede no encontrada"];
         }
 
         if (sede.contactos && sede.contactos.length > 0) {
+            if (manager) throw [null, "No se puede eliminar una sede con contactos"];
             return [null, "No se puede eliminar una sede con contactos"];
         }
 
@@ -506,6 +620,11 @@ export async function deleteSedeService(sede_id, manager = null) {
         return [sede, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al eliminar sedes", error[1]);
+            return error
+        }
         console.error("Error al eliminar sede:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -524,10 +643,16 @@ export async function getClientesService(manager = null) {
 
         const clientes = await clienteRepository.find({ relations: ["filiales", "sede"], where: { tipoCliente: "EMPRESA" } })
 
-        if (!clientes || clientes.length === 0) return [null, createErrorMessage("clientes", "No hay clientes")];
-
+        if (!clientes || clientes.length === 0) {
+            return [null, createErrorMessage("clientes", "No hay clientes")];
+        }
         return [clientes, null]
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener clientes", error[1]);
+            return error
+        }
         console.error("Error al obtener clientes:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -548,10 +673,16 @@ export async function listarClientesService(manager = null) {
             .leftJoinAndSelect("filial.sede", "filialSede")
             .leftJoin("filialSede.contactos", "sedeContactos").getMany()
 
-        if (!clientes || clientes.length === 0) return [null, "No hay clientes"];
-
+        if (!clientes || clientes.length === 0) {
+            return [null, "No hay clientes"];
+        }
         return [clientes, null]
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener clientes", error[1]);
+            return error
+        }
         console.error("Error al obtener clientes:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -578,11 +709,17 @@ export async function getClienteByService(query, manager = null) {
 
         const cliente = await clienteRepository.findOne({ relations: ["sede"], where })
 
-        if (!cliente) return [null, createSimpleMessage("Cliente no encontrado")]
-
+        if (!cliente) {
+            return [null, createErrorMessage("cliente", "Cliente no encontrado")]
+        }
         return [cliente, null]
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtene el cliente", error[1]);
+            return error
+        }
         console.error("Error al obtener el cliente:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -612,12 +749,18 @@ export async function findClienteByService(query, manager = null) {
 
         const cliente = await clienteRepository.find({ relations: ["sede"], where })
 
-        if (!cliente.length) return [null, createSimpleMessage("Cliente no encontrado")]
-
+        if (!cliente.length) {
+            return [null, createErrorMessage("cliente", "Cliente no encontrado")]
+        }
 
         return [cliente, null]
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener el cliente", error[1]);
+            return error
+        }
         console.error("Error al obtener el cliente:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -628,8 +771,10 @@ export async function deleteCliente(cliente_id, manager = null) {
     try {
         const [clienteFound, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
 
-        if (err) return err
-
+        if (err) {
+            if (manager) throw [null, err]
+            return [null, err]
+        }
         const clienteRepository = manager ?
             manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
@@ -638,6 +783,11 @@ export async function deleteCliente(cliente_id, manager = null) {
         return [clienteDeleted, null]
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al eliminar un cliente", error[1]);
+            return error
+        }
         console.error("Error al eliminar un cliente:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -648,16 +798,23 @@ export async function updateClienteService(cliente_id, data, manager = null) {
     try {
         const { nombreCliente, tipoCliente } = data
         const rutCliente = cleanRut(data.rutCliente)
-        if (nombreCliente === "") return [null, createErrorMessage("nombreCliente", "Datos inválidos")];
-        if (rutCliente === "") return [null, createErrorMessage("rutCliente", "Datos inválidos")];
-        if (tipoCliente === "") return [null, createErrorMessage("tipoCliente", "Datos inválidos")];
-
+        if (nombreCliente === "") {
+            if (manager) throw [null, createErrorMessage("nombreCliente", "Datos inválidos")];
+            return [null, createErrorMessage("nombreCliente", "Datos inválidos")];
+        } if (rutCliente === "") {
+            if (manager) throw [null, createErrorMessage("rutCliente", "Datos inválidos")];
+            return [null, createErrorMessage("rutCliente", "Datos inválidos")];
+        } if (tipoCliente === "") {
+            if (manager) throw [null, createErrorMessage("tipoCliente", "Datos inválidos")];
+            return [null, createErrorMessage("tipoCliente", "Datos inválidos")];
+        }
         const clienteRepository = manager ?
             manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
         const [cliente, errCliente] = await getClienteByService({ cliente_id })
 
         if (errCliente) {
+            if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
             return [null, createErrorMessage("cliente", "No encontrado")];
         }
         //si se entrega un rut, es distinto al actual y está en uso
@@ -667,17 +824,25 @@ export async function updateClienteService(cliente_id, data, manager = null) {
             });
 
             if (existente) {
+                if (manager) throw [null, createErrorMessage("rut", "Rut ya en uso")];
                 return [null, createErrorMessage("rut", "Rut ya en uso")];
             }
         }
 
         await clienteRepository.update({ cliente_id }, { nombreCliente: nombreCliente, rutCliente: rutCliente, tipoCliente: tipoCliente, updatedAt: new Date() });
         const [updatedCliente, errUpdate] = await getClienteByService({ cliente_id }, manager)
-        if (errUpdate) return [null, "Cliente no encontrado después de actualizar: " + errUpdate]
-
+        if (errUpdate) {
+            if (manager) throw [null, "Cliente no encontrado después de actualizar: " + errUpdate]
+            return [null, "Cliente no encontrado después de actualizar: " + errUpdate]
+        }
         return [updatedCliente, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al actualizar cliente", error[1]);
+            return error
+        }
         console.error("Error al actualizar cliente:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
@@ -695,12 +860,19 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
         const { nombreCliente } = cliente
         const rutCliente = cleanRut(cliente.rutCliente)
 
-        if (!nombreCliente || !rutCliente) return [null, createErrorMessage("cliente", "Datos incompletos")]
-
+        if (!nombreCliente || !rutCliente) {
+            if (manager) throw [null, createErrorMessage("cliente", "Datos incompletos")]
+            return [null, createErrorMessage("cliente", "Datos incompletos")]
+        }
         if (clientePadre_id) {
             const [clientePadreVerif, errClientePadreVerif] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
-            if (errClientePadreVerif) return [null, errClientePadreVerif]
-            if (clientePadreVerif.tipoCliente !== "EMPRESA") return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+            if (errClientePadreVerif) {
+                if (manager) throw [null, errClientePadreVerif]
+                return [null, errClientePadreVerif]
+            } if (clientePadreVerif.tipoCliente !== "EMPRESA") {
+                if (manager) throw [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+                return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+            }
         }
 
         const clienteRepository = manager ?
@@ -709,8 +881,9 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
         const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente }, manager);
         const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
         const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
-        if (existingClient || existingRutUser || existingRutContacto) return [null, createErrorMessage("rut", "Rut en uso")];
-
+        if (existingClient || existingRutUser || existingRutContacto) {
+            return [null, createErrorMessage("rut", "Rut en uso")];
+        }
         //preparar los datos para crear el nuevo cliente
         const nuevoCliente = clienteRepository.create({
             nombreCliente: nombreCliente,
@@ -752,13 +925,13 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
 
             const { cliente, filial, sede, contacto } = data;
 
-            if (!cliente || !sede || !contacto) throw createErrorMessage("cliente/sede/contacto", "Datos incompletos")
+            if (!cliente || !sede || !contacto) throw [null, createErrorMessage("cliente/sede/contacto", "Datos incompletos")]
 
             let trabajador = null, errTrabajador = null
             if (trabajador_id) {
                 [trabajador, errTrabajador] = await getORTrabajadorService({ id: trabajador_id });
                 if (errTrabajador) throw errTrabajador
-                if (trabajador.rol !== "trabajador") throw createErrorMessage("trabajador_id", "El trabajador entregado no califica para ser supervisor")
+                if (trabajador.rol !== "trabajador") return [null, createErrorMessage("trabajador_id", "El trabajador entregado no califica para ser supervisor")]
             }
             //el cliente, posible filial, posible trabajador y contacto a registrar no pueden tener el mismo rut
             if ((filial && cleanRut(filial.rutCliente) === cleanRut(cliente.rutCliente)) ||                                                 //verificacion de filial para cliente
@@ -769,18 +942,18 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
 
             //verificar el rut con las sedes, que no esté registrado en una sede de otro cliente
             const [existingSedeRut, errSedeRut] = await getSedeByService({ rutSecundario: cleanRut(cliente.rutCliente) }, manager)
-            if (existingSedeRut) throw createErrorMessage("rut", "Rut ya en uso")
+            if (existingSedeRut) return [null, createErrorMessage("rut", "Rut ya en uso")]
 
             if (filial && Object.keys(filial).length > 0) {
                 const [existingSedeRutFilial, errSedeRutFilial] = await getSedeByService({ rutSecundario: cleanRut(filial.rutCliente) }, manager)
 
-                if (existingSedeRutFilial) throw createErrorMessage("rut", "Rut ya en uso")
+                if (existingSedeRutFilial) return [null, createErrorMessage("rut", "Rut ya en uso")]
             }
 
 
             //registrar en la tabla cliente
             const [clienteCreado, errClienteCreado] = await createCliente(cliente, null, manager)
-            if (errClienteCreado) throw errClienteCreado
+            if (errClienteCreado) return [null, errClienteCreado]
             console.log("=> Cliente registrado");
 
             let filialCreada = null, errFilial = null
@@ -789,7 +962,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
                 [filialCreada, errFilial] = await createCliente(filial, clienteCreado.cliente_id, manager)
                 if (errFilial) {
                     console.error("=> Error de registro");
-                    throw errFilial;
+                    throw [null, errFilial];
                 }
             }
             //registrar la sede del cliente
@@ -830,7 +1003,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
             //registrar un nuevo usuario como supervisor del nuevo cliente
             let usuarioSupervisor = null, errSupervisor = null
             if (trabajador_id) {
-                [usuarioSupervisor, errSupervisor] = await asignarPersonalService({ id: trabajador_id, rol: "SUPERVISOR" }, clienteCreado.cliente_id, sedeCreada.sede_id, manager)
+                [usuarioSupervisor, errSupervisor] = await asignarPersonalService({ id: trabajador_id, rol: "SUPERVISOR" }, sedeCreada.sede_id, manager)
                 if (errSupervisor) {
                     //await deleteUserService({ id: perfilCreado.id })
                     console.error("=> Error de registro:", errSupervisor);
@@ -857,8 +1030,11 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
 
         })
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+            return error
+        }
         console.error("Error al registrar un cliente", error);
-        if (Array.isArray(error)) return error;
         return [null, "Error interno del servidor"]
     }
 }
@@ -867,19 +1043,19 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
     try {
         const execute = async (transactionManager) => {
             const { nombre_sede, direccion, rutSecundario, personalSolicitado } = sede
-            if (!nombre_sede || !direccion || !cliente_id) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
+            if (!nombre_sede || !direccion || !cliente_id) throw [null, createErrorMessage("nombre_sede/direccion", "Datos incompletos")]
 
             //no se hacen validaciones porque estan dentro de la funcion createSede
             const [sedeCreada, errSede] = await createSede(sede, cliente_id, transactionManager)
-            if (errSede) throw errSede
+            if (errSede) throw [null, errSede]
 
             const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, transactionManager)
-            if (errContacto) throw errContacto
+            if (errContacto) throw [null, errContacto]
 
             let usuarioSupervisor = null, errSupervisor = null
             if (trabajador_id) {
                 [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id, transactionManager)
-                if (errSupervisor) throw errSupervisor
+                if (errSupervisor) throw [null, errSupervisor]
             }
 
             return [{
@@ -893,8 +1069,13 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
         if (manager) return await execute(manager)
         return AppDataSource.transaction(execute)
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+            if (manager) throw error
+            return error
+        }
         console.error("Error al registrar un cliente", error);
-        if (Array.isArray(error)) return error;
+        if (manager) throw error
         return [null, "Error interno del servidor"]
     }
 }
@@ -917,20 +1098,20 @@ export async function registerClienteJerarquicoService(cliente, sedes, clientePa
 
 
             const { nombreCliente, rutCliente, filiales } = cliente
-            if (!nombreCliente || !rutCliente) throw createErrorMessage("nombreCliente/rutCliente", "Datos incompletos o repetidos")
+            if (!nombreCliente || !rutCliente) throw [null, createErrorMessage("nombreCliente/rutCliente", "Datos incompletos o repetidos")]
 
             const [clientePadre, errorPadre] = await createCliente({ nombreCliente, rutCliente }, clientePadre_id, transactionManager)
-            if (errorPadre) throw errorPadre
+            if (errorPadre) throw [null, errorPadre]
 
             const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
-            if (errSedes) throw errSedes
+            if (errSedes) throw [null, errSedes]
 
 
             const filialResponse = []
             if ((Array.isArray(filiales) && filiales.length > 0)) {
                 for (const filial of filiales) {
                     const [filialesCreadas, errFiliales] = await registerClienteJerarquicoService(filial, filial.sedes, clientePadre.cliente_id, transactionManager)
-                    if (errFiliales) throw errFiliales
+                    if (errFiliales) throw [null, errFiliales]
                     filialResponse.push(filialesCreadas)
                 }
             }
@@ -949,8 +1130,13 @@ export async function registerClienteJerarquicoService(cliente, sedes, clientePa
 
         return await AppDataSource.transaction(execute)
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+            if (manager) throw error
+            return error
+        }
         console.error("Error al registrar un cliente", error);
-        if (Array.isArray(error)) return error;
+        if (manager) throw error
         return [null, "Error interno del servidor"]
     }
 }
@@ -962,14 +1148,14 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, manager 
             for (const sede of sedes || []) {
                 //extraer los datos de la sede a agregar
                 const { nombre_sede, direccion, personalSolicitado, trabajadores, contactos } = sede
-                if (!nombre_sede || !direccion) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
+                if (!nombre_sede || !direccion) throw [null, createErrorMessage("nombre_sede/direccion", "Datos incompletos")]
 
                 //registrar en el espacio temporal la sede recorrida
                 const [sedeCreada, errorSedes] = await createSede(
                     { nombre_sede, direccion, personalSolicitado, },
                     cliente_id,
                     transactionManager)
-                if (errorSedes) throw errorSedes
+                if (errorSedes) throw [null, errorSedes]
 
                 //constante que almacenará la una sede y la lista de contactos y supervisores
                 const sedeResponse = {
@@ -980,12 +1166,12 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, manager 
 
                 //registrar los contactos de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
                 const [contactosCreados, errContactos] = await registerContactoJerarquicoService(contactos, sedeCreada.sede_id, transactionManager)
-                if (errContactos) throw errContactos
+                if (errContactos) throw [null, errContactos]
                 sedeResponse.contactos = contactosCreados
 
                 //registrar los supervisores de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
                 const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, cliente_id, transactionManager)
-                if (errSupervisores) throw errSupervisores
+                if (errSupervisores) throw [null, errSupervisores]
                 sedeResponse.supervisores = supervisores
 
                 sedesCreadas.push(sedeResponse)
@@ -996,8 +1182,14 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, manager 
         if (manager) return await execute(manager)
         return await AppDataSource.transaction(execute)
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+
+            if (manager) throw error
+            return error
+        }
         console.error("Error al registrar un cliente", error);
-        if (Array.isArray(error)) return error;
+        if (manager) throw error
         return [null, "Error interno del servidor"]
 
     }
@@ -1023,8 +1215,13 @@ export async function registerContactoJerarquicoService(contactos, sede_id, mana
         if (manager) return await execute(manager)
         return await AppDataSource.transaction(execute)
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+            if (manager) throw error
+            return error
+        }
         console.error("Error al registrar un cliente", error);
-        if (Array.isArray(error)) return error;
+        if (manager) throw error
         return [null, "Error interno del servidor"]
     }
 }

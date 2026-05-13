@@ -9,6 +9,7 @@ import { registerService } from "./auth.service.js";
 import { getClienteByService, getSedeByService, } from "./cliente.service.js";
 import Sede from "../entity/sede.entity.js";
 import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
+import Cliente from "../entity/cliente.entity.js";
 
 /**
  * Busqueda estricta OR para obtener un usuario por id, rut, email o teléfono. 
@@ -119,12 +120,14 @@ export async function updateUserService(query, body, manager = null) {
     if (body.phone) where.push({ phone: body.phone })
 
     if (Object.keys(where).length === 0) {
+      if (manager) throw [null, "Debe proporcionar al menos un criterio de búsqueda para actualizar"];
       return [null, "Debe proporcionar al menos un criterio de búsqueda para actualizar"];
     }
     //verificar que el nuevo rut, email o teléfono no estén registrados en otro usuario
     const existingUser = await userRepository.findOne({ where, });
 
     if (existingUser && existingUser.id !== userFound.id) {
+      if (manager) throw [null, "Ya existe un usuario con el mismo rut, email o teléfono"];
       return [null, "Ya existe un usuario con el mismo rut, email o teléfono"];
     }
 
@@ -134,7 +137,10 @@ export async function updateUserService(query, body, manager = null) {
         userFound.password,
       );
 
-      if (!matchPassword) return [null, "La contraseña no coincide"];
+      if (!matchPassword) {
+        if (manager) throw [null, "La contraseña no coincide"]
+        return [null, "La contraseña no coincide"]
+      }
     }
 
     const dataUserUpdate = {
@@ -157,6 +163,7 @@ export async function updateUserService(query, body, manager = null) {
     });
 
     if (!userData) {
+      if (manager) throw [null, "Usuario no encontrado después de actualizar"];
       return [null, "Usuario no encontrado después de actualizar"];
     }
 
@@ -180,9 +187,12 @@ export async function deleteUserService(query, manager = null) {
       where: [{ id: id }, { rut: cleanRut(rut) }, { email: email }],
     });
 
-    if (!userFound) return [null, "Usuario no encontrado"];
-
+    if (!userFound) {
+      if (manager) throw [null, "Usuario no encontrado"];
+      return [null, "Usuario no encontrado"];
+    }
     if (userFound.rol === "Administrador") {
+      if (manager) throw [null, "No se puede eliminar un usuario con rol de Administrador"];
       return [null, "No se puede eliminar un usuario con rol de Administrador"];
     }
 
@@ -344,16 +354,53 @@ export async function getAsignadoByService(trabajador, estado = null, sede_id = 
   }
 }
 
+export async function getTopJerarquía(cliente_id, manager = null) {
+  try {
+    const clienteRepository = manager
+      ? manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente)
+
+    let clienteActual = await clienteRepository.findOne({
+      where: { cliente_id },
+      relations: ["clientePadre"]
+    });
+    if (!clienteActual) return [null, createErrorMessage("cliente", "Cliente no encontrado")]
+
+    if (!clienteActual.clientePadre) return [cliente, null]
+
+    while (clienteActual.clientePadre) {
+
+      clienteActual = await clienteRepository.findOne({
+        where: { cliente_id: clienteActual.clientePadre.cliente_id },
+        relations: ["clientePadre"]
+      })
+
+    }
+
+    return [clienteActual, null]
+
+
+
+  } catch (error) {
+    if (Array.isArray(error)) {
+      if (manager) throw error
+      console.error("Error al obtener el cliente", error[1]);
+      return error
+    }
+    console.error("Error al obtener el cliente:", error);
+    if (manager) throw error
+    return [null, "Error interno del servidor"]
+  }
+}
 
 /**
- * 
+ * Se asigna un trabajador para trabajar con el cliente en una sede 
  * @param {*} trabajador datos del trabajador a asignar, id, rut o email, debe incluir el rol que cumplirá
  * @param {*} cliente_id id del cliente al que se asignará, si no corresponde al cliente de la sede entonces se verifica que esté en la jerarquía
  * @param {*} sede_id id de la sede a la que se asignará, se verifica que exista y que no se exceda el límite de personal solicitado, además se aumenta en 1 el personal asignado a la sede
  * @param {*} manager 
  * @returns 
  */
-export async function asignarPersonalService(trabajador, cliente_id, sede_id, manager = null) {
+export async function asignarPersonalService(trabajador, sede_id, manager = null) {
   try {
     const execute = async (transactionManager) => {
       /**parte referencial del body
@@ -391,20 +438,10 @@ export async function asignarPersonalService(trabajador, cliente_id, sede_id, ma
       if (errSede) throw errSede
 
       /*cliente de la sede encontrada*/
-      let clienteSede = sedeFound.cliente
+      const [topCliente, errCliente] = await getTopJerarquía(sedeFound.cliente.cliente_id, manager)
 
-      //verificar que la sede sea del cliente o el cliente_id es padre del cliente de la sede
-      let [clienteEntregado, errCliente] = await getClienteByService({ cliente_id: cliente_id }, transactionManager)
-      if (errCliente) throw errCliente
 
-      //si el cliente entregado no es el mismo que el de la sede, entonces se verifica que el cliente de la sede esté en la jerarquía del cliente entregado
-      if (clienteEntregado.cliente_id !== clienteSede.cliente_id) {
-        //recorrer la gerarquia hace encontrar el cliente dueño del id entregado
-        while (clienteSede.clientePadre && clienteSede.cliente_id !== cliente_id) {
-          clienteSede = clienteSede.clientePadre
-        }
-        if (clienteSede.cliente_id !== cliente_id) throw createErrorMessage("cliente_id", "La sede no pertenece al cliente o su jerarquia")
-      }
+
       const cuposDisponibles = sedeFound.personalSolicitado - sedeFound.personalAsignado
       //verificar que no se exceda el límite de personal
       if (cuposDisponibles <= 0) throw createErrorMessage("trabajadores", `Solo quedan ${cuposDisponibles} cupos disponibles`)
@@ -429,7 +466,7 @@ export async function asignarPersonalService(trabajador, cliente_id, sede_id, ma
         trabajador: trabajadorEncontrado,
         usuario: userAsignado,
         sede: sedeFound,
-        cliente: clienteEntregado,
+        cliente: topCliente,
       })
 
       await AsignadoRepository.save(newAsignado)
@@ -448,8 +485,13 @@ export async function asignarPersonalService(trabajador, cliente_id, sede_id, ma
     return AppDataSource.transaction(execute)
 
   } catch (error) {
+    if (Array.isArray(error)) {
+      if (manager) throw error
+      console.error("Error al asignar un trabajador", error[1]);
+      return error
+    }
     console.error("Error al asignar un trabajador", error);
-    if (Array.isArray(error)) return error;
+    if (manager) throw error
     return [null, "Error interno del servidor"]
   }
 }
@@ -663,7 +705,13 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
 
     return await AppDataSource.transaction(execute)
   } catch (error) {
+    if (Array.isArray(error)) {
+      if (manager) throw error
+      console.error("Error al asignar un supervisor", error[1]);
+      return error
+    }
     console.error("Error al asignar un supervisor:", error);
+    if (manager) throw error
     return [null, "Error interno del servidor"];
   }
 }
@@ -706,8 +754,13 @@ export async function updateEstadoTrabajadorAsignado(trabajador, sede_id, estado
 
     return AppDataSource.transaction(execute)
   } catch (error) {
+    if (Array.isArray(error)) {
+      if (manager) throw error
+      console.error("Error al actualizar asignación", error[1]);
+      return error
+    }
     console.error("Error al actualizar asignación", error);
-    if (Array.isArray(error)) return error;
+    if (manager) throw error
     return [null, "Error interno del servidor"]
   }
 }
@@ -740,8 +793,13 @@ export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, 
     if (manager) return await execute(manager)
     return await AppDataSource.transaction(execute)
   } catch (error) {
+    if (Array.isArray(error)) {
+      if (manager) throw error
+      console.error("Error al asignar un supervisor", error[1]);
+      return error
+    }
     console.error("Error al asignar un supervisor", error);
-    if (Array.isArray(error)) return error;
+    if (manager) throw error
     return [null, "Error interno del servidor"]
   }
 }
