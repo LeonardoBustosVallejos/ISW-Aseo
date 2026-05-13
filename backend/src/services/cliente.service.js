@@ -5,7 +5,7 @@ import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
 import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
 import User from "../entity/user.entity.js";
-import { asignarSupervisorJerarquicoService, asignarSupervisorService, deleteUserService, getUserService } from "./user.service.js";
+import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupervisorService, getUserService } from "./user.service.js";
 import { registerService } from "./auth.service.js";
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
@@ -259,7 +259,8 @@ export async function updateContactoService(contacto_id, data, manager = null) {
         if (phone && phone !== currentContacto.phone) {
             const [existingPhone, errPhoneContacto] = await getContactoByService({ phone: phone }, manager)
             const [phoneUser, errUser] = await getUserService({ phone: phone }, manager)
-            if ((existingPhone && existingPhone.contacto_rut !== currentContacto.contacto_rut) || phoneUser.rut !== currentContacto.contacto_rut) {
+            if ((existingPhone && existingPhone.contacto_rut !== currentContacto.contacto_rut) ||
+                (phoneUser && phoneUser.rut !== currentContacto.contacto_rut)) {
                 return [null, createErrorMessage("phone", "Teléfono ya en uso")];
             }
         }
@@ -319,13 +320,13 @@ export async function getSedeByService(query, manager = null) {
 
         if (sede_id) where.sede_id = sede_id;
         if (direccion) where.direccion = direccion;
-        if (cliente_id) where.cliente = cliente_id;
+        if (cliente_id) where.cliente = { cliente_id: cliente_id };
         if (rutSecundario) where.rutSecundario = rutSecundario;
 
         if (Object.keys(where).length === 0) return [null, "Debe enviar al menos un criterio de busqueda"]
 
         const sede = await sedeRepository.findOne({
-            relations: ["cliente", "contactos"],
+            relations: ["cliente", "contactos", "cliente.clientePadre"],
             where
         });
 
@@ -383,10 +384,9 @@ export async function findSedesByService(query, manager = null) {
     }
 }
 
-export async function createSedeService(sede, cliente_id, manager = null) {
+async function createSede(sede, cliente_id, manager) {
     try {
-        const sedeRepository = manager ?
-            manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
+        const sedeRepository = manager.getRepository(Sede)
 
         const { nombre_sede, direccion, personalSolicitado, rutSecundario } = sede
 
@@ -524,7 +524,7 @@ export async function getClientesService(manager = null) {
 
         const clientes = await clienteRepository.find({ relations: ["filiales", "sede"], where: { tipoCliente: "EMPRESA" } })
 
-        if (!clientes || clientes.length === 0) return [null, "No hay clientes"];
+        if (!clientes || clientes.length === 0) return [null, createErrorMessage("clientes", "No hay clientes")];
 
         return [clientes, null]
     } catch (error) {
@@ -725,7 +725,6 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
 
     } catch (error) {
         console.error("Error al registrar un cliente", error);
-        if (manager) throw error
         return [null, "Error interno del servidor"]
     }
 }
@@ -794,7 +793,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
                 }
             }
             //registrar la sede del cliente
-            const [sedeCreada, errSede] = await createSedeService(sede, filialCreada ? filialCreada.cliente_id : clienteCreado.cliente_id, manager);
+            const [sedeCreada, errSede] = await createSede(sede, filialCreada ? filialCreada.cliente_id : clienteCreado.cliente_id, manager);
             if (errSede) {
                 //await deleteUserService({ id: perfilCreado.id })
                 console.error("=> Error de registro");
@@ -831,7 +830,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
             //registrar un nuevo usuario como supervisor del nuevo cliente
             let usuarioSupervisor = null, errSupervisor = null
             if (trabajador_id) {
-                [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id, manager)
+                [usuarioSupervisor, errSupervisor] = await asignarPersonalService({ id: trabajador_id, rol: "SUPERVISOR" }, clienteCreado.cliente_id, sedeCreada.sede_id, manager)
                 if (errSupervisor) {
                     //await deleteUserService({ id: perfilCreado.id })
                     console.error("=> Error de registro:", errSupervisor);
@@ -870,8 +869,8 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
             const { nombre_sede, direccion, rutSecundario, personalSolicitado } = sede
             if (!nombre_sede || !direccion || !cliente_id) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
 
-            //no se hacen validaciones porque estan dentro de la funcion createSedeService
-            const [sedeCreada, errSede] = await createSedeService(sede, cliente_id, transactionManager)
+            //no se hacen validaciones porque estan dentro de la funcion createSede
+            const [sedeCreada, errSede] = await createSede(sede, cliente_id, transactionManager)
             if (errSede) throw errSede
 
             const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, transactionManager)
@@ -966,7 +965,7 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, manager 
                 if (!nombre_sede || !direccion) throw createErrorMessage("nombre_sede/direccion", "Datos incompletos")
 
                 //registrar en el espacio temporal la sede recorrida
-                const [sedeCreada, errorSedes] = await createSedeService(
+                const [sedeCreada, errorSedes] = await createSede(
                     { nombre_sede, direccion, personalSolicitado, },
                     cliente_id,
                     transactionManager)
@@ -985,10 +984,11 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, manager 
                 sedeResponse.contactos = contactosCreados
 
                 //registrar los supervisores de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
-                const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, transactionManager)
+                const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, cliente_id, transactionManager)
                 if (errSupervisores) throw errSupervisores
                 sedeResponse.supervisores = supervisores
 
+                sedesCreadas.push(sedeResponse)
             }
             return [sedesCreadas, null]
         }

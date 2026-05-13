@@ -205,35 +205,38 @@ export async function deleteUserService(query, manager = null) {
  */
 export async function cambiarEstadoUsuario(query, estado = false, manager = null) {
   try {
-    const { id, rut, email } = query;
+    const execute = async (transactionManager) => {
+      const { id, rut, email } = query;
 
-    if (!id && !rut && !email) return [null, "Debe proporcionar al menos un criterio de búsqueda"];
+      if (!id && !rut && !email) throw createErrorMessage("Usuario", "Debe proporcionar al menos un criterio de búsqueda")
 
-    //verificar que el usuario exista
-    const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, manager)
-    if (err) return [null, err]
+      //verificar que el usuario exista
+      const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, transactionManager)
+      if (err) throw err
 
-    //verificar que el usuario no sea administrador
-    if (userFound.rol.nombre === "Administrador") return [null, "No se puede cambiar el estado de un usuario con rol de Administrador"];
+      //verificar que el usuario no sea administrador
+      if (userFound.rol.nombre === "Administrador") throw createErrorMessage("Usuario", "No se puede cambiar el estado de un usuario con rol de Administrador")
 
-    const userRepository = manager ?
-      manager.getRepository(User) : AppDataSource.getRepository(User);
+      const userRepository = transactionManager.getRepository(User);
 
-    const userUpdated = await userRepository.update({ id: userFound.id }, { isActive: estado })
+      const userUpdated = await userRepository.update({ id: userFound.id }, { isActive: estado })
 
-    if (!userUpdated.affected) return [null, "No se pudo actualizar el estado del usuario"]
+      if (!userUpdated.affected) throw createErrorMessage("Usuario", "No se pudo actualizar el estado del usuario")
 
-    const userData = await userRepository.findOne({
-      where: { id: userFound.id },
-    });
+      const userData = await userRepository.findOne({
+        where: { id: userFound.id },
+      });
 
-    if (!userData) {
-      return [null, "Usuario no encontrado después de actualizar"];
+      if (!userData) {
+        throw createErrorMessage("Usuario", "Usuario no encontrado después de actualizar")
+      }
+      const { password, ...user } = userData;
+
+      return [user, null];
     }
-    const { password, ...user } = userData;
+    if (manager) return await execute(manager)
 
-    return [user, null];
-
+    return await AppDataSource.transaction(execute)
   } catch (error) {
     console.error("Error al desactivar un usuario:", error);
     return [null, "Error interno del servidor"];
@@ -253,8 +256,8 @@ export async function getHistorialAsignacionService(query, manager = null) {
       manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
 
     const where = {}
-    if (sede_id) where.sede.sede_id = sede_id
-    if (cliente_id) where.cliente.cliente_id = cliente_id
+    if (sede_id) where.sede = { sede_id }
+    if (cliente_id) where.cliente = { cliente_id }
 
     const asignados = await AsignadoRepository.find({ where });
     if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
@@ -279,7 +282,7 @@ export async function getAsignadosService(sede_id = null, manager = null) {
 
     const where = {}
     where.estado = "ASIGNADO"
-    if (sede_id) where.sede.sede_id = sede_id
+    if (sede_id) where.sede = { sede_id: sede_id }
 
     const asignados = await AsignadoRepository.find({ where });
     if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
@@ -301,7 +304,7 @@ export async function getSupervisoresService(sede_id = null, estado = null, mana
     if (estado) where.estado = estado
     if (sede_id) where.sede = { sede_id }
 
-    const asignados = await AsignadoRepository.findOne({ where });
+    const asignados = await AsignadoRepository.find({ where });
     if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
 
     return [asignados, null]
@@ -318,7 +321,7 @@ export async function getAsignadoByService(trabajador, estado = null, sede_id = 
     if (estado && estado !== "ASIGNADO" && estado !== "REMOVIDO" && estado !== "FINALIZADO") return [null, createErrorMessage("estado", "Estado no válido")]
 
     const AsignadoRepository = manager ?
-      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+      manager.getRepository(TrabajadoresAsignados) : AppDataSource.getRepository(TrabajadoresAsignados);
 
     const where = {}
     if (estado) where.estado = estado
@@ -332,7 +335,7 @@ export async function getAsignadoByService(trabajador, estado = null, sede_id = 
     }
 
     const asignados = await AsignadoRepository.findOne({ where });
-    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+    if (!asignados) return [null, "No hay trabajadores asignados"];
 
     return [asignados, null]
   } catch (error) {
@@ -391,7 +394,7 @@ export async function asignarPersonalService(trabajador, cliente_id, sede_id, ma
       let clienteSede = sedeFound.cliente
 
       //verificar que la sede sea del cliente o el cliente_id es padre del cliente de la sede
-      let [clienteEntregado, errCliente] = await getClienteByService({ cliente_id }, transactionManager)
+      let [clienteEntregado, errCliente] = await getClienteByService({ cliente_id: cliente_id }, transactionManager)
       if (errCliente) throw errCliente
 
       //si el cliente entregado no es el mismo que el de la sede, entonces se verifica que el cliente de la sede esté en la jerarquía del cliente entregado
@@ -458,78 +461,82 @@ export async function asignarPersonalService(trabajador, cliente_id, sede_id, ma
  */
 async function reactivarSupervisorService(trabajador, manager = null) {
   try {
-    //datos de busqueda del trabajador
-    const { id, rut, email } = trabajador
+    const execute = async (transactionManager) => {
+      //datos de busqueda del trabajador
+      const { id, rut, email } = trabajador
 
-    if (!id && !rut && !email) return [null, createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")]
+      if (!id && !rut && !email) throw createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")
 
-    const trabajadorRepository = manager ?
-      manager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
+      const trabajadorRepository = transactionManager.getRepository(Trabajador);
 
-    const where = {} //AND
+      const where = {} //AND
 
-    where.despedido = false   //asegura que el trabajador no esté despedido
+      where.despedido = false   //asegura que el trabajador no esté despedido
 
-    //datos para buscar al trabajador, se puede buscar por id, rut o email
-    if (id) where.id = id
-    if (rut) where.rut = rut
-    if (email) where.email = email
+      //datos para buscar al trabajador, se puede buscar por id, rut o email
+      if (id) where.id = id
+      if (rut) where.rut = rut
+      if (email) where.email = email
 
-    //verificar que el trabajador exista y no esté despedido con AND
-    const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
-    if (!trabajadorEncontrado) return [null, createErrorMessage("trabajador", "Trabajador no encontrado")];
-    /*
-        // verificar que el trabajador no sea ya supervisor
-        if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
-    */
-    //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
-    const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
-    if (existingRut && existingRut.email !== trabajadorEncontrado.email) return [null, createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")]
+      //verificar que el trabajador exista y no esté despedido con AND
+      const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
+      if (!trabajadorEncontrado) throw createErrorMessage("trabajador", "Trabajador no encontrado")
+      /*
+          // verificar que el trabajador no sea ya supervisor
+          if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
+      */
+      //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
+      const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, transactionManager)
+      if (existingRut && existingRut.email !== trabajadorEncontrado.email && !existingEmail.isActive) throw createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")
 
-    const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, manager)
-    if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut) return [null, createErrorMessage("email", "Ya existe un otro registrado con el mismo email")]
+      const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, transactionManager)
+      if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut && !existingRut.isActive) throw createErrorMessage("email", "Ya existe un otro registrado con el mismo email")
 
-    //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
+      //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
 
-    //verificar que si existe un usuario entonces ver si está activo
-    let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, manager)
+      //verificar que si existe un usuario entonces ver si está activo
+      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, transactionManager)
 
-    if (errRegister) {
+      if (errRegister) {
 
-      //si no existe un usuario se registra
+        //si no existe un usuario se registra
 
-      //obtener el rol de supervisor para asignarlo al nuevo usuario
-      const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
-      if (errRol) return [null, errRol]
+        //obtener el rol de supervisor para asignarlo al nuevo usuario
+        const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
+        if (errRol) throw errRol
 
-      //seleccionar el correo antes del @ para usarlo como contraseña temporal
-      const emailParts = trabajadorEncontrado.email.split("@")[0]
+        //seleccionar el correo antes del @ para usarlo como contraseña temporal
+        const emailParts = trabajadorEncontrado.email.split("@")[0]
 
-      //registrar el nuevo usuario del supervisor
-      const [nuevoPerfil, errPerfil] = await registerService({
-        nombreCompleto: trabajadorEncontrado.nombreCompleto,
-        rut: cleanRut(trabajadorEncontrado.rut),
-        email: trabajadorEncontrado.email,
-        password: emailParts,
-        rol_id: rolSupervisor.id,
-      }, manager)
-      if (errPerfil) return [null, errPerfil]
+        //registrar el nuevo usuario del supervisor
+        const [nuevoPerfil, errPerfil] = await registerService({
+          nombreCompleto: trabajadorEncontrado.nombreCompleto,
+          rut: cleanRut(trabajadorEncontrado.rut),
+          email: trabajadorEncontrado.email,
+          password: emailParts,
+          rol_id: rolSupervisor.id,
+        }, transactionManager)
+        if (errPerfil) throw errPerfil
 
-      //retornar el perfil del nuevo supervisor
-      return [nuevoPerfil, null]
+        //retornar el perfil del nuevo supervisor
+        return [nuevoPerfil, null]
 
-    } else if (nuevoSupervisor && nuevoSupervisor.isActive === false) {
-      //si existe pero está desactivado, se reactiva
-      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, manager)
-      if (errEstado) return [null, errEstado]
+      } else if (nuevoSupervisor && nuevoSupervisor.isActive === false) {
+        //si existe pero está desactivado, se reactiva
+        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, transactionManager)
+        if (errEstado) throw errEstado
 
-      //retornar el perfil del supervisor reactivado
-      return [nuevoEstado, null]
+        //retornar el perfil del supervisor reactivado
+        return [nuevoEstado, null]
+
+      }
+      //if(nuevoSupervisor && nuevoSupervisor.isActive)
+      return [nuevoSupervisor, null];
 
     }
-    //if(nuevoSupervisor && nuevoSupervisor.isActive)
-    return [nuevoSupervisor, null];
+    if (manager) return await execute(manager)
 
+    return await AppDataSource.transaction(execute)
 
   } catch (error) {
     console.error("Error al asignar un supervisor:", error);
@@ -538,123 +545,123 @@ async function reactivarSupervisorService(trabajador, manager = null) {
 }
 export async function asignarSupervisorService(trabajador, sede_id, manager = null) {
   try {
-    //datos de busqueda del trabajador
-    const { id, rut, email } = trabajador
+    const execute = async (transactionManager) => {
+      //datos de busqueda del trabajador
+      const { id, rut, email } = trabajador
 
-    //verificar que la sede exista
-    const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
-    if (errSede) return [null, errSede]
+      //verificar que la sede exista
+      const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, transactionManager)
+      if (errSede) throw errSede
 
-    //verificar que no se exceda el límite de personal
-    if (sedeFound.personalAsignado === sedeFound.personalSolicitado) return [null, createSimpleMessage("Límite de personal alcanzado")]
+      //verificar que no se exceda el límite de personal
+      if (sedeFound.personalAsignado === sedeFound.personalSolicitado) throw createSimpleMessage("Límite de personal alcanzado")
 
-    if (!id && !rut && !email) return [null, createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")]
+      if (!id && !rut && !email) throw createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")
 
-    const trabajadorRepository = manager ?
-      manager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
+      const trabajadorRepository = transactionManager.getRepository(Trabajador);
 
-    const where = {} //AND
+      const where = {} //AND
 
-    where.despedido = false   //asegura que el trabajador no esté despedido
+      where.despedido = false   //asegura que el trabajador no esté despedido
 
-    //datos para buscar al trabajador, se puede buscar por id, rut o email
-    if (id) where.id = id
-    if (rut) where.rut = rut
-    if (email) where.email = email
+      //datos para buscar al trabajador, se puede buscar por id, rut o email
+      if (id) where.id = id
+      if (rut) where.rut = rut
+      if (email) where.email = email
 
-    //verificar que el trabajador exista y no esté despedido con AND
-    const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
-    if (!trabajadorEncontrado) return [null, createErrorMessage("trabajador", "Trabajador no encontrado")];
-    /*
-        // verificar que el trabajador no sea ya supervisor
-        if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
-    */
-    //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
-    const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, manager)
-    if (existingRut && existingRut.email !== trabajadorEncontrado.email) return [null, createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")]
+      //verificar que el trabajador exista y no esté despedido con AND
+      const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
+      if (!trabajadorEncontrado) throw createErrorMessage("trabajador", "Trabajador no encontrado")
+      /*
+          // verificar que el trabajador no sea ya supervisor
+          if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
+      */
+      //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
+      const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, transactionManager)
+      if (existingRut && existingRut.email !== trabajadorEncontrado.email) throw createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")
 
-    const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, manager)
-    if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut) return [null, createErrorMessage("email", "Ya existe un otro registrado con el mismo email")]
+      const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, transactionManager)
+      if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut) throw createErrorMessage("email", "Ya existe un otro registrado con el mismo email")
 
-    //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
+      //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
 
-    //verificar que si existe un usuario entonces ver si está activo
-    let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, manager)
-    let usuarioCreado = false
+      //verificar que si existe un usuario entonces ver si está activo
+      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, transactionManager)
+      let usuarioCreado = false
 
-    if (errRegister) {
+      if (errRegister) {
 
-      //si no existe un usuario se registra
+        //si no existe un usuario se registra
 
-      //obtener el rol de supervisor para asignarlo al nuevo usuario
-      const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
-      if (errRol) return [null, errRol]
+        //obtener el rol de supervisor para asignarlo al nuevo usuario
+        const [rolSupervisor, errRol] = await getRolByNameService("Supervisor")
+        if (errRol) throw errRol
 
-      //seleccionar el correo antes del @ para usarlo como contraseña temporal
-      const emailParts = trabajadorEncontrado.email.split("@")[0];
+        //seleccionar el correo antes del @ para usarlo como contraseña temporal
+        const emailParts = trabajadorEncontrado.email.split("@")[0];
 
-      const datosSupervisor = {
-        nombreCompleto: trabajadorEncontrado.nombreCompleto,
-        rut: cleanRut(trabajadorEncontrado.rut),
-        email: trabajadorEncontrado.email,
-        password: emailParts,
-        rol_id: rolSupervisor.id,
+        const datosSupervisor = {
+          nombreCompleto: trabajadorEncontrado.nombreCompleto,
+          rut: cleanRut(trabajadorEncontrado.rut),
+          email: trabajadorEncontrado.email,
+          password: emailParts,
+          rol_id: rolSupervisor.id,
+        }
+
+        //registrar el nuevo usuario del supervisor
+        const [nuevoPerfil, errPerfil] = await registerService({
+          nombreCompleto: trabajadorEncontrado.nombreCompleto,
+          rut: cleanRut(trabajadorEncontrado.rut),
+          email: trabajadorEncontrado.email,
+          password: emailParts,
+          rol_id: rolSupervisor.id,
+        }, transactionManager)
+        if (errPerfil) throw errPerfil
+        nuevoSupervisor = nuevoPerfil
+        usuarioCreado = true
+
+      } else if (nuevoSupervisor && !nuevoSupervisor.isActive) {
+        //si existe pero está desactivado, se reactiva
+        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, transactionManager)
+        if (errEstado) throw errEstado
+        nuevoSupervisor = nuevoEstado
+
       }
 
-      //registrar el nuevo usuario del supervisor
-      const [nuevoPerfil, errPerfil] = await registerService({
-        nombreCompleto: trabajadorEncontrado.nombreCompleto,
-        rut: cleanRut(trabajadorEncontrado.rut),
-        email: trabajadorEncontrado.email,
-        password: emailParts,
-        rol_id: rolSupervisor.id,
-      }, manager)
-      if (errPerfil) return [null, errPerfil]
-      nuevoSupervisor = nuevoPerfil
-      usuarioCreado = true
 
-    } else if (nuevoSupervisor && nuevoSupervisor.state === "DESACTIVADO") {
-      //si existe pero está desactivado, se reactiva
-      const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, manager)
-      if (errEstado) return [null, errEstado]
-      nuevoSupervisor = nuevoEstado
-
-    }
-
-
-    if (trabajadorEncontrado.rol !== "Supervisor") {
-      //actualizar rol del trabajador a Supervisor
-      const trabajadorUpdated = await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "Supervisor" })
-      if (!trabajadorUpdated.affected) {
-        if (usuarioCreado && !manager) await deleteUserService({ id: nuevoSupervisor.id })
-        return [null, createSimpleMessage(
-          "No se pudo actualizar el rol del trabajador"
-        )]
+      if (trabajadorEncontrado.rol !== "Supervisor") {
+        //actualizar rol del trabajador a Supervisor
+        const trabajadorUpdated = await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "Supervisor" })
+        if (!trabajadorUpdated.affected) {
+          if (usuarioCreado && !transactionManager) await deleteUserService({ id: nuevoSupervisor.id })
+          throw createSimpleMessage("No se pudo actualizar el rol del trabajador")
+        }
       }
-    }
-    //si cumple con todo lo anterior, se asigna un nuevo supervisor a la sede, aumentando en 1 el personal asignado a la sede
-    const sedeRepository = manager ?
-      manager.getRepository(Sede) : AppDataSource.getRepository(Sede);
+      //si cumple con todo lo anterior, se asigna un nuevo supervisor a la sede, aumentando en 1 el personal asignado a la sede
+      const sedeRepository = transactionManager.getRepository(Sede);
 
-    const nuevoPersonal = await sedeRepository.createQueryBuilder()
-      .update(Sede)
-      .set({ personalAsignado: () => `"personalAsignado" + 1` })
-      .where("sede_id = :id", { id: sede_id })
-      .andWhere(`"personalAsignado" < "personalSolicitado"`)
-      .execute();
+      const nuevoPersonal = await sedeRepository.createQueryBuilder()
+        .update(Sede)
+        .set({ personalAsignado: () => `"personalAsignado" + 1` })
+        .where("sede_id = :id", { id: sede_id })
+        .andWhere(`"personalAsignado" < "personalSolicitado"`)
+        .execute();
 
-    if (!nuevoPersonal.affected) {
-      if (!manager) {
-        if (usuarioCreado) await deleteUserService({ id: nuevoSupervisor.id })
-        await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "trabajador" })
+      if (!nuevoPersonal.affected) {
+        if (!manager) {
+          if (usuarioCreado) await deleteUserService({ id: nuevoSupervisor.id })
+          await trabajadorRepository.update({ id: trabajadorEncontrado.id }, { rol: "trabajador" })
+        }
+        throw createSimpleMessage("No se pudo actualizar el trabajador")
       }
-      return [null, createSimpleMessage("No se pudo actualizar el trabajador")]
+      console.log("Personal asignado cambiado:", nuevoPersonal);
+
+      return [nuevoSupervisor, null];
+
     }
-    console.log("Personal asignado cambiado:", nuevoPersonal);
+    if (manager) return await execute(manager)
 
-    return [nuevoSupervisor, null];
-
-
+    return await AppDataSource.transaction(execute)
   } catch (error) {
     console.error("Error al asignar un supervisor:", error);
     return [null, "Error interno del servidor"];
@@ -666,7 +673,7 @@ export async function updateEstadoTrabajadorAsignado(trabajador, sede_id, estado
     const execute = async (transactionManager) => {
 
       const estadosValidos = ["ASIGNADO", "REMOVIDO", "FINALIZADO"]
-      if (!estadosValidos.includes(estado)) return [null, createErrorMessage("estado", "Estado no válido")]
+      if (!estadosValidos.includes(estado)) throw createErrorMessage("estado", "Estado no válido")
 
       const [trabajadorAsignado, errAsignacion] = await getAsignadoByService(trabajador, "ASIGNADO", sede_id, transactionManager)
       if (errAsignacion) throw errAsignacion
@@ -706,12 +713,12 @@ export async function updateEstadoTrabajadorAsignado(trabajador, sede_id, estado
 }
 
 
-export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, manager = null) {
+export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, cliente_id, manager = null) {
   try {
     const execute = async (transactionManager) => {
       const trabajadoresAsignados = []
       const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, transactionManager)
-      if (errSede) return [null, errSede]
+      if (errSede) throw errSede
 
       const cuposDisponibles = sedeFound.personalSolicitado - sedeFound.personalAsignado
 
@@ -719,8 +726,9 @@ export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, 
 
       //recorrer la lista de supervisores a asignar
       for (const trabajador_id of trabajadores || []) {
-        const [supervisor, errSupervisor] = await asignarSupervisorService(
-          { id: trabajador_id },
+        const [supervisor, errSupervisor] = await asignarPersonalService(
+          { id: trabajador_id, rol: "SUPERVISOR" },
+          cliente_id,
           sede_id,
           transactionManager)
         if (errSupervisor) throw errSupervisor

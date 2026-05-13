@@ -1,5 +1,5 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, createSedeService, registerSedeSimpleService } from "../services/cliente.service.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService } from "../services/cliente.service.js";
 import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 
 export async function getClientes(req, res) {
