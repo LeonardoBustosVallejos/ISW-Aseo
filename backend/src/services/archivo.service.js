@@ -8,7 +8,9 @@ export const uploadContratoComercialService =
         allowedMimeTypes: [
             "application/pdf",
             "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpeg",
+            "image/png"
         ]
     })
 
@@ -18,7 +20,9 @@ export const uploadContratoLaboralService =
         allowedMimeTypes: [
             "application/pdf",
             "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpeg",
+            "image/png"
         ]
     })
 
