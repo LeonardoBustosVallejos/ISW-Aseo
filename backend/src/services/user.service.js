@@ -366,7 +366,7 @@ export async function getTopJerarquía(cliente_id, manager = null) {
     });
     if (!clienteActual) return [null, createErrorMessage("cliente", "Cliente no encontrado")]
 
-    if (!clienteActual.clientePadre) return [cliente, null]
+    if (!clienteActual.clientePadre) return [clienteActual, null]
 
     while (clienteActual.clientePadre) {
 
@@ -415,12 +415,11 @@ export async function asignarPersonalService(trabajador, sede_id, manager = null
      * }
      */
       const { id, rut, email, rol } = trabajador
-      if (!id && !rut && !email) throw createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")
+      if (!id && !rut && !email) throw [null, createErrorMessage("trabajador", "Debe proporcionar al menos un criterio de búsqueda para el trabajador")]
 
-      if (rol !== "SUPERVISOR" && rol !== "TRABAJADOR") throw createErrorMessage("rol", "Rol no válido")
+      if (rol !== "SUPERVISOR" && rol !== "TRABAJADOR") throw [null, createErrorMessage("rol", "Rol no válido")]
 
-      const trabajadorRepository = transactionManager ?
-        transactionManager.getRepository(Trabajador) : AppDataSource.getRepository(Trabajador);
+      const trabajadorRepository = transactionManager.getRepository(Trabajador)
 
       const where = {} //AND
 
@@ -432,34 +431,33 @@ export async function asignarPersonalService(trabajador, sede_id, manager = null
 
       //verificar que el trabajador exista y no esté despedido con AND
       const trabajadorEncontrado = await trabajadorRepository.findOne({ where });
-      if (!trabajadorEncontrado) throw createErrorMessage("trabajador", "Trabajador no encontrado")
+      if (!trabajadorEncontrado) throw [null, createErrorMessage("trabajador", "Trabajador no encontrado")]
 
       //verificar que la sede exista
       const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, transactionManager)
-      if (errSede) throw errSede
+      if (errSede) throw [null, errSede]
 
       /*cliente de la sede encontrada*/
-      const [topCliente, errCliente] = await getTopJerarquía(sedeFound.cliente.cliente_id, manager)
+      const [topCliente, errCliente] = await getTopJerarquía(sedeFound.cliente.cliente_id, transactionManager)
 
 
 
       const cuposDisponibles = sedeFound.personalSolicitado - sedeFound.personalAsignado
       //verificar que no se exceda el límite de personal
-      if (cuposDisponibles <= 0) throw createErrorMessage("trabajadores", `Solo quedan ${cuposDisponibles} cupos disponibles`)
+      if (cuposDisponibles <= 0) throw [null, createErrorMessage("trabajadores", `Solo quedan ${cuposDisponibles} cupos disponibles`)]
 
       //verificar que no esté asignado ya a esta sede
       const [estaAsignado, noAsignado] = await getAsignadoByService(trabajador, "ASIGNADO", sedeFound.sede_id, transactionManager)
-      if (estaAsignado) throw createErrorMessage("trabajador", "El trabajador ya está asignado a esta sede")
+      if (estaAsignado) throw [null, createErrorMessage("trabajador", "El trabajador ya está asignado a esta sede")]
 
       let [userAsignado, errAsignacion] = [null, null]
       if (rol === "SUPERVISOR") {
         [userAsignado, errAsignacion] = await reactivarSupervisorService({ id, rut, email }, transactionManager)
-        if (errAsignacion) throw errAsignacion
+        if (errAsignacion) throw [null, errAsignacion]
       }
 
 
-      const AsignadoRepository = transactionManager ?
-        transactionManager.getRepository(TrabajadoresAsignados) : AppDataSource.getRepository(TrabajadoresAsignados)
+      const AsignadoRepository = transactionManager.getRepository(TrabajadoresAsignados)
 
       const newAsignado = AsignadoRepository.create({
         estado: "ASIGNADO",
@@ -472,8 +470,7 @@ export async function asignarPersonalService(trabajador, sede_id, manager = null
 
       await AsignadoRepository.save(newAsignado)
 
-      const sedeRepository = transactionManager ?
-        transactionManager.getRepository(Sede) : AppDataSource.getRepository(Sede)
+      const sedeRepository = transactionManager.getRepository(Sede)
 
       await sedeRepository.increment({ sede_id }, "personalAsignado", 1)
 
@@ -481,9 +478,9 @@ export async function asignarPersonalService(trabajador, sede_id, manager = null
 
     }
 
-    if (manager) return execute(manager)
+    if (manager) return await execute(manager)
 
-    return AppDataSource.transaction(execute)
+    return await AppDataSource.transaction(execute)
 
   } catch (error) {
     if (Array.isArray(error)) {
@@ -752,7 +749,7 @@ export async function updateEstadoTrabajadorAsignado(trabajador, sede_id, estado
 
     if (manager) return execute(manager)
 
-    return AppDataSource.transaction(execute)
+    return await AppDataSource.transaction(execute)
   } catch (error) {
     if (Array.isArray(error)) {
       if (manager) throw error
@@ -781,7 +778,6 @@ export async function asignarSupervisorJerarquicoService(trabajadores, sede_id, 
       for (const trabajador_id of trabajadores || []) {
         const [supervisor, errSupervisor] = await asignarPersonalService(
           { id: trabajador_id, rol: "SUPERVISOR" },
-          cliente_id,
           sede_id,
           transactionManager)
         if (errSupervisor) throw errSupervisor

@@ -3,13 +3,15 @@ import Contacto from "../entity/contacto.entity.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
-import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
+import { cleanRut, createErrorMessage } from "../cleaners/extras.js";
 import User from "../entity/user.entity.js";
 import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupervisorService, getUserService } from "./user.service.js";
-import { registerService } from "./auth.service.js";
+
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
 import { getORTrabajadorService } from "./trabajador.service.js";
+import { createContratoComercialService } from "./contrato.service.js";
+import { createMultipleDocumentosService } from "./archivo.service.js";
 /**
  * get...s() lista de todos
  * get...By(params) estricta para un único elemento con findOne AND
@@ -944,7 +946,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
             if ((filial && cleanRut(filial.rutCliente) === cleanRut(cliente.rutCliente)) ||                                                 //verificacion de filial para cliente
                 (trabajador && (cleanRut(cliente.rutCliente) === cleanRut(trabajador.rut) || cleanRut(trabajador.rut) === cleanRut(contacto.contacto_rut))) ||  //verificacion con trabajador para supervisor
                 cleanRut(cliente.rutCliente) === cleanRut(contacto.contacto_rut))                                                           //verificacion de contacto para cliente
-                throw createErrorMessage("rut", "Rut duplicado")
+                throw [null, createErrorMessage("rut", "Rut duplicado")]
 
 
             //verificar el rut con las sedes, que no esté registrado en una sede de otro cliente
@@ -1074,7 +1076,7 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
         }
 
         if (manager) return await execute(manager)
-        return AppDataSource.transaction(execute)
+        return await AppDataSource.transaction(execute)
     } catch (error) {
         if (Array.isArray(error)) {
             console.error("Error al registrar un cliente", error[1]);
@@ -1089,6 +1091,42 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
 
 
 //Funciones compuestas para registro jerarquico
+
+export async function registerClienteJerarquicoYArchivoService(data, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const { cliente, sedes, contrato, documentos } = data
+            //registrar jerarquía clientes, sedes, contactos y asignar supervisor/es
+            const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(cliente, sedes, null, transactionManager)
+            if (errCliente) throw [null, errCliente]
+
+            const [contratoCreado, errContrato] = await createContratoComercialService(contrato, clienteJerarquico.cliente_id, transactionManager)
+            if (errContrato) throw [null, errContrato]
+
+            const [documentosCreados, errDocs] = await createMultipleDocumentosService(documentos, contratoCreado.id_contrato_comercial, transactionManager)
+            if (errDocs) throw [null, errDocs]
+            return [
+                {
+                    cliente: clienteJerarquico,
+                    ...contrato,
+                    documentos: documentosCreados
+                }
+            ]
+        }
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente/contrato/documentos", error[1]);
+            if (manager) throw error
+            return error
+        }
+        console.error("Error al registrar un cliente/contrato/documento", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
 
 /**
  * Función para registrar un cliente o filial de forma jerárquica, con la posibilidad de asignar un supervisor desde el registro, pero sin necesidad de crear un perfil para el cliente o filial, ni asignar un contrato comercial al momento del registro, esta función se puede llamar recursivamente para registrar filiales anidadas

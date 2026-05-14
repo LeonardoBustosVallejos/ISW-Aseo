@@ -46,7 +46,8 @@ const DocumentoComercialSchema = new EntitySchema({
         },
         tipoDocumento: {
             type: "enum",
-            enum: ["CONTRATO", "ANEXO", "RENOVACION", "OTRO"]
+            enum: ["CONTRATO", "ANEXO", "RENOVACION", "OTRO"],
+            default: "OTRO"
         },
         createdAt: {
             type: "timestamp with time zone",

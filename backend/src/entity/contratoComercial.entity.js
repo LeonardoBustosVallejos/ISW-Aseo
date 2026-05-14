@@ -72,12 +72,12 @@ const contratoComercialSchema = new EntitySchema({
             nullable: false, //el contrato si o si debe ser dirigido a alguien
             onDelete: "CASCADE"
         },
-        sede: {
+        /*sede: {
             target: "Sede",
             type: "many-to-many",
             joinColumn: { name: "sede_id" },
             nullable: false //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
-        }
+        }*/
     }
 });
 

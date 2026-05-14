@@ -1,40 +1,53 @@
-import Contrato from "../entity/contrato.entity.js";
+import Contrato from "../entity/contratoComercial.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import Clientes from "../entity/cliente.entity.js";
-import UserSchema from "../entity/user.entity.js";
+import User from "../entity/user.entity.js";
+import Sedes from "../entity/sede.entity.js";
+import { createErrorMessage } from "../cleaners/extras.js";
+import { getClienteByService, getSedeByService } from "./cliente.service.js";
+import { getTopJerarquía } from "./user.service.js";
 
 
-export async function createContratoComercialService(data, sede_id, cliente_id) {
+export async function createContratoComercialService(data, cliente_id, manager = null) {
     try {
-        const contratoRepository = AppDataSource.getRepository(Contrato);
-        const clienteRepository = AppDataSource.getRepository(Clientes);
-        const userRepository = AppDataSource.getRepository(User);
+        const execute = async (transactionManager) => {
 
-        const { cliente_id, usuario_id, fechaInicio, fechaFin, archivo } = data;
+            const contratoRepository = transactionManager.getRepository(Contrato);
+            const clienteRepository = transactionManager.getRepository(Clientes);
+            const sedeRepository = transactionManager.getRepository(Sedes)
 
-        //verificar que a quien vaya dirigido exista
-        const usuarios = await userRepository.findOne({
-            where: { usuario_id }
-        });
 
-        const cliente = await clienteRepository.findOne({
-            where: { cliente_id }
-        });
+            const { fechaInicio, fechaFinOriginal, fechaFinReal, monto, descripcion } = data
 
-        if (!usuarios || !cliente) return [null, "No existe destinatario del contrato"]
+            if (!fechaInicio || !fechaFinOriginal || !monto || !cliente_id) throw [null, createErrorMessage("contrato", "datos incompletos")]
 
-        const contrato = contratoRepository.create({
-            fechaInicio,
-            fechaFin,
-            archivo,
-            cliente: cliente.usuario_id || null,
-            usuario: usuario_id
-        });
+            if ((fechaInicio >= fechaFinOriginal) ||
+                (fechaInicio >= fechaFinReal) ||
+                (fechaFinOriginal <= fechaFinReal)) throw [null, createErrorMessage("fecha", "Fechas no válidas")]
 
-        await contratoRepository.save(contrato)
+            const [clienteFound, errCliente] = await getClienteByService({ cliente_id: cliente_id }, transactionManager)
+            if (errCliente) throw [null, errCliente]
 
-        return [contrato, null]
+            const [representante, errRep] = await getTopJerarquía(clienteFound.cliente_id, transactionManager)
+            if (errRep) throw [null, errRep]
 
+
+            const contrato = contratoRepository.create({
+                codigoContrato: `COM-${representante.cliente_id}-${representante.nombreCliente}`,
+                fechaInicio: fechaInicio,
+                fechaFinOriginal: fechaFinOriginal,
+                fechaFinReal: fechaFinReal ? fechaFinReal : fechaFinOriginal,
+                monto: monto,
+                cliente: representante.cliente_id,
+                //sede: sede_id
+            });
+
+            await contratoRepository.save(contrato)
+
+            return [contrato, null]
+        }
+        if (manager) return await execute(manager)
+        return await AppDataSource.transaction(execute)
     } catch (error) {
         console.error("Error creando contrato", error);
         return [null, "Error interno"];
@@ -43,4 +56,4 @@ export async function createContratoComercialService(data, sede_id, cliente_id) 
 
 
 
-//NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo usuario
+//NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente o trabajador

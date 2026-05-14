@@ -1,32 +1,56 @@
-import multer from "multer";
+import multer from "multer"
 import path from "path"
+import fs from "fs"
 import { v4 as uuidv4 } from "uuid"
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/contratos")
-    },
+export function createUploadMiddleware({
+    destination = "uploads",
+    allowedMimeTypes = [],
+    maxSize = 10 * 1024 * 1024
+}) {
 
-    filename: (req, file, cb) => {
-        const extension = path.extname(file.originalname)
+    const storage = multer.diskStorage({
 
-        const nombreArchivo = `${uuidv4()}${extension}`
+        destination: (req, file, cb) => {
 
-        cb(null, nombreArchivo)
+            const fullPath = path.join(process.cwd(), destination)
+
+            //crear carpeta si no existe
+            fs.mkdirSync(fullPath, { recursive: true })
+
+            cb(null, fullPath)
+        },
+
+        filename: (req, file, cb) => {
+
+            const extension = path.extname(file.originalname)
+
+            const uniqueName = `${uuidv4()}${extension}`
+
+            cb(null, uniqueName)
+        }
+    })
+
+    const fileFilter = (req, file, cb) => {
+
+        if (
+            allowedMimeTypes.length > 0 &&
+            !allowedMimeTypes.includes(file.mimetype)
+        ) {
+            return cb(
+                new Error("Formato de archivo no permitido"),
+                false
+            )
+        }
+
+        cb(null, true)
     }
-})
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype !== "application/pdf") {
-        return cb(new Error("Solo se permiten archivos PDF"), false)
-    }
 
-    cb(null, true)
+    return multer({
+        storage,
+        fileFilter,
+        limits: {
+            fileSize: maxSize
+        }
+    })
 }
-
-export const uploadContrato = multer({
-    storage,
-    fileFilter,
-    limits: {
-        fileSize: 10 * 1024 * 1024
-    }
-})

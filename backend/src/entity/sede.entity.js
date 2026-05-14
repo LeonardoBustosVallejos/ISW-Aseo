@@ -57,7 +57,7 @@ const SedeSchema = new EntitySchema({
     relations: {
         //varias sedes pueden ser del mismo cliente
         cliente: {
-            type: "many-to-many",
+            type: "many-to-one",
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
             onDelete: "CASCADE" //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección

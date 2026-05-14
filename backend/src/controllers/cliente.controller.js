@@ -1,7 +1,7 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService } from "../services/cliente.service.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService } from "../services/cliente.service.js";
 import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
-
+import fs from "fs";
 export async function getClientes(req, res) {
     try {
         const [clientes, err] = await listarClientesService()
@@ -79,5 +79,65 @@ export async function registrarClienteJerarquico(req, res) {
         return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
     } catch (error) {
         handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function registrarClienteYArchivo(req, res) {
+    try {
+
+        const documentos = req.files || []
+
+        console.log(req.files);
+
+        const { cliente, sedes, contrato, metadataDocumentos } = req.body
+
+        /**
+        const { error } = registerClienteJerarquicoValidation.validate({ cliente, sedes, contrato })
+
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
+*/
+        /**
+         * IMPORTANTE:
+         * multipart/form-data convierte todo en string,
+         * así que normalmente tendrás que parsear.
+        */
+
+        const clienteParsed = typeof cliente === "string" ? JSON.parse(cliente) : cliente
+        const sedesParsed = typeof sedes === "string" ? JSON.parse(sedes) : sedes
+        const contratoParsed = typeof contrato === "string" ? JSON.parse(contrato) : contrato
+        const metadataParsed = typeof metadataDocumentos === "string" ? JSON.parse(metadataDocumentos) : metadataDocumentos
+
+        /**
+         * unir metadata con archivos reales
+        */
+
+        const documentosFinales = documentos.map((file, index) => ({
+            file,
+            nombrePersonalizado: metadataParsed?.[index]?.nombrePersonalizado,
+            tipoDocumento: metadataParsed?.[index]?.tipoDocumento,
+            originalname: metadataParsed?.[index]?.originalname
+        }))
+
+        const [data, errorRegistro] = await registerClienteJerarquicoYArchivoService({
+            cliente: clienteParsed,
+            sedes: sedesParsed,
+            contrato: contratoParsed,
+            documentos: documentosFinales
+        })
+
+        if (errorRegistro) return handleErrorClient(res, 400, "Error registrando", errorRegistro)
+
+        for (const file of req.files || []) {
+            console.log(
+                "EXISTE?",
+                fs.existsSync(file.path),
+                file.path
+            )
+        }
+        return handleSuccess(res, 201, "Cliente, contrato y documentos registrados con éxito", data)
+
+    } catch (error) {
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
