@@ -13,7 +13,11 @@ const contratoLaboralSchema = new EntitySchema({
             type: "date",
             nullable: false,
         },
-        fechaFin: {
+        fechaFinOriginal: {
+            type: "date",
+            nullable: true,
+        },
+        fechaFinReal: {
             type: "date",
             nullable: true,
         },
@@ -32,10 +36,6 @@ const contratoLaboralSchema = new EntitySchema({
         monto: {
             type: "int",
             default: 0,
-        },
-        archivo: {
-            type: "varchar",
-            nullable: true //CAMBIAR A FUTURO
         },
         descripcion: {
             type: "text",
@@ -61,6 +61,11 @@ const contratoLaboralSchema = new EntitySchema({
         },
     ],
     relations: {
+        documentos: {
+            type: "one-to-many",
+            target: "DocumentoComercial",
+            inverseSide: "contratoLaboral"
+        },
         trabajador: {
             target: "User",
             type: "many-to-one",

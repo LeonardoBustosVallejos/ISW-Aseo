@@ -79,6 +79,9 @@ export async function getContactoByService(query, manager = null) {
         if (email) where.email = email
         if (phone) where.phone = phone
 
+        if (Object.keys(where).length === 0) {
+            return [null, "Debe enviar al menos un criterio de busqueda"]
+        }
 
         const contacto = await contactoRepository.findOne({
             relations: ["sede", "sede.cliente"],
@@ -706,6 +709,10 @@ export async function getClienteByService(query, manager = null) {
         if (nombreCliente) where.nombreCliente = nombreCliente
         if (rutCliente) where.rutCliente = cleanRut(rutCliente)
         if (tipoCliente) where.tipoCliente = tipoCliente
+
+        if (Object.keys(where).length === 0) {
+            return [null, "Debe enviar al menos un criterio de busqueda"]
+        }
 
         const cliente = await clienteRepository.findOne({ relations: ["sede"], where })
 

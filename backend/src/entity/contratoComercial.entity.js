@@ -9,11 +9,20 @@ const contratoComercialSchema = new EntitySchema({
             primary: true,
             generated: true,
         },
+        codigoContrato: {
+            type: "varchar",
+            length: 50,
+            unique: true
+        },
         fechaInicio: {
             type: "date",
             nullable: false,
         },
-        fechaFinOriginal: {
+        fechaFinOriginal: { //fecha original de fin de contrato
+            type: "date",
+            nullable: false,
+        },
+        fechaFinReal: { //fecha ajustada de fin de contrato
             type: "date",
             nullable: false,
         },
@@ -24,13 +33,8 @@ const contratoComercialSchema = new EntitySchema({
             nullable: false,
         },
         monto: {
-            type: "int",
+            type: "numeric",
             default: 0,
-        },
-        archivo: {
-            type: "varchar",
-            unique: true,
-            nullable: true //posibilidad de cambio más adelante
         },
         descripcion: {
             type: "text",
@@ -56,16 +60,21 @@ const contratoComercialSchema = new EntitySchema({
         },
     ],
     relations: {
+        documentos: {
+            type: "one-to-many",
+            target: "DocumentoComercial",
+            inverseSide: "contratoComercial"
+        },
         cliente: {
             target: "Cliente",
             type: "many-to-one",
-            joinColumn: true,
+            joinColumn: { name: "cliente_id" },
             nullable: false, //el contrato si o si debe ser dirigido a alguien
             onDelete: "CASCADE"
         },
         sede: {
             target: "Sede",
-            type: "many-to-one",
+            type: "many-to-many",
             joinColumn: { name: "sede_id" },
             nullable: false //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
         }

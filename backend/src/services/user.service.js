@@ -55,7 +55,7 @@ export async function getUserService(query, manager = null) {
  */
 export async function getUserByService(query, manager = null) {
   try {
-    const { rut, id, email, phone } = query;
+    const { rut, id, email, phone, isActive } = query;
 
     const userRepository = manager ?
       manager.getRepository(User) : AppDataSource.getRepository(User);
@@ -63,9 +63,10 @@ export async function getUserByService(query, manager = null) {
     const where = {};
 
     if (id) where.id = id;
-    else if (rut) where.rut = cleanRut(rut);
-    else if (email) where.email = email;
-    else if (phone) where.phone = phone;
+    if (rut) where.rut = cleanRut(rut);
+    if (email) where.email = email;
+    if (phone) where.phone = phone;
+    if (typeof isActive === "boolean") where.isActive = isActive;
 
     if (Object.keys(where).length === 0) {
       return [null, "Debe proporcionar al menos un criterio de búsqueda"];
@@ -221,7 +222,7 @@ export async function cambiarEstadoUsuario(query, estado = false, manager = null
       if (!id && !rut && !email) throw createErrorMessage("Usuario", "Debe proporcionar al menos un criterio de búsqueda")
 
       //verificar que el usuario exista
-      const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, transactionManager)
+      const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, null, transactionManager)
       if (err) throw err
 
       //verificar que el usuario no sea administrador
@@ -528,17 +529,16 @@ async function reactivarSupervisorService(trabajador, manager = null) {
           if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
       */
       //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
-      const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, transactionManager)
-      if (existingRut && existingRut.email !== trabajadorEncontrado.email && !existingEmail.isActive) throw createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")
-
-      const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, transactionManager)
-      if (existingEmail && existingEmail.rut !== trabajadorEncontrado.rut && !existingRut.isActive) throw createErrorMessage("email", "Ya existe un otro registrado con el mismo email")
+      const [existingUser, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut), email: email }, transactionManager)
+      if (existingUser && existingUser.email !== trabajadorEncontrado.email && !existingEmail.isActive) throw createErrorMessage("rut/email", "Ya existe un otro registrado con uno de los datos")
 
       //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
 
       //verificar que si existe un usuario entonces ver si está activo
       let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, transactionManager)
 
+
+      //primero veo si existe y después si está activado
       if (errRegister) {
 
         //si no existe un usuario se registra
