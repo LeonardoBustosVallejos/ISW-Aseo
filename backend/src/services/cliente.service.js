@@ -5,7 +5,7 @@ import { AppDataSource } from "../config/configDb.js";
 import { ILike } from "typeorm";
 import { cleanRut, createErrorMessage } from "../cleaners/extras.js";
 import User from "../entity/user.entity.js";
-import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupervisorService, getUserService } from "./user.service.js";
+import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupervisorService, getAsignadosService, getUserService } from "./user.service.js";
 
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
@@ -820,7 +820,7 @@ export async function updateClienteService(cliente_id, data, manager = null) {
         const clienteRepository = manager ?
             manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
-        const [cliente, errCliente] = await getClienteByService({ cliente_id })
+        const [cliente, errCliente] = await getClienteByService({ cliente_id }, manager)
 
         if (errCliente) {
             if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
@@ -867,36 +867,59 @@ export async function updateClienteService(cliente_id, data, manager = null) {
 async function createCliente(cliente, clientePadre_id = null, manager = null) {
     try {
         const { nombreCliente } = cliente
-        const rutCliente = cleanRut(cliente.rutCliente)
-
-        if (!nombreCliente || !rutCliente) {
-            if (manager) throw [null, createErrorMessage("cliente", "Datos incompletos")]
-            return [null, createErrorMessage("cliente", "Datos incompletos")]
+        let rutCliente = cleanRut(cliente.rutCliente)
+        let verificado = false
+        if (!nombreCliente) {
+            if (manager) throw [null, createErrorMessage(clientePadre_id ? "nombreFilial" : "nombreCliente", "Datos incompletos")]
+            return [null, createErrorMessage(clientePadre_id ? "nombreFilial" : "nombreCliente", "Datos incompletos")]
         }
+        let rutNuevo = cleanRut(rutCliente), [padre, errPadre] = [null, null]
+
+        //si es filial, que exista el padre
         if (clientePadre_id) {
-            const [clientePadreVerif, errClientePadreVerif] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
-            if (errClientePadreVerif) {
-                if (manager) throw [null, errClientePadreVerif]
-                return [null, errClientePadreVerif]
-            } if (clientePadreVerif.tipoCliente !== "EMPRESA") {
-                if (manager) throw [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
-                return [null, createErrorMessage("padre_id", "El cliente a afiliarse no califica")]
+            [padre, errPadre] = await getClienteByService({ cliente_id: clientePadre_id }, manager)
+            //si se va a afiliar y no existe quien
+            if (errPadre) throw [null, errPadre]
+        }
+        //si no hay rut
+        if (!rutNuevo) {
+            //y es filial
+            if (padre) {
+                //se toma el rut del padre
+                rutNuevo = cleanRut(padre.rutCliente)
+                verificado = true                       //se marca como verificado
+            } else {
+                //y no es filial(es tope/raiz)
+                throw [null, createErrorMessage(clientePadre_id ? "rutFilial" : "rutCliente", "Datos incompletos")]
             }
         }
-
         const clienteRepository = manager ?
             manager.getRepository(Cliente) : AppDataSource.getRepository(Cliente);
 
-        const [existingClient, errCliente] = await getClienteByService({ rutCliente: rutCliente }, manager);
-        const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
-        const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
-        if (existingClient || existingRutUser || existingRutContacto) {
-            return [null, createErrorMessage("rut", "Rut en uso")];
+        //si no pasó por la verificacion anterior o ya viene un rut diferente al del padre, aun puede ser raiz/tope
+        if (!verificado || (padre && padre.rutCliente !== rutNuevo)) {
+            //validar el rut con los de personas
+            const [existingRutUser, errRutUser] = await getUserService({ rut: rutCliente }, manager);
+            const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: rutCliente }, manager)
+            if (existingRutUser || existingRutContacto) {
+                if (manager) throw [null, createErrorMessage(clientePadre_id ? "rutFilial" : "rutCliente", "Rut en uso")];
+                return [null, createErrorMessage(clientePadre_id ? "rutFilial" : "rutCliente", "Rut en uso")];
+            }
+
+            //validar rut entre empresas cliente
+
+            //obtener a todos los que puedan tener el mismo rut
+            const clientesConRut = await clienteRepository.find({
+                where: { rutCliente: rutNuevo },
+                relations: ["clientePadre"]
+            });
+            //si es tope en jerarquia/raiz y el rut ya existe 1 0 1
+            if ((!clientePadre_id) && clientesConRut.length > 0) throw [null, createErrorMessage("rutCliente", "Rut ya en uso")]
         }
         //preparar los datos para crear el nuevo cliente
         const nuevoCliente = clienteRepository.create({
             nombreCliente: nombreCliente,
-            rutCliente: rutCliente,
+            rutCliente: rutNuevo,
             tipoCliente: clientePadre_id ? "FILIAL" : "EMPRESA",
             clientePadre: clientePadre_id //nulo si el cliente padre no fue entregado
         });
@@ -912,6 +935,83 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
 }
 /*=====FIN FUNCIONES CRUD======*/
 
+//funciones para obtener la informacion relevante de la entidad
+export async function getInfoSedeService(cliente, sede_id = null, manager = null) {
+    try {
+        const sedeRepository = manager ? manager.getRepository(Sede) :
+            AppDataSource.getRepository(Sede)
+
+        const { rutCliente, cliente_id } = cliente
+
+        const where = {}
+        if (rutCliente) where.cliente = { rutCliente }
+        if (cliente_id) where.cliente = { cliente_id }
+        if (sede_id) where.sede_id = sede_id
+
+        //1. Obter la sede por su ID y a quien pertenece
+        const sede = await sedeRepository.find({
+            relations: ["contactos"],
+            where
+        })
+
+        const [historial, error] = await getAsignadosService({ rutCliente, cliente_id, sede_id }, null, manager)
+        if (error) {
+            if (manager) throw [null, error]
+            return [null, error]
+        }
+        console.log(sede);
+
+        return [{ sede, historial }]
+    } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener clientes", error[1]);
+            return error
+        }
+        console.error("Error al obtener clientes:", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
+export async function getInfoClienteService(rutCliente, manager = null) {
+    try {
+        const clienteRepository = manager ? manager.getRepository(Cliente) :
+            AppDataSource.getRepository(Cliente)
+
+        //1. obtener al cliente buscado
+        const clientePrincipal = await clienteRepository.findOne({
+            where: { rutCliente: rutCliente },
+            relations: ["contrato"]
+        })
+        if (!clientePrincipal) {
+            if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
+            return [null, createErrorMessage("cliente", "No encontrado")];
+        }
+
+        const sedeRepository = manager ? manager.getRepository(Sede) :
+            AppDataSource.getRepository(Sede)
+
+        //2. Obtener las filiales
+        const filiales = await clienteRepository.find({
+            where: { clientePadre: { rutCliente: rutCliente }, },
+        })
+        //3. Obtener las sedes
+        const [sedes, errSedes] = await getInfoSedeService({ cliente_id: clientePrincipal.cliente_id }, null, manager)
+
+        return [{ clientePrincipal, sedes, filiales }, null]
+
+    } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener clientes", error[1]);
+            return error
+        }
+        console.error("Error al obtener clientes:", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
 
 /**
  * Funciones con Simple en el nombre son funciones que realizan un proceso sin jerarquias
@@ -1141,9 +1241,7 @@ export async function registerClienteJerarquicoService(cliente, sedes, clientePa
 
         const execute = async (transactionManager) => {
 
-
             const { nombreCliente, rutCliente, filiales } = cliente
-            if (!nombreCliente || !rutCliente) throw [null, createErrorMessage("nombreCliente/rutCliente", "Datos incompletos o repetidos")]
 
             const [clientePadre, errorPadre] = await createCliente({ nombreCliente, rutCliente }, clientePadre_id, transactionManager)
             if (errorPadre) throw [null, errorPadre]

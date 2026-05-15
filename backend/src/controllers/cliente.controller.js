@@ -1,5 +1,5 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService } from "../services/cliente.service.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService } from "../services/cliente.service.js";
 import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 import fs from "fs";
 export async function getClientes(req, res) {
@@ -46,6 +46,31 @@ export async function getContactos(req, res) {
         handleErrorServer(res, 500, error.message);
     }
 }
+export async function getInfoSede(req, res) {
+    try {
+        const { rutCliente, sede_id } = req.params
+
+        const [data, error] = await getInfoSedeService(rutCliente, sede_id)
+        if (error) return handleErrorClient(res, 404, error)
+
+        handleSuccess(res, 200, "Sede encontrada", data);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function getInfoCliente(req, res) {
+    try {
+        const { rutCliente } = req.params
+
+        const [data, error] = await getInfoClienteService(rutCliente)
+        if (error) return handleErrorClient(res, 404, error)
+
+        handleSuccess(res, 200, "Cliente encontrado", data);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
 
 export async function registerCliente(req, res) {
     try {
@@ -86,8 +111,6 @@ export async function registrarClienteYArchivo(req, res) {
     try {
 
         const documentos = req.files || []
-
-        console.log(req.files);
 
         const { cliente, sedes, contrato, metadataDocumentos } = req.body
 

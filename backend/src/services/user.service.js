@@ -264,13 +264,16 @@ export async function getHistorialAsignacionService(query, manager = null) {
   try {
     const { cliente_id, sede_id } = query
     const AsignadoRepository = manager ?
-      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+      manager.getRepository(TrabajadoresAsignados) : AppDataSource.getRepository(TrabajadoresAsignados);
 
     const where = {}
     if (sede_id) where.sede = { sede_id }
     if (cliente_id) where.cliente = { cliente_id }
 
-    const asignados = await AsignadoRepository.find({ where });
+    const asignados = await AsignadoRepository.find({
+      where,
+      relations: ["sede"]
+    });
     if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
 
     return [asignados, null]
@@ -280,23 +283,44 @@ export async function getHistorialAsignacionService(query, manager = null) {
   }
 }
 
-export async function getAsignadosService(sede_id = null, manager = null) {
+/**
+ * Funcion que entrega la lusta de trabajadores asignados, ya sea por su estado, sede o el cliente
+ * @param {*} sede_id ID de la sede de la que se quiere saber el personal
+ * @param {*} manager 
+ * @returns lista de trabajadores activos/asignados en la sede
+ */
+export async function getAsignadosService(query, estado = null, manager = null) {
   try {
+    const { sede_id, cliente_id, rutCliente } = query
+    if (estado && (estado !== "ASIGNADO" || estado !== "REMOVIDO" || estado !== "FINALIZADO")) {
+      if (manager) throw [null, createErrorMessage("estado", "Estado de asignación inválido")]
+      return [null, createErrorMessage("estado", "Estado de asignación inválido")]
+    }
     //verificar que la sede exista
     if (sede_id) {
       const [sedeFound, errSede] = await getSedeByService({ sede_id: sede_id }, manager)
-      if (errSede) return [null, errSede]
+      if (errSede) {
+        if (manager) throw [null, errSede]
+        return [null, errSede]
+      }
     }
 
     const AsignadoRepository = manager ?
-      manager.getRepository(TrabajadoresAsignadosSchema) : AppDataSource.getRepository(TrabajadoresAsignadosSchema);
+      manager.getRepository(TrabajadoresAsignados) : AppDataSource.getRepository(TrabajadoresAsignados);
 
     const where = {}
-    where.estado = "ASIGNADO"
     if (sede_id) where.sede = { sede_id: sede_id }
+    if (cliente_id) where.cliente = { cliente_id }
+    if (rutCliente) where.cliente = { rutCliente }
+    if (estado) where.estado = estado
+
 
     const asignados = await AsignadoRepository.find({ where });
-    if (!asignados || asignados.length === 0) return [null, "No hay trabajadores asignados"];
+
+    if (!asignados || asignados.length === 0) {
+      if (manager) throw [null, "No hay trabajadores asignados"]
+      return [null, "No hay trabajadores asignados"]
+    };
 
     return [asignados, null]
   } catch (error) {

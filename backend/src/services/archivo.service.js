@@ -36,11 +36,7 @@ export const uploadImagenPerfilService =
     })
 
 
-export async function createMultipleDocumentosService(
-    documentos,
-    contrato_id,
-    manager = null
-) {
+export async function createMultipleDocumentosService(documentos, contrato_id, manager = null) {
     try {
 
         const execute = async (transactionManager) => {
@@ -52,7 +48,7 @@ export async function createMultipleDocumentosService(
                 const [nuevoDocumento, errDocumento] =
                     await createDocumentoService(
                         {
-                            file: documento,
+                            file: documento.file,
                             nombrePersonalizado: documento.nombrePersonalizado,
                             tipoDocumento: documento.tipoDocumento,
                             contrato_id
@@ -102,12 +98,12 @@ export async function createDocumentoService(data, manager = null) {
             const documentoRepository = transactionManager.getRepository(DocumentoSchema)
 
             const documento = documentoRepository.create({
-                nombreOriginal: file.file.originalname,
-                nombreArchivo: nombrePersonalizado || file.file.filename,
-                ruta: file.file.path,
-                mimeType: file.file.mimetype,
-                extension: path.extname(file.file.originalname),
-                peso: file.file.size,
+                nombreOriginal: file.originalname,
+                nombreArchivo: nombrePersonalizado || file.filename,
+                ruta: file.path,
+                mimeType: file.mimetype,
+                extension: path.extname(file.originalname),
+                peso: file.size,
                 tipoDocumento,
                 contrato: {
                     id_contrato_comercial: contrato_id

@@ -20,8 +20,8 @@ const ClienteSchema = new EntitySchema({
         rutCliente: {
             type: "varchar",
             length: 15,
-            nullable: true,        //si es filial, el rut es opcional
-            unique: true,
+            nullable: false,        /*si es filial, el rut puede ser*/
+            unique: false,          /*igual al del que se está afiliado*/
         },
         tipoCliente: {
             type: "enum",
@@ -88,6 +88,11 @@ const ClienteSchema = new EntitySchema({
             type: "one-to-many",
             target: "Cliente",
             inverseSide: "clientePadre"
+        },
+        contrato: {
+            type: "one-to-many",
+            target: "ContratoComercial",
+            inverseSide: "cliente"
         }
     }
 })
