@@ -1,5 +1,7 @@
+import { ReturningStatementNotSupportedError } from "typeorm";
 import { AppDataSource } from "../config/configDb.js";
 import ActivoFijo from "../entity/activofijo.entity.js";
+import { registrarMovimiento } from "./movimiento.service.js";
 
 const generarCodigo = async (prefijo) => {
 
@@ -100,6 +102,13 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
             activo.cliente_id = cliente_id;
             const resultado = await activoFijoRepositorio.save(activo);
             activo_actualizados.push(resultado);
+
+            await registrarMovimiento(
+                "ASIGNACION",
+                `Se asigno ${activo.nombre} (${activo.codigo_inventario}) al cliente`,
+                cliente_id,
+                activo.id
+            );
         }
 
         return [activo_actualizados, null];
@@ -108,29 +117,35 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
         console.error("Error al asignar:", error); 
         return [null, error.message];
     }
-}
+};
 
-export const devolverActivosBodega = async(cliente_id, nombre_maquina, cantidad_devolver) => {
+export const devolverActivosBodega = async(cliente_id, activos_ids) => {
 
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
 
-        const activos_cliente = await activoFijoRepositorio
+        const los_activos = await activoFijoRepositorio
             .createQueryBuilder("activo")
-            .where("activo.nombre = :nombre", {nombre: nombre_maquina})
+            .where("activo.id IN (:...ids)", {ids: activos_ids})
             .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
-            .limit(cantidad_devolver)
             .getMany();
 
-        if(activos_cliente.length < cantidad_devolver){
-            return [null,`Error: cliente no cuenta con ${cantidad_devolver}-${nombre_maquina}. Se encontraron ${activos_cliente.length}`];
+        if (los_activos.length !== activos_ids.length){
+            return [null, `Error: Se intento devolver ${activos_ids.length} activos, pero solo se encontraron ${los_activos.length} con estos ids.`];
         }
 
-        const activo_devueltos = [];
-        for (const activo of activos_cliente){
+        const activos_devueltos = [];
+        for (const activo of los_activos){
             activo.cliente_id = null;
             const resultado = await activoFijoRepositorio.save(activo);
-            activo_devueltos.push(resultado);
+            actuvos_devueltos.push(resultado);
+
+            await registrarMovimiento(
+                "DEVOLUCION",
+                `Se retiro ${activo.nombre} (${activo.codigo_inventario}) y volvio a bodega`,
+                cliente_id,
+                activo.id
+            );
         }
 
         return [activo_devueltos, null];

@@ -72,30 +72,29 @@ export const asignarActivos = async (req, res) => {
 
 export const devolverActivos = async (req, res) => {
     try {
-        const{cliente_id, nombre_maquina, cantidad} = req.body;
+        const{cliente_id, activos_ids} = req.body;
 
-        if(!cliente_id || !nombre_maquina || !cantidad){
+        if(!cliente_id || !Array.isArray(activos_ids) || activos_ids.length === 0){
             return res.status(400).json({
-                estado: "error",
+                estado: "error200",
             });
         }
 
-        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, nombre_maquina, cantidad);
+        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, activos_ids);
         if(error_servicio){
             return res.status(400).json({
-                estado: "error22",
-                mensaje: error_servicio
+                estado: "error201",
             });
         }
 
         return res.status(200).json({
             estado: "exito",
-            mensaje: `Se devolvieron ${activos_devueltos.length}-${nombre_maquina} a la bodega`,
+            mensaje: `Se devolvieron ${activos_devueltos.length} a la bodega`,
             data: activos_devueltos
         });
 
     } catch(error){
-        console.error("Error al devolver el activo", error);
+        console.error("Error devolver en controlador", error);
         return [null, "Error interno del servidor"];
     }
 };
