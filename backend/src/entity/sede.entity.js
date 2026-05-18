@@ -14,7 +14,7 @@ const SedeSchema = new EntitySchema({
             type: "varchar",
             length: 15,
             nullable: true,
-            unique: true,
+            unique: false,
         },
         nombre_sede: {
             type: "varchar",
@@ -25,6 +25,11 @@ const SedeSchema = new EntitySchema({
             type: "varchar",
             length: 255,
             nullable: false,
+        },
+        tipoSede: {
+            type: "enum",
+            enum: ["PRINCIPAL", "SUCURSAL", "BODEGA"],
+            default: "PRINCIPAL"
         },
         personalSolicitado: {
             type: "int",
@@ -68,6 +73,12 @@ const SedeSchema = new EntitySchema({
             target: "Contacto",
             inverseSide: "sede"
         },
+        contrato: {
+            target: "ContratoComercial",
+            type: "many-to-many",
+            joinColumn: { name: "id_contrato_comercial" },
+            nullable: false //IMPORTANTE, al regitrar una sede debe existir un contrato al cual sujetarse
+        }
     }
 
 })
