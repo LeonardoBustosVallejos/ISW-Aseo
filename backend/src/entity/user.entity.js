@@ -1,5 +1,6 @@
 "use strict";
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanUserEntity } from "../cleaners/user.cleaner.js";
 
 /**
  * tabla de usuarios
@@ -43,11 +44,10 @@ const UserSchema = new EntitySchema({
       nullable: true,
       unique: true
     },
-    state: {
-      type: "varchar",
-      length: 15,
-      enum: ["ACTIVADO", "DESACTIVADO"],
-      default: "ACTIVADO",
+    isActive: {
+      type: "boolean",
+      default: true,
+      nullable: false,
     },
     createdAt: {
       type: "timestamp with time zone",
@@ -60,6 +60,14 @@ const UserSchema = new EntitySchema({
       onUpdate: "CURRENT_TIMESTAMP",
       nullable: false,
     },
+  },
+  listeners: {
+    BeforeInsert(entity) {
+      cleanUserEntity(entity)
+    },
+    BeforeUpdate(entity) {
+      cleanUserEntity(entity)
+    }
   },
   indices: [
     {
@@ -93,11 +101,10 @@ const UserSchema = new EntitySchema({
       onDelete: "CASCADE",
     },
     //varios usuarios pueden trabajar para la misma sede o ninguno
-    sede: {
-      target: "Sede",
-      type: "many-to-none",
-      joinColumn: { name: "sede_id" },
-      nullable: true,
+    asignacionSede: {
+      target: "TrabajadoresAsignados",
+      type: "one-to-many",
+      inverseSide: "usuario",
       onDelete: null,
     }
   }

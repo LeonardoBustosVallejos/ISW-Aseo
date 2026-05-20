@@ -128,3 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Carpeta uploads, ignora los archivos agregados y deja las carpetas
+uploads/**/*
+!uploads/**/
+!.gitkeep

@@ -1,4 +1,5 @@
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanSedeEntity } from "../cleaners/cliente.cleaner.js";
 
 const SedeSchema = new EntitySchema({
     name: "Sede",
@@ -45,10 +46,18 @@ const SedeSchema = new EntitySchema({
             nullable: false,
         },
     },
+    listeners: {
+        BeforeInsert(entity) {
+            cleanSedeEntity(entity)
+        },
+        BeforeUpdate(entity) {
+            cleanSedeEntity(entity)
+        }
+    },
     relations: {
         //varias sedes pueden ser del mismo cliente
         cliente: {
-            type: "many-to-one",
+            type: "many-to-many",
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
             onDelete: "CASCADE" //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección

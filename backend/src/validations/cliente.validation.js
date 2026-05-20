@@ -186,6 +186,18 @@ export const clienteValidation = Joi.object({
         }),
 })
 
+export const createSedeValidation = Joi.object({
+    cliente_id: Joi.number()
+        .integer()
+        .positive()
+        .required(),
+    sede: sedeValidation.required(),
+    contacto: contactoValidation.required(),
+    trabajador_id: Joi.number()
+        .integer()
+        .positive()
+})
+
 
 export const registerClienteValidation = Joi.object({
     cliente: clienteValidation.required(),

@@ -8,7 +8,7 @@ import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
 import { getClienteByService, getContactoByService, getSedeByService } from "./cliente.service.js";
-import { cleanRut } from "../handlers/extras.js";
+import { cleanRut } from "../cleaners/extras.js";
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
@@ -29,7 +29,7 @@ export async function loginService(user) {
 
     const userFound = await userRepository.findOne({
       relations: ["rol"],
-      where: { email: email, state: "ACTIVADO" },
+      where: { email: email, isActive: true },
     });
 
     if (!userFound) {
@@ -64,16 +64,10 @@ export async function loginService(user) {
 /**
  * Solo el administrador puede registrar nuevos usuarios
 */
-export async function registerService(nuevoUsuario, sede_id = null, manager = null) {
+export async function registerService(nuevoUsuario, manager = null) {
   try {
     const userRepository = manager ?
       manager.getRepository(User) : AppDataSource.getRepository(User);
-
-    //si se entrego un id de sede entonces verificar que esa sede exista
-    if (sede_id) {
-      const [existingClient, errCliente] = await getSedeByService({ sede_id: sede_id }, manager)
-      if (errCliente) return [null, errCliente]
-    }
 
     const [nuevoRol, errRol] = await getRolByIdService(nuevoUsuario.rol_id)
     if (errRol) return [null, errRol];
@@ -107,7 +101,6 @@ export async function registerService(nuevoUsuario, sede_id = null, manager = nu
       password: await encryptPassword(nuevoUsuario.password),
       phone: nuevoUsuario.phone || null,
       rol: nuevoUsuario.rol_id,
-      sede: sede_id
     });
 
 
