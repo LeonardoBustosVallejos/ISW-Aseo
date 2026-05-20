@@ -31,12 +31,13 @@ export async function createContratoComercialService(data, cliente_id, manager =
             const [representante, errRep] = await getTopJerarquía(clienteFound.cliente_id, transactionManager)
             if (errRep) throw [null, errRep]
 
-
+            const fechaActual = new Date()
             const contrato = contratoRepository.create({
                 codigoContrato: `COM-${representante.cliente_id}-${representante.nombreCliente}`,
                 fechaInicio: fechaInicio,
                 fechaFinOriginal: fechaFinOriginal,
                 fechaFinReal: fechaFinReal ? fechaFinReal : fechaFinOriginal,
+                estado: fechaActual < fechaInicio ? "VIGENTE" : "ESPERA",
                 monto: monto,
                 cliente: representante.cliente_id,
                 //sede: sede_id

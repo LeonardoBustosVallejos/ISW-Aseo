@@ -691,7 +691,17 @@ export async function listarClientesService(manager = null) {
         for (const cliente of lista) {
             const { solicitados, asignados } = await getTotalesCliente(cliente.cliente_id, manager)
 
-            clientesConTotales.push({ cliente, solicitados, asignados })
+            clientesConTotales.push({
+                cliente_id: cliente.cliente_id,
+                nombreCliente: cliente.nombreCliente,
+                rutCliente: cliente.rutCliente,
+                contrato: cliente.contrato.estado ? cliente.contrato.estado : "ESPERA",
+                direccionPrincipal: cliente.sede[0].direccion,
+                nombreContacto: cliente.sede[0].contactos[0].nombreContacto,
+                email: cliente.sede[0].contactos[0].email,
+                phone: cliente.sede[0].contactos[0].phone,
+                solicitados, asignados
+            })
         }
 
 

@@ -4,6 +4,7 @@ import Root from '@pages/Root';
 import Error404 from '@pages/Error404';
 import ProtectedRoute from '@components/ProtectedRoute';
 import RegisterClienteForm from "@pages/Clientes/registerCliente";
+import ListaClientes from "./pages/Clientes/ListaClientes";
 
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
                     <Route path="recursos/resumen" element={<Resumen />} />
                     <Route path="recursos/detalles" element={<Detalles />} />
                     <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
+                    <Route path="/clientes" element={<ListaClientes />} />
                     <Route path="cliente"  >
                         <Route path="registrar" element={<RegisterClienteForm />} />
 
