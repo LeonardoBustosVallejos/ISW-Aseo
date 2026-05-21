@@ -26,10 +26,8 @@ const generarCodigo = async (prefijo) => {
 };
 
 export const registrarNuevoActivo = async (datos_activo) => {
-
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-
         const prefijo_categoria = {
             "Linea Blanca": "LBL",
             "Herramientas de Limpieza": "HRL",
@@ -38,7 +36,6 @@ export const registrarNuevoActivo = async (datos_activo) => {
         };
 
         const prefijo_of = prefijo_categoria[datos_activo.codigo_inventario];
-
         const cantidad = datos_activo.cantidad ? parseInt(datos_activo.cantidad): 1;
         const activos_creados = [];
 
@@ -62,14 +59,12 @@ export const registrarNuevoActivo = async (datos_activo) => {
 };
 
 export const resumenActivos = async (cliente_id) => {
-
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-        
         const resumen = await activoFijoRepositorio
         .createQueryBuilder("activo")
         .select("activo.nombre", "nombre")
-        .addSelect("COUNT(activo.id)", "cantidad")
+        .addSelect("COUNT(activo.activo_id)", "cantidad")
         .where("activo.cliente_id = :id", { id: cliente_id })
         .groupBy("activo.nombre")
         .getRawMany();
@@ -82,10 +77,8 @@ export const resumenActivos = async (cliente_id) => {
 };
 
 export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_requerida) => {
-
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-        
         const activos_disponibles = await activoFijoRepositorio
             .createQueryBuilder("activo")
             .where("activo.nombre = :nombre", {nombre: nombre_maquina})
@@ -98,21 +91,22 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
         }
         
         const activo_actualizados = [];
+        const ids_asignados = [];
         for(const activo of activos_disponibles){
             activo.cliente_id = cliente_id;
             const resultado = await activoFijoRepositorio.save(activo);
             activo_actualizados.push(resultado);
-
-            await registrarMovimiento(
-                "ASIGNACION",
-                `Se asigno ${activo.nombre} (${activo.codigo_inventario}) al cliente`,
-                cliente_id,
-                activo.id
-            );
+            ids_asignados.push(activo.activo_id);
         }
 
-        return [activo_actualizados, null];
+        await registrarMovimiento(
+            "ASIGNACION",
+            `Se asignaron ${activos_disponibles.length} ${nombre_maquina}(s) al cliente`,
+            cliente_id,
+            ids_asignados
+        );
 
+        return [activo_actualizados, null];
     }catch(error){
         console.error("Error al asignar:", error); 
         return [null, error.message];
@@ -120,13 +114,11 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
 };
 
 export const devolverActivosBodega = async(cliente_id, activos_ids) => {
-
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-
         const los_activos = await activoFijoRepositorio
             .createQueryBuilder("activo")
-            .where("activo.id IN (:...ids)", {ids: activos_ids})
+            .where("activo.activo_id IN (:...ids)", {ids: activos_ids})
             .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
             .getMany();
 
@@ -135,22 +127,60 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
         }
 
         const activos_devueltos = [];
+        const ids_devueltos = [];
         for (const activo of los_activos){
             activo.cliente_id = null;
             const resultado = await activoFijoRepositorio.save(activo);
-            actuvos_devueltos.push(resultado);
-
-            await registrarMovimiento(
-                "DEVOLUCION",
-                `Se retiro ${activo.nombre} (${activo.codigo_inventario}) y volvio a bodega`,
-                cliente_id,
-                activo.id
-            );
+            activos_devueltos.push(resultado);
+            ids_devueltos.push(activo.activo_id);
         }
 
-        return [activo_devueltos, null];
+        await registrarMovimiento(
+            "DEVOLUCION",
+            `Se retiraron ${los_activos.length} activo(s) del cliente y volvieron a bodega`,
+            cliente_id,
+            ids_devueltos
+        );
+
+        return [activos_devueltos, null];
     } catch(error) {
         console.error("Error al devolver a bodega:", error);
         return [null, error.message];
     }
 };
+
+export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajador_id, nombre_trabajador) => {
+    try{
+        const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
+        const activos_enviados = await activoFijoRepositorio
+            .createQueryBuilder("activo")
+            .where("activo.activo_id IN (:...ids)", {ids: activos_ids})
+            .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
+            .getMany();
+
+        if(activos_enviados.length !== activos_ids.length){
+            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero se enviaron ${activosEnviados.length} a este cliente.`];
+        }
+
+        const activos_confirmados = [];
+        for(const activo of activos_enviados){
+            activo.trabajador_id = trabajador_id;
+            const resultado = await activoFijoRepositorio.save(activo);
+            activos_confirmados.push(resultado);
+
+            await registrarMovimiento(
+                "RECEPCION",
+                `${nombre_trabajador} confirmó la recepción de ${activo.nombre} (${activo.codigo_inventario})`,
+                cliente_id,
+                activo.activo_id,
+                trabajador_id,
+                nombre_trabajador
+            );
+        }
+
+        return[activos_confirmados, null];
+    }catch(error){
+        console.error("Error al confirmar recepcion: ", error);
+        return[null, error.message]
+    }
+}

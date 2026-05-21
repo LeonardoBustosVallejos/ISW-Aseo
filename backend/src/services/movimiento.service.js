@@ -1,14 +1,16 @@
 import { AppDataSource } from "../config/configDb.js";
 import Movimiento from "../entity/movimiento.entity.js";
 
-export const registrarMovimiento = async(tipo_movimiento, descripcion, cliente_id, activo_id) => {
+export const registrarMovimiento = async(tipo_movimiento, descripcion, cliente_id, activos_ids, trabajador_id = null, nombre_trabajador = null) => {
     try {
         const movimiento_repositorio = AppDataSource.getRepository(Movimiento);
         const nuevo_movimiento = movimiento_repositorio.create({
             tipo_movimiento,
             descripcion,
             cliente_id,
-            codigo_inventario
+            activos_ids,
+            trabajador_id,
+            nombre_trabajador
         });
 
         await movimiento_repositorio.save(nuevo_movimiento)

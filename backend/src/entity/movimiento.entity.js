@@ -23,8 +23,17 @@ const Movimiento = new EntitySchema({
             type: "int",
             nullable: true
         },
-        activo_id:{
-            type: "int"
+        activos_ids:{
+            type: "simple-array",
+            nullable: true
+        },
+        trabajador_id:{
+            type: "int",
+            nullable: true
+        },
+        nombre_trabajador:{
+            type: "varchar",
+            nullable: true
         }
     }
 });

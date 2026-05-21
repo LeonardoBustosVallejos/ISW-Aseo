@@ -8,7 +8,7 @@ const ActivoFijo = new EntitySchema({
 
     columns:{
 
-        id:{
+        activo_id:{
             primary:true,
             type:"int",
             generated:true

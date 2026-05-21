@@ -80,8 +80,8 @@ export const devolverActivos = async (req, res) => {
             });
         }
 
-        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, activos_ids);
-        if(error_servicio){
+        const [activos_devueltos, error] = await devolverActivosBodega(cliente_id, activos_ids);
+        if(error){
             return res.status(400).json({
                 estado: "error201",
             });
@@ -93,7 +93,7 @@ export const devolverActivos = async (req, res) => {
             data: activos_devueltos
         });
 
-    } catch(error){
+    }catch(error){
         console.error("Error devolver en controlador", error);
         return [null, "Error interno del servidor"];
     }
