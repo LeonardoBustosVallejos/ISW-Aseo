@@ -1,4 +1,6 @@
 import { EntitySchema } from "typeorm";
+import ClienteSchema from "./cliente.entity.js";
+import TrabajadorSchema from "./trabajador.entity.js";
 
 const Movimiento = new EntitySchema({
     name: "Movimiento",
@@ -30,10 +32,28 @@ const Movimiento = new EntitySchema({
         trabajador_id:{
             type: "int",
             nullable: true
+        }
+    },
+
+    relations:{
+        cliente:{
+            target: ClienteSchema,
+            type: "many-to-one",
+            joinColumn:{
+                name: "cliente_id",
+                referencedColumnName: "id",
+            },
+            onDelete: "SET NULL"
         },
-        nombre_trabajador:{
-            type: "varchar",
-            nullable: true
+
+        trabajador:{
+            traget: TrabajadorSchema,
+            type: "many-to-one",
+            joinColumn:{
+                name: "trabajador_id",
+                referencedColumnName: "id"
+            },
+            onDelete: "SET NULL"
         }
     }
 });

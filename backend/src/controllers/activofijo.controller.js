@@ -1,100 +1,71 @@
+import { Query } from "pg";
+import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
 import { registrarNuevoActivo, resumenActivos, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
+import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
 
 export const getResumenActivos = async (req, res) => {
-
     try{
-
         const {cliente_id} = req.params;
         const resumen = await resumenActivos(cliente_id);
-
-        return res.status(200).json({
-            estado: "exito",
-            data: resumen
-        });
+        return handleSuccess(res, 200, "Resumen obtenido correctamente", resumen);
     }catch(error){
-        console.error("Error al obtener el resumen:", error);
-        return [null, "Error interno del servidor"];
+        return handleErrorServer(res, 500, "Error interno del servidor", error.message);
     }
 };
 
 export const crearActivoFijo = async (req, res) => {
-
     try{
-
         const datos_ingresados = req.body;
-
         if(!datos_ingresados.nombre){
-            return res.status(400).json({
-                estado: "error4",
-            });
+            return handleErrorClient(res, 400, "Falta el nombre del activo");
         }
 
-        const nuevo_activo = await registrarNuevoActivo(datos_ingresados);
-        return res.status(201).json({
-            estado: "exito",
-            mensaje: "Activo registrado correctamente",
-            data: nuevo_activo
-        });
+        const [nuevo_activo, error_servicio] = await registrarNuevoActivo(datos_ingresados);
+        if(error_servicio){
+            return handleErrorClient(res, 400, "Error al crear activo", error_servicio);
+        }
+        return handleSuccess(res, 201, "Activo registrado correctamente", nuevo_activo);
     }catch(error){
-        console.error("Error al crear el activo", error);
-        return [null, "Error interno del servidor"];
+        return handleErrorServer(res, "Error interno del servidor", error.message);
     }
 };
 
 export const asignarActivos = async (req, res) => {
     try {
-
-        const{cliente_id, nombre_maquina, cantidad} = req.body;
-
-        if(!cliente_id || !nombre_maquina || !cantidad) {
-            return res.status(400).json({
-                estado: "error21"
-            });
+        const {error, value} = asignarActivosValidation.validate(req.body);
+        if(error){
+            const mensajes = error.details.map(err => err.message).join(", ");
+            return handleErrorClient(res, 400, "Parametros de asignacion invalidos", mensajes);
         }
 
+        const{cliente_id, nombre_maquina, cantidad} = value;
         const [activos_asignados, error_servicio] = await asignarActivosCliente(cliente_id, nombre_maquina, cantidad);
         if(error_servicio){
-            return res.status(400).json({
-                estado: "error22",
-                mensaje: error_servicio
-            });
+            return handleErrorClient(res, 400, "Error al asignar activo", error_servicio);
         }
-        return res.status(200).json({
-            estado: "exito",
-            mensaje: `Se asignaron ${activos_asignados.length}-${nombre_maquina} al cliente ${cliente_id}`,
-            data: activos_asignados
-        });
+
+        return handleSuccess(res, 200, `Se asignaron ${activos_asignados.length} ${nombre_maquina} al cliente ${cliente_id}`, activos_asignados);
     }catch (error){
-        console.error("Error al asignar el activo", error);
-        return [null, "Error interno del servidor"];
+        return handleErrorServer(res, 500, "Error interno del servidor", error.message);
     }
 };
 
 export const devolverActivos = async (req, res) => {
     try {
-        const{cliente_id, activos_ids} = req.body;
-
-        if(!cliente_id || !Array.isArray(activos_ids) || activos_ids.length === 0){
-            return res.status(400).json({
-                estado: "error200",
-            });
-        }
-
-        const [activos_devueltos, error] = await devolverActivosBodega(cliente_id, activos_ids);
+        const {error, value} = devolverActivosValidation.validate(req.body);
         if(error){
-            return res.status(400).json({
-                estado: "error201",
-            });
+            const mensajes = error.details.map(err => err.message).join(", ");
+            return handleErrorClient(res, 400, "Parametros de devolucion invalidos", mensajes);
         }
 
-        return res.status(200).json({
-            estado: "exito",
-            mensaje: `Se devolvieron ${activos_devueltos.length} a la bodega`,
-            data: activos_devueltos
-        });
+        const{cliente_id, activos_ids} = value;
+        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, activos_ids);
+        if(error_servicio){
+            return handleErrorClient(res, 400, "Error al devolver a bodega", error_servicio);
+        }
 
+        return handleSuccess(res, 200, `Se devolvieron ${activos_devueltos.length} activos a la bodega`, activos_devueltos);
     }catch(error){
-        console.error("Error devolver en controlador", error);
-        return [null, "Error interno del servidor"];
-    }
+        return handleErrorServer(res, 500, "Error interno del servidor", error.message);
+     }
 };

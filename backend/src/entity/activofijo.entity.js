@@ -1,6 +1,7 @@
 "use strict";
 import { EntitySchema } from "typeorm";
-import User from "./user.entity.js";
+import ClienteSchema from "./cliente.entity.js";
+import TrabajadorSchema from "./trabajador.entity.js";
 
 const ActivoFijo = new EntitySchema({
     name: "ActivoFijo",
@@ -40,14 +41,23 @@ const ActivoFijo = new EntitySchema({
 
     relations:{
         cliente:{
-
-            target: User,
+            target: ClienteSchema,
             type: "many-to-one",
             joinColumn:{
                 name: "cliente_id",
                 referencedColumnName: "id",
             },
-            onDelete:"SET NULL",
+            onDelete: "SET NULL"
+        },
+
+        trabajador:{
+            traget: TrabajadorSchema,
+            type: "many-to-one",
+            joinColumn:{
+                name: "trabajador_id",
+                referencedColumnName: "id"
+            },
+            onDelete: "SET NULL"
         }
     }
 });

@@ -149,7 +149,7 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
     }
 };
 
-export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajador_id, nombre_trabajador) => {
+export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajador_id) => {
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
         const activos_enviados = await activoFijoRepositorio
@@ -159,7 +159,7 @@ export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajad
             .getMany();
 
         if(activos_enviados.length !== activos_ids.length){
-            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero se enviaron ${activosEnviados.length} a este cliente.`];
+            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero se enviaron ${activos_enviados.length} a este cliente.`];
         }
 
         const activos_confirmados = [];
@@ -173,8 +173,7 @@ export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajad
                 `${nombre_trabajador} confirmó la recepción de ${activo.nombre} (${activo.codigo_inventario})`,
                 cliente_id,
                 activo.activo_id,
-                trabajador_id,
-                nombre_trabajador
+                trabajador_id
             );
         }
 
