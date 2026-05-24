@@ -2,6 +2,7 @@ import { ReturningStatementNotSupportedError } from "typeorm";
 import { AppDataSource } from "../config/configDb.js";
 import ActivoFijo from "../entity/activofijo.entity.js";
 import { registrarMovimiento } from "./movimiento.service.js";
+import TrabajadorSchema from "../entity/trabajador.entity.js";
 
 const generarCodigo = async (prefijo) => {
 
@@ -151,6 +152,15 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
 
 export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajador_id) => {
     try{
+        const trabajadorRepositorio = AppDataSource.getRepository(TrabajadorSchema)
+        const trabajador = await trabajadorRepositorio.findOne({
+            where: {id: trabajador_id}
+        });
+        if(!trabajador){
+            return[null,`Error: El trabajador con id ${trabajador_id} no existe en el sistema.`];
+        }
+        const nombre_trabajador = trabajador.nombre;
+
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
         const activos_enviados = await activoFijoRepositorio
             .createQueryBuilder("activo")
