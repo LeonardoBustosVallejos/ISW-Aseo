@@ -10,3 +10,14 @@ export async function getItems() {
         return error.response.data;
     }
 }
+
+export async function updateEdit(data, id) {
+    try {
+        const response = await axios.patch(`/item/update/?id=${id}`, data);
+        console.log(response);
+        return response.data.data;
+    } catch (error) {
+        console.log(error);
+        return error.response.data;
+    }
+}

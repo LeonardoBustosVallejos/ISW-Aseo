@@ -22,10 +22,11 @@ export async function getItemsService() {
 
 export async function createItemService(itemData) {
   try {
-    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = itemData;
+    const { nombre, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = itemData;
     const ItemRepository = AppDataSource.getRepository(Item);
     const newItem = ItemRepository.create({
       nombre: nombre,
+      tipo: tipo,
       descripcion: descripcion,
       disponibilidadActual: disponibilidadActual,
       disponibilidadTotal: disponibilidadTotal
@@ -55,8 +56,8 @@ export async function updateItemService(id, updateData) {
     const ItemRepository = AppDataSource.getRepository(Item);
     const item = await ItemRepository.findOne({ where: { id } });
     if (!item) return { success: false, message: "Item no encontrado" };
-    //if (updateData.nombre && updateData.nombre.trim() !== "") item.nombre = updateData.nombre.trim();
     item.nombre = updateData.nombre;
+    item.tipo = updateData.tipo;
     item.descripcion = updateData.descripcion;
     item.disponibilidadActual = updateData.disponibilidadActual;
     item.disponibilidadTotal = updateData.disponibilidadTotal;

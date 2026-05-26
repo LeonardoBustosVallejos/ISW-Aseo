@@ -16,6 +16,11 @@ const ItemSchema = new EntitySchema({
       length: 255,
       nullable: false,
     },
+    tipo: {
+      type: "varchar",
+      lenght: 255,
+      nullable: false,
+    },
     descripcion: {
       type: "varchar",
       length: 512,
