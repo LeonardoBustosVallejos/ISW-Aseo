@@ -10,7 +10,7 @@ import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupe
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
 import { getORTrabajadorService } from "./trabajador.service.js";
-import { createContratoComercialService } from "./contrato.service.js";
+import { createContratoAnexoService, createContratoComercialService } from "./contrato.service.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
 import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
 /**
@@ -1306,7 +1306,8 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
 export async function registerClienteJerarquicoYArchivoService(data, manager = null) {
     try {
         const execute = async (transactionManager) => {
-            const { cliente, sedes, contrato, documentos } = data
+            const { cliente, sedes, filiales, contrato, anexos, documentosContrato, } = data
+
             //registrar jerarquía clientes, sedes, contactos y asignar supervisor/es
 
             const [clientePadre, errorPadre] = await createCliente(cliente, null, transactionManager)
@@ -1318,8 +1319,39 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
             const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, contratoCreado.id_contrato_comercial, transactionManager)
             if (errSedes) throw [null, errSedes]
 
+            let documentosContratoCreados = []
+
+            if (Array.isArray(documentosContrato) && documentosContrato.length > 0) {
+
+                const [docsContrato, errDocs] = await createMultipleDocumentosService(documentosContrato, { id_contrato_comercial: contratoCreado.id_contrato_comercial }, transactionManager)
+                if (errDocs) throw [null, errDocs]
+
+                documentosContratoCreados = docsContrato
+            }
+
+            const anexosCreados = []
+
+            if (Array.isArray(anexos) && anexos.length > 0) {
+                for (const anexoData of anexos) {
+
+                    const [anexoCreado, errAnexo] = await createContratoAnexoService(anexoData.datos, contratoCreado.id_contrato_comercial, transactionManager)
+
+                    if (errAnexo) throw [null, errAnexo]
+
+                    let documentosAnexo = []
+
+                    if (Array.isArray(anexoData.documentos) && anexoData.documentos.length > 0) {
+                        const [docsAnexo, errDocsAnexo] = await createMultipleDocumentosService(anexoData.documentos, { anexo_id: anexoCreado.id_anexo }, transactionManager)
+                        if (errDocsAnexo) throw [null, errDocsAnexo]
+                        documentosAnexo = docsAnexo
+                    }
+
+                    anexosCreados.push({ ...anexoCreado, documentos: documentosAnexo })
+                }
+            }
+
             let filialesCreadas = []
-            if (cliente.filiales || (Array.isArray(filiales) && filiales.length > 0)) {
+            if (cliente.filiales || (Array.isArray(cliente.filiales) && cliente.filiales.length > 0)) {
                 for (const filial of cliente.filiales) {
                     const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, contratoCreado.id_contrato_comercial, clientePadre.cliente_id, transactionManager)
                     if (errCliente) throw [null, errCliente]
@@ -1327,15 +1359,14 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                 }
             }
 
-            const [documentosCreados, errDocs] = await createMultipleDocumentosService(documentos, contratoCreado.id_contrato_comercial, transactionManager)
-            if (errDocs) throw [null, errDocs]
-            return [
-                {
-                    cliente: clientePadre,
-                    filiales: filialesCreadas,
-                    ...contrato,
-                    documentos: documentosCreados
-                }
+            return [{
+                cliente: clientePadre,
+                contrato: contratoCreado,
+                sedes: sedesCreadas,
+                documentosContrato: documentosContratoCreados,
+                anexos: anexosCreados,
+                filiales: filialesCreadas
+            }, null
             ]
         }
         if (manager) return await execute(manager)
@@ -1416,6 +1447,8 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, contrato
             for (const sede of sedes || []) {
                 //extraer los datos de la sede a agregar
                 const { nombre_sede, direccion, personalSolicitado, trabajadores, contactos } = sede
+                console.log(nombre_sede, direccion);
+
                 if (!nombre_sede || !direccion) throw [null, createErrorMessage("nombre_sede/direccion", "Datos incompletos")]
 
                 //registrar en el espacio temporal la sede recorrida
@@ -1439,9 +1472,12 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, contrato
                 sedeResponse.contactos = contactosCreados
 
                 //registrar los supervisores de la sede recorrida, utilizando el ID de la sede recién creada y el espacio temporal
-                const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, cliente_id, transactionManager)
-                if (errSupervisores) throw [null, errSupervisores]
-                sedeResponse.supervisores = supervisores
+                if (Array.isArray(trabajadores) && trabajadores.length > 0) {
+
+                    const [supervisores, errSupervisores] = await asignarSupervisorJerarquicoService(trabajadores, sedeCreada.sede_id, cliente_id, transactionManager)
+                    if (errSupervisores) throw [null, errSupervisores]
+                    sedeResponse.supervisores = supervisores
+                }
 
                 sedesCreadas.push(sedeResponse)
             }
@@ -1494,3 +1530,5 @@ export async function registerContactoJerarquicoService(contactos, sede_id, mana
         return [null, "Error interno del servidor"]
     }
 }
+
+

@@ -1,39 +1,40 @@
 import { EntitySchema } from "typeorm";
 
-const contratoComercialSchema = new EntitySchema({
-    name: "ContratoComercial",
-    tableName: "contrato_comercial",
+const contratoLaboralSchema = new EntitySchema({
+    name: "ContratoLaboral",
+    tableName: "contrato_laboral",
     columns: {
-        id_contrato_comercial: {
+        id_contrato_laboral: {
             type: "int",
             primary: true,
             generated: true,
-        },
-        codigoContrato: {
-            type: "varchar",
-            length: 50,
-            unique: true
         },
         fechaInicio: {
             type: "date",
             nullable: false,
         },
-        fechaFinOriginal: { //fecha original de fin de contrato
+        fechaFinOriginal: {
             type: "date",
-            nullable: false,
+            nullable: true,
         },
-        fechaFinReal: { //fecha ajustada de fin de contrato
+        fechaFinReal: {
             type: "date",
-            nullable: false,
+            nullable: true,
         },
         estado: {
             type: "enum",
-            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA",],
+            enum: ["ACTIVO", "DESPEDIDO", "RENUNCIA", "LICENCIA", "ESPERA", "TERMINADO"],
             default: "ESPERA",
             nullable: false,
         },
+        tipoDuracion: {
+            type: "enum",
+            enum: ["FIJO", "INDEFINIDO", "OBRA", "REEMPLAZO"],
+            default: "FIJO",
+            nullable: false,
+        },
         monto: {
-            type: "numeric",
+            type: "int",
             default: 0,
         },
         descripcion: {
@@ -54,33 +55,28 @@ const contratoComercialSchema = new EntitySchema({
     },
     indices: [
         {
-            name: "IDX_CONTRATO_COMERCIAL",
-            columns: ["id_contrato_comercial"],
+            name: "IDX_CONTRATO_LABORAL",
+            columns: ["id_contrato_laboral"],
             unique: true,
         },
     ],
     relations: {
         documentos: {
             type: "one-to-many",
-            target: "DocumentoComercial",
-            inverseSide: "contratoComercial"
+            target: "DocumentoContrato",
+            inverseSide: "contratoLaboral"
         },
-        cliente: {
-            target: "Cliente",
+        trabajador: {
+            target: "User",
             type: "many-to-one",
-            joinColumn: { name: "cliente_id" },
-            nullable: false, //el contrato si o si debe ser dirigido a alguien
-            onDelete: "CASCADE"
+            joinColumn: { name: "id" },
+            onDelete: "CASCADE",
+            nullable: false,
         },
-        sedes: {
-            target: "Sede",
-            type: "many-to-many",
-            inverseSide: "contrato" //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
-        }
     }
 });
 
-export default contratoComercialSchema;
+export default contratoLaboralSchema;
 /*
 export const ContratoArchivoSchema = new EntitySchema({
     name: "ContratoArchivo",

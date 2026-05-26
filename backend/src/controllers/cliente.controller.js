@@ -110,54 +110,61 @@ export async function registrarClienteJerarquico(req, res) {
 export async function registrarClienteYArchivo(req, res) {
     try {
 
-        const documentos = req.files || []
-
-        const { cliente, sedes, contrato, metadataDocumentos } = req.body
-
         /**
         const { error } = registerClienteJerarquicoValidation.validate({ cliente, sedes, contrato })
 
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
 */
+
+        const { cliente, sedes, contrato, anexos, metadataDocumentosContrato } = req.body
+
         /**
-         * IMPORTANTE:
-         * multipart/form-data convierte todo en string,
-         * así que normalmente tendrás que parsear.
-        */
+         * Parse JSON
+         */
 
         const clienteParsed = typeof cliente === "string" ? JSON.parse(cliente) : cliente
         const sedesParsed = typeof sedes === "string" ? JSON.parse(sedes) : sedes
         const contratoParsed = typeof contrato === "string" ? JSON.parse(contrato) : contrato
-        const metadataParsed = typeof metadataDocumentos === "string" ? JSON.parse(metadataDocumentos) : metadataDocumentos
+        const anexosParsed = typeof anexos === "string" ? JSON.parse(anexos) : anexos || []
+        const metadataContratoParsed = typeof metadataDocumentosContrato === "string" ? JSON.parse(metadataDocumentosContrato) : metadataDocumentosContrato || []
 
         /**
-         * unir metadata con archivos reales
-        */
+         * Documentos contrato
+         */
 
-        const documentosFinales = documentos.map((file, index) => ({
-            file,
-            nombrePersonalizado: metadataParsed?.[index]?.nombrePersonalizado,
-            tipoDocumento: metadataParsed?.[index]?.tipoDocumento,
-            originalname: metadataParsed?.[index]?.originalname
+        const documentosContratoFinales = metadataContratoParsed.map(doc => ({
+            file: req.files?.[doc.fileKey]?.[0],
+            nombrePersonalizado: doc.nombrePersonalizado,
+            tipoDocumento: doc.tipoDocumento
         }))
+
+        /**
+         * Documentos anexos
+         */
+
+        for (const anexo of anexosParsed) {
+            anexo.documentos = (anexo.documentos || []).map(doc => ({
+                file: req.files?.[doc.fileKey]?.[0],
+                nombrePersonalizado:
+                    doc.nombrePersonalizado,
+                tipoDocumento: doc.tipoDocumento
+            }))
+        }
+
+        /**
+         * Registrar
+         */
 
         const [data, errorRegistro] = await registerClienteJerarquicoYArchivoService({
             cliente: clienteParsed,
             sedes: sedesParsed,
             contrato: contratoParsed,
-            documentos: documentosFinales
+            documentosContrato: documentosContratoFinales,
+            anexos: anexosParsed
         })
 
         if (errorRegistro) return handleErrorClient(res, 400, "Error registrando", errorRegistro)
-
-        for (const file of req.files || []) {
-            console.log(
-                "EXISTE?",
-                fs.existsSync(file.path),
-                file.path
-            )
-        }
-        return handleSuccess(res, 201, "Cliente, contrato y documentos registrados con éxito", data)
+        return handleSuccess(res, 201, "Cliente registrado con éxito", data)
 
     } catch (error) {
         console.error(error)

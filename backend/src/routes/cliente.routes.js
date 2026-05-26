@@ -15,7 +15,7 @@ router
     .get("/:rutCliente/:sede_id", isAdmin(['Administrador']), getInfoSede)
 
     .post("/register", isAdmin(['Administrador']), registerCliente)
-    .post("/register-gerarquico", isAdmin(["Administrador"]), uploadContratoComercialService.array("documentos"), registrarClienteYArchivo)
+    .post("/register-gerarquico", isAdmin(["Administrador"]), uploadContratoComercialService.fields([{ name: "anexo_pdf", maxCount: 9 }, { name: "contrato_pdf", maxCount: 10 }]), registrarClienteYArchivo)
 
     .post("/register/sede", isAdmin(["Administrador"]), createSede)
 
