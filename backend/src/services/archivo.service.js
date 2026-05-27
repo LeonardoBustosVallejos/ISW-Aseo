@@ -45,7 +45,6 @@ export async function createMultipleDocumentosService(documentos, relaciones, ma
 
         const execute = async (transactionManager) => {
             const { id_contrato_comercial, contrato_laboral_id, anexo_id } = relaciones
-            console.log(documentos);
 
             //asegurar que el documento pertenezca a un contrato o anexo
             if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato", "Debe proporcionar un contrato válido")]
@@ -134,7 +133,6 @@ export async function createDocumentoService(data, manager = null) {
             if (relaciones.length !== 1) throw [null, createErrorMessage("documento", "Debe pertenecer a una sola entidad")]
 
             const documentoRepository = transactionManager.getRepository(DocumentoSchema)
-            console.log("sfifsnes");
 
 
             const contratoRepository = transactionManager.getRepository(contratoComercialSchema)

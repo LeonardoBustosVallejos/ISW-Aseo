@@ -209,7 +209,6 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
              */
 
             let contratoActualizado = false
-            console.log("sfsf");
 
             // Renovación fecha
             if (fechaFin && new Date(fechaFin) > new Date(contrato.fechaFinReal)) {

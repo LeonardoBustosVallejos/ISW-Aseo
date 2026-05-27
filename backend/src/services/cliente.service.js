@@ -13,6 +13,7 @@ import { getORTrabajadorService } from "./trabajador.service.js";
 import { createContratoAnexoService, createContratoComercialService } from "./contrato.service.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
 import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
+import { calcularPersonalTotal, obtenerLimitePersonalContrato } from "../helpers/personal.helper.js";
 /**
  * get...s() lista de todos
  * get...By(params) estricta para un único elemento con findOne AND
@@ -869,7 +870,7 @@ export async function findClienteByService(query, manager = null) {
     }
 }
 
-export async function deleteCliente(cliente_id, manager = null) {
+export async function deleteClienteService(cliente_id, manager = null) {
     try {
         const [clienteFound, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
 
@@ -1306,7 +1307,14 @@ export async function registerSedeSimpleService(sede, contacto, cliente_id, trab
 export async function registerClienteJerarquicoYArchivoService(data, manager = null) {
     try {
         const execute = async (transactionManager) => {
-            const { cliente, sedes, filiales, contrato, anexos, documentosContrato, } = data
+            const { cliente, sedes, contrato, anexos, documentosContrato, } = data
+            const { filiales } = cliente
+
+            //validar que la cantidad de personal requerido en las sedes no exceda lo que dice el contrato/anexo
+            const totalPersonal = calcularPersonalTotal(sedes, filiales || [])
+            const limitePersonal = obtenerLimitePersonalContrato(contrato, anexos || [])
+
+            if (limitePersonal > 0 && totalPersonal > limitePersonal) throw [null, createErrorMessage("contrato", `La cantidad total de personal solicitada (${totalPersonal}) excede el límite permitido (${limitePersonal})`)]
 
             //registrar jerarquía clientes, sedes, contactos y asignar supervisor/es
 
@@ -1351,8 +1359,8 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
             }
 
             let filialesCreadas = []
-            if (cliente.filiales || (Array.isArray(cliente.filiales) && cliente.filiales.length > 0)) {
-                for (const filial of cliente.filiales) {
+            if (filiales || (Array.isArray(filiales) && filiales.length > 0)) {
+                for (const filial of filiales) {
                     const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, contratoCreado.id_contrato_comercial, clientePadre.cliente_id, transactionManager)
                     if (errCliente) throw [null, errCliente]
                     filialesCreadas.push(clienteJerarquico)
@@ -1447,7 +1455,6 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, contrato
             for (const sede of sedes || []) {
                 //extraer los datos de la sede a agregar
                 const { nombre_sede, direccion, personalSolicitado, trabajadores, contactos } = sede
-                console.log(nombre_sede, direccion);
 
                 if (!nombre_sede || !direccion) throw [null, createErrorMessage("nombre_sede/direccion", "Datos incompletos")]
 

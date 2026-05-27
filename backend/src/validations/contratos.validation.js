@@ -1,56 +1,114 @@
 import Joi from "joi";
+import { documentoValidation } from "./documentos.validation.js";
 
-export const contratoValidation = Joi.object({
-    cliente_id: Joi.number()
-        .integer()
+export const contratoComercialValidation = Joi.object({
+    fechaInicio: Joi.date()
+        .required(),
+
+    fechaFinOriginal: Joi.date()
+        .greater(Joi.ref("fechaInicio"))
+        .required(),
+
+    monto: Joi.number()
         .positive()
-        .required()
-        .messages({
-            "any.required": "El cliente es obligatorio"
-        }),
+        .required(),
+
+    jornada: Joi.string()
+        .valid("COMPLETA", "PARCIAL")
+        .default("COMPLETA"),
+
+    tipoJornada: Joi.string()
+        .valid(
+            "DIURNA",
+            "NOCTURNA",
+            "MIXTA",
+            "TURNOS"
+        )
+        .default("DIURNA"),
+
+    cantidadMinTrabajadores: Joi.number()
+        .integer()
+        .min(1)
+        .required(),
+
+    cantidadMaxTrabajadores: Joi.number()
+        .integer()
+        .min(Joi.ref("cantidadMinTrabajadores"))
+        .required(),
+
+    tamanoInstalacion: Joi.string()
+        .valid(
+            "PEQUENA",
+            "MEDIANA",
+            "GRANDE",
+            "INDUSTRIAL"
+        ),
+
+    requiereGuardias: Joi.boolean()
+        .default(false),
+
+    detalles: Joi.string()
+        .allow("", null),
+
+    observacionesOperativas: Joi.string()
+        .allow("", null)
+})
+
+export const contratoAnexoValidation = Joi.object({
+
+    numeroAnexo: Joi.string()
+        .max(50)
+        .required(),
 
     fechaInicio: Joi.date()
-        .required()
-        .messages({
-            "date.base": "Fecha de inicio inválida",
-            "any.required": "La fecha de inicio es obligatoria"
-        }),
+        .required(),
+
     fechaFin: Joi.date()
-        .allow(null)
-        .optional(),
+        .greater(Joi.ref("fechaInicio"))
+        .allow(null),
 
-    usuarios_ids: Joi.array()
-        .items(Joi.number().integer().positive())
-        .optional()
-        .messages({
-            "array.required": "el usuario del contrato es obligatorio"
-        }),
+    montoNuevo: Joi.number()
+        .positive()
+        .allow(null),
 
-    archivo: Joi.string()
-        .optional() //modificar cuando esté habilitado el subir archivos
-        .allow(null, "")
-}).custom((value, helpers) => {
-    const { fechaFin, fechaInicio } = value
+    cantidadMaxTrabajadores: Joi.number()
+        .integer()
+        .min(1)
+        .allow(null),
 
-    if (!fechaFin && new Date(fechaFin) <= new Date(fechaInicio)) {
-        return helpers.error("any.invalid", { message: "La fecha de fin debe ser mayor a la fecha de inicio" });
-    }
-    //contrato de máximo 3 años
+    tipoJornada: Joi.string()
+        .valid(
+            "DIURNA",
+            "NOCTURNA",
+            "MIXTA",
+            "TURNOS"
+        )
+        .allow(null),
 
-    if (fin <= inicio) {
-        return helpers.error("any.invalid", {
-            message: "La fecha de fin debe ser mayor a la fecha de inicio"
-        });
-    }
+    tipoAnexo: Joi.string()
+        .valid(
+            "RENOVACION",
+            "AUMENTO_PERSONAL",
+            "REDUCCION_PERSONAL",
+            "CAMBIO_MONTO",
+            "SERVICIO_ADICIONAL",
+            "OTRO"
+        )
+        .default("OTRO"),
 
-    const maxFecha = new Date(inicio);
-    maxFecha.setFullYear(maxFecha.getFullYear() + 3);
+    detalles: Joi.string()
+        .allow("", null),
 
-    if (fin > maxFecha) {
-        return helpers.error("any.invalid", {
-            message: "El contrato no puede durar más de 3 años"
-        });
-    }
+    observacionesOperativas: Joi.string()
+        .allow("", null)
+})
 
-    return value
+export const anexoCompletoValidation = Joi.object({
+
+    datos: contratoAnexoValidation
+        .required(),
+
+    documentos: Joi.array()
+        .items(documentoValidation)
+        .default([])
 })

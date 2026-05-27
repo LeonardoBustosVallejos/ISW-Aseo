@@ -1,6 +1,6 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService } from "../services/cliente.service.js";
-import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService } from "../services/cliente.service.js";
+import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteJerarquicoYArchivoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
 import fs from "fs";
 export async function getClientes(req, res) {
     try {
@@ -11,6 +11,20 @@ export async function getClientes(req, res) {
         clientes.length === 0
             ? handleSuccess(res, 204)
             : handleSuccess(res, 200, "Clientes encontrados", clientes);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message)
+    }
+}
+
+export async function deleteCliente(req, res) {
+    try {
+        const { cliente_id } = req.params
+
+        const [data, err] = await deleteClienteService(cliente_id)
+        if (err) return handleErrorClient(res, 404, "Error eliminado al cliente", err)
+
+        handleSuccess(res, 200, "Cliente eliminado correctamente", data);
+
     } catch (error) {
         handleErrorServer(res, 500, error.message)
     }
@@ -110,13 +124,27 @@ export async function registrarClienteJerarquico(req, res) {
 export async function registrarClienteYArchivo(req, res) {
     try {
 
-        /**
-        const { error } = registerClienteJerarquicoValidation.validate({ cliente, sedes, contrato })
-
-        if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
-*/
 
         const { cliente, sedes, contrato, anexos, metadataDocumentosContrato } = req.body
+        const bodyParsed = {
+
+            cliente: typeof cliente === "string" ? JSON.parse(cliente) : cliente,
+
+            sedes: typeof sedes === "string" ? JSON.parse(sedes) : sedes,
+
+            contrato: typeof contrato === "string" ? JSON.parse(contrato) : contrato,
+
+            anexos: typeof anexos === "string" ? JSON.parse(anexos) : anexos || [],
+
+            metadataDocumentosContrato: typeof metadataDocumentosContrato === "string" ? JSON.parse(metadataDocumentosContrato) : metadataDocumentosContrato || []
+        }
+        const { error } = registerClienteJerarquicoYArchivoValidation.validate(bodyParsed, {
+
+            abortEarly: false
+        })
+
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
+
 
         /**
          * Parse JSON
