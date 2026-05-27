@@ -45,3 +45,31 @@ export async function deleteCapacitacionService(id_capacitacion) {
     return { success: false, message: "Error borrando capacitacion", error: error.message };
   }
 }
+
+export async function getCapacitacionItemService(id_item) {
+  const capacitacionRepository = AppDataSource.getRepository(Capacitacion);
+  try {
+    if (id_item === undefined || id_item === null) {
+      const capacitaciones = await capacitacionRepository.find();
+      return { success: true, data: capacitaciones, message: "Capacitaciones recuperadas exitósamente"};
+    }
+    const capacitaciones = await capacitacionRepository.find({ where: { id_item: parseInt(id_item) } });
+    return { success: true, data: capacitaciones, message: "Capacitaciones recuperadas exitósamente"};
+  } catch (error) {
+    return { success: false, message: "Error recuperando capacitaciones", error: error.message };
+  }
+}
+
+export async function getCapacitacionTrabajoService(id_trabajador) {
+  const capacitacionRepository = AppDataSource.getRepository(Capacitacion);
+  try {
+    if (id_trabajador === undefined || id_trabajador === null) {
+      const capacitaciones = await capacitacionRepository.find();
+      return { success: true, data: capacitaciones, message: "Capacitaciones recuperadas exitósamente"};
+    }
+    const capacitaciones = await capacitacionRepository.find({ where: { id_item: parseInt(id_trabajador) } });
+    return { success: true, data: capacitaciones, message: "Capacitaciones recuperadas exitósamente"};
+  } catch (error) {
+    return { success: false, message: "Error recuperando capacitaciones", error: error.message };
+  }
+}

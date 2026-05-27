@@ -11,7 +11,9 @@ import {
 import {
     getCapacitacionesService,
     createCapacitacionService,
-    deleteCapacitacionService
+    deleteCapacitacionService,
+    getCapacitacionItemService,
+    getCapacitacionTrabajoService
 } from "../services/capacitacion.service.js";
 import { AppDataSource } from "../config/configDb.js";
 import Capacitacion from "../entity/capacitacion.entity.js";
@@ -59,5 +61,41 @@ export async function deleteCapacitacionController(req, res) {
     }
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error interno de servidor", error: error.message });
+  }
+}
+
+export async function getCapacitacionItemController(req, res) {
+  try {
+    const { id_item } = req.params;
+    console.log("el id es %d", id_item);
+    if (isNaN(id_item)) {
+      return res.status(400).json({ success:false, message:"ID de item inválido" })
+    };
+    const result = await getCapacitacionItemService(id_item);
+    if (result.success) {
+      return res.status(200).json({ success:true, data:result.data, message:result.message});
+    } else {
+      return res.status(404).json({ success:false, message:result.message});
+    }
+  } catch (error) {
+    return res.status(500).json({ success:false, message:"Error de servidor interno", error:error.message});
+  }
+}
+
+export async function getCapacitacionTrabajoController(req, res) {
+  try {
+    const {id_trabajador } = req.params;
+    console.log("el id es %d", id_trabajador);
+    if (isNaN(id_trabajador)) {
+      return res.status(400).json({ success:false, message:"ID de trabajador inválido" })
+    };
+    const result = await getCapacitacionTrabajoService(id_trabajador);
+    if (result.success) {
+      return res.status(200).json({ success:true, data:result.data, message:result.message});
+    } else {
+      return res.status(404).json({ success:false, message:result.message});
+    }
+  } catch (error) {
+    return res.status(500).json({ success:false, message:"Error de servidor interno", error:error.message});
   }
 }
