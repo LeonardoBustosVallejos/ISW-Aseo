@@ -7,6 +7,7 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
   
   // atributos de un item
   const [itemName, setItemName] = useState('');
+  const [itemCode, setItemCode] = useState('');
   const [itemType, setItemType] = useState('');
   const [itemDesc, setItemDesc] = useState('');
   const [itemDisCu, setItemDisCu] = useState('');
@@ -27,6 +28,7 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
         setMessage({ type: 'success', text: result.message });
         setTimeout(() => {
           setItemName(formData.nombre);
+          setItemCode(formData.codigo);
           setItemType(formData.tipo);
           setItemDesc(formData.descripcion);
           setItemDisCu(formData.disponibilidadActual);
@@ -74,6 +76,7 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
           e.preventDefault();
           await handleSubmit({
             nombre: itemName.trim(),
+            codigo: itemCode.trim(),
             tipo: itemType.trim(),
             descripcion: itemDesc.trim(),
             disponibilidadActual: itemDisCu.trim(),
@@ -96,6 +99,16 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
             placeholder="Ingrese el nombre del item"
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
+            disabled={isLoading}
+            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+          <input
+            id="create-item6"
+            type="text"
+            name="codigo"
+            placeholder="Ingrese el codigo del item"
+            value={itemCode}
+            onChange={(e) => setItemCode(e.target.value)}
             disabled={isLoading}
             style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
           />

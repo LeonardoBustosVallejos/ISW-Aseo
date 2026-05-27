@@ -33,8 +33,8 @@ export async function getItemsController(req, res) {
 
 export async function createItemController(req, res) {
   try {
-    const { nombre, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
-    const [created, err] = await createItemService({ nombre, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
+    const { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
+    const [created, err] = await createItemService({ nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
     if (err) return handleErrorServer(res, 500, err);
     handleSuccess(res, 201, "Items creado", created);
   } catch (error) {
@@ -64,7 +64,7 @@ export async function deleteItemController(req, res) {
 export async function updateItemController(req, res) {
   try {
     const { id } = req.params;
-    const { nombre, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
+    const { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
     const itemId = parseInt(id);
     if (isNaN(itemId)) {
       return res.status(400).json({ success: false, message: "ID de item inválida"});
@@ -72,7 +72,7 @@ export async function updateItemController(req, res) {
     if (!nombre || nombre.trim() === '') {
       return res.status(400).json({ success: false, message: "Debe cambiarse al menos un atributo" });
     }
-    const result = await updateItemService(itemId, { nombre, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
+    const result = await updateItemService(itemId, { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
     if (result.success) {
       return res.status(200).json({ success: true, data: result.data, message: result.message });
     } else {

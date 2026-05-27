@@ -1,10 +1,11 @@
 import Table from '@components/Table';
 import useItems from '@hooks/items/useGetItems.jsx';
+import useEditItems from '@hooks/items/useEditItems';
 import useUsers from '@hooks/users/useGetUsers.jsx';
 import { useCallback, useState, useEffect } from 'react';
 import ItemModal from './AgregarItemModal.jsx';
 import Popup from '../components/Popup';
-import useEditItems from '@hooks/items/useEditItems';
+
 
 const Bodega = () => {
   const { items, fetchItems, setItems } = useItems();
@@ -19,8 +20,9 @@ const Bodega = () => {
   //tabla que muestra los datos de los items que existen en bodega
   const columns = [
     { title: 'ID', field: 'id', width: 50, responsive: 0 },
-    { title: 'Nombre', field: 'nombre', width: 150, responsive: 0 },
-    { title: 'Tipo', field: 'tipo', width: 150, responsive: 0 },
+    { title: 'Nombre', field: 'nombre', width: 120, responsive: 0 },
+    { title : 'Codigo', field: 'codigo', width: 70, responsive: 0 },
+    { title: 'Tipo', field: 'tipo', width: 120, responsive: 0 },
     { title: 'Descripción', field: 'descripcion', width: 100, responsive: 1 },
     { title: 'Disponibles', field: 'disponibilidadActual', width: 100, responsive: 2 },
     { title: 'Totales', field: 'disponibilidadTotal', width: 100, responsive: 2 }
@@ -53,6 +55,7 @@ const Bodega = () => {
         },
         body: JSON.stringify({ //puede q tga q cambiar estos d abajo ya q no se si trim bastará para cortarlos a todos
           nombre: itemInfo.nombre,
+          codigo: itemInfo.codigo,
           tipo: itemInfo.tipo,
           descripcion: itemInfo.descripcion,
           disponibilidadActual: itemInfo.disponibilidadActual,
