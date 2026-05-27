@@ -30,3 +30,24 @@ export function formatPostUpdate(user) {
         createdAt: formatTempo(user.createdAt, "DD-MM-YYYY")
     };
 }
+
+export function formatItemData(item){
+    return {
+        ...item,
+        nombre: startCase(item.nombre),
+        codigo: startCase(item.codigo),
+        tipo: startCase(item.tipo),
+        descripcion: startCase(item.descripcion),
+        /*puede que aquí en algún momento me falte implementar un formato especial para los enteros 
+        disponibilidadActual y disponibilidadTotal*/
+    };
+}
+
+export function formatItemPostUpdate(item) {
+    return {
+        nombre: startCase(item.nombre),
+        codigo: startCase(item.codigo),
+        tipo: startCase(item.tipo),
+        descripcion: startCase(item.descripcion),
+    };
+}

@@ -13,6 +13,8 @@ router
   .get("/", getItemsController)
   .post("/create/", createItemController)
   .put("/update/:id", updateItemController)
-  .delete("/delete/:id", deleteItemController);
+  .delete("/delete/:id", deleteItemController)
+  //ruta para recuperar todos los items de un tipo
+  //ruta para borrar todos los items
 
 export default router;

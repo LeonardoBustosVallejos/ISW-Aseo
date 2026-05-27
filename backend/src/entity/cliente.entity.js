@@ -18,24 +18,10 @@ const ClienteSchema = new EntitySchema({
         },
         rutCliente: {
             type: "varchar",
-            length: 12,
+            length: 15,
             nullable: false,
             unique: true,
         },
-        direccion: {
-            type: "varchar",
-            length: 255,
-            nullable: false,
-        },
-        personalSolicitado: {
-            type: "int",
-            default: 1
-        },
-        personalAsignado: {
-            type: "int",
-            default: 0
-        },
-
     },
     indices: [{
         name: "IDX_CLIENTE",
@@ -43,11 +29,12 @@ const ClienteSchema = new EntitySchema({
         unique: true,
     }],
     relations: {
-        contactos: {
+        //un cliente puede tener varias sedes, por ejemplo la UBB en Concepción y Chillán
+        sede: {
             type: "one-to-many",
-            target: "Contacto",
+            target: "Sede",
             inverseSide: "cliente"
-        }
+        },
     }
 })
 export default ClienteSchema
