@@ -30,3 +30,13 @@ export function formatPostUpdate(user) {
         createdAt: formatTempo(user.createdAt, "DD-MM-YYYY")
     };
 }
+
+export function formatItemData(item){
+    return {
+        ...item,
+        nombre: startCase(item.nombre),
+        descripcion: startCase(item.descripcion),
+        //disponibilidadActual: startCase(item.disponibilidadActual),
+        //disponibilidadTotal: startCase(item.disponibilidadTotal)
+    };
+}
