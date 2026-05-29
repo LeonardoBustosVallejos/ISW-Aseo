@@ -36,11 +36,6 @@ const TrabajadorSchema = new EntitySchema({
       length: 255,
       nullable: true,
     },
-    antecedentes: {
-      type: "varchar",
-      length: 255,
-      nullable: true,
-    },
     rol: {
       type: "varchar",
       length: 255,
@@ -55,6 +50,76 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 255,
       nullable: true,
+    },
+    // Metadatos de foto
+    fotoNombreOriginal: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    fotoNombreArchivo: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },  
+    fotoMimeType: {
+      type: "varchar", 
+      length: 100, 
+      nullable: true,
+    },
+    fotoPeso: {
+      type: "bigint",
+      nullable: true
+    },
+    // Metadatos de CV
+    cvNombreOriginal: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    cvNombreArchivo: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    cvRuta: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    cvMimeType: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    cvPeso: {
+      type: "bigint",
+      nullable: true
+    },
+    // Metadatos de antecedentes
+        antecedentesNombreOriginal: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    antecedentesNombreArchivo: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    antecedentesRuta: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    antecedentesMimeType: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    antecedentesPeso: {
+      type: "bigint",
+      nullable: true
     },
     despedido: {
       type: "boolean",

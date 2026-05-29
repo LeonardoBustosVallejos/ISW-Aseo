@@ -49,28 +49,60 @@ export async function getTrabajadorController(req, res) {
 
 export async function createTrabajadoresController(req, res) {
   try {
-    const { nombreCompleto,
-      nacimiento,
-      rut,
-      email,
-      grupo,
-      antecedentes,
-      rol,
-      sexo,
-      competencias,
-      despedido } = req.body;
-    const [created, err] = await createTrabajadoresService({
+    const {
       nombreCompleto,
       nacimiento,
       rut,
       email,
       grupo,
-      antecedentes,
       rol,
       sexo,
       competencias,
-      despedido
-    });
+      despedido,
+    } = req.body;
+
+  const files = req.files || {};
+  const foto = files.foto?.[0];
+  const cv = files.cv?.[0];
+  const antecedentes = files.antecedentes?.[0];
+
+  const payload = {
+    nombreCompleto,
+    nacimiento,
+    rut,
+    email,
+    grupo,
+    rol,
+    sexo,
+    competencias,
+    despedido,
+    foto: foto
+    ? {
+      original: foto.originalname,
+      archivo: foto.filename,
+      ruta: foto.path,
+      mime: foto.mimetype,
+      peso: foto.size,
+    } : null,
+    cv: cv
+    ? {
+      original: cv.originalname,
+      archivo: cv.filename,
+      ruta: cv.path,
+      mime: cv.mimetype,
+      peso: cv.size,
+    } : null,
+    antecedentes: antecedentes
+    ? {
+      original: antecedentes.originalname,
+      archivo: antecedentes.filename,
+      ruta: antecedentes.path,
+      mime: antecedentes.mimetype,
+      peso: antecedentes.size,
+    } : null
+  };
+
+    const [created, err] = await createTrabajadoresService(payload);
     if (err) return handleErrorServer(res, 500, err);
 
     return handleSuccess(res, 201, "Trabajador creado correctamente", created);
@@ -85,6 +117,39 @@ export async function updateTrabajadorController(req, res) {
 
     const { id } = req.params;
     const { body } = req;
+
+    const files = req.files || {};
+    const foto = files.foto?.[0];
+    const cv = files.cv?.[0];
+    const antecedentes = files.antecedentes?.[0];
+
+    const payload = {
+      ...body,
+      foto: foto
+      ? {
+        original: foto.originalname,
+        archivo: foto.filename,
+        ruta: foto.path,
+        mime: foto.mimetype,
+        peso: foto.size,
+      } : null,
+      cv: cv
+      ? {
+        original: cv.originalname,
+        archivo: cv.filename,
+        ruta: cv.path,
+        mime: cv.mimetype,
+        peso: cv.size,
+      } : null,
+      antecedentes : antecedentes
+      ? {
+        original: antecedentes.originalname,
+        archivo: antecedentes.filename,
+        ruta: antecedentes.path,
+        mime: antecedentes.mimetype,
+        peso: antecedentes.size,
+      } : null,
+    };
 
     const [trabajador, trabajadorError] = await updateTrabajadorService(id, body);
 

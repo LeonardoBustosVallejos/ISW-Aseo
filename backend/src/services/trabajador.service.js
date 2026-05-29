@@ -87,9 +87,12 @@ export async function updateTrabajadorService(id, body) {
 
         //verificar que el correo electrónico no esté registrado
         if (body.email) {
-            const existingEmail = await trabajadoresRepository.findOne({ where: [{ email: body.email }] })
-            const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: body.email }] })
-            if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
+            const existingEmail = await trabajadoresRepository.findOne(
+                { where: [{ email: body.email }] })
+            const existingContactoEmail = await contactoRepository.findOne(
+                { where: [{ email: body.email }] })
+            if (existingEmail || existingContactoEmail) {
+                return [null, "Email ya en uso"]};
         }
         const dataTrabajadorUpdate = {
             grupo: body.grupo,
@@ -99,6 +102,30 @@ export async function updateTrabajadorService(id, body) {
             competencias: body.competencias,
             updatedAt: new Date(),
         };
+
+        if (body.foto) {
+        dataTrabajadorUpdate.fotoNombreOriginal = body.foto.original;
+        dataTrabajadorUpdate.fotoNombreArchivo = body.foto.archivo;
+        dataTrabajadorUpdate.fotoRuta = body.foto.ruta;
+        dataTrabajadorUpdate.fotoMimeType = body.foto.mime;
+        dataTrabajadorUpdate.fotoPeso = body.foto.peso;
+        }
+
+        if (body.cv) {
+        dataTrabajadorUpdate.cvNombreOriginal = body.cv.original;
+        dataTrabajadorUpdate.cvNombreArchivo = body.cv.archivo;
+        dataTrabajadorUpdate.cvRuta = body.cv.ruta;
+        dataTrabajadorUpdate.cvMimeType = body.cv.mime;
+        dataTrabajadorUpdate.cvPeso = body.cv.peso;
+        }
+
+        if (body.antecedentes) {
+        dataTrabajadorUpdate.antecedentesNombreOriginal = body.antecedentes.original;
+        dataTrabajadorUpdate.antecedentesNombreArchivo = body.antecedentes.archivo;
+        dataTrabajadorUpdate.antecedentesRuta = body.antecedentes.ruta;
+        dataTrabajadorUpdate.antecedentesMimeType = body.antecedentes.mime;
+        dataTrabajadorUpdate.antecedentesPeso = body.antecedentes.peso;
+        }
 
         await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
 
@@ -194,7 +221,6 @@ export async function createTrabajadoresService(trabajadoresData) {
             rut,
             email,
             grupo,
-            antecedentes,
             rol,
             sexo,
             competencias,
@@ -204,8 +230,8 @@ export async function createTrabajadoresService(trabajadoresData) {
 
 
         //verificar que el rut no esté ya registrado
-        const existingRut = await TrabajadoresRepository.findOne({ where: [{ rut: rut }] })
-        const existingContacto = await contactoRepository.findOne({ where: [{ contacto_rut: rut }] })
+        const existingRut = await TrabajadoresRepository.findOne({ where: { rut } })
+        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rut } })
         if (existingContacto || existingRut) return [null, "Rut ya registrado previamente"]
 
         //verificar que el correo electrónico no esté registrado
@@ -219,12 +245,35 @@ export async function createTrabajadoresService(trabajadoresData) {
             rut,
             email,
             grupo,
-            antecedentes,
             rol,
             sexo,
             competencias,
             despedido: despedido ?? false,
         });
+        
+        if (trabajadoresData.foto) {
+        newTrabajador.fotoNombreOriginal = trabajadoresData.foto.original;
+        newTrabajador.fotoNombreArchivo = trabajadoresData.foto.archivo;
+        newTrabajador.fotoRuta = trabajadoresData.foto.ruta;
+        newTrabajador.fotoMimeType = trabajadoresData.foto.mime;
+        newTrabajador.fotoPeso = trabajadoresData.foto.peso;
+        }
+        if (trabajadoresData.cv) {
+        newTrabajador.cvNombreOriginal = trabajadoresData.cv.original;
+        newTrabajador.cvNombreArchivo = trabajadoresData.cv.archivo;
+        newTrabajador.cvRuta = trabajadoresData.cv.ruta;
+        newTrabajador.cvMimeType = trabajadoresData.cv.mime;
+        newTrabajador.cvPeso = trabajadoresData.cv.peso;
+        }
+        if (trabajadoresData.antecedentes) {
+        newTrabajador.antecedentesNombreOriginal = trabajadoresData.antecedentes.original;
+        newTrabajador.antecedentesNombreArchivo = trabajadoresData.antecedentes.archivo;
+        newTrabajador.antecedentesRuta = trabajadoresData.antecedentes.ruta;
+        newTrabajador.antecedentesMimeType = trabajadoresData.antecedentes.mime;
+        newTrabajador.antecedentesPeso = trabajadoresData.antecedentes.peso;
+        }
+
+
         const trabajadorGuardado = await TrabajadoresRepository.save(newTrabajador);
         return [trabajadorGuardado, null];
     }
