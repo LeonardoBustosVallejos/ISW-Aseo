@@ -5,6 +5,7 @@ import Error404 from '@pages/Error404';
 import ProtectedRoute from '@components/ProtectedRoute';
 import RegisterClienteForm from "@pages/Clientes/registerCliente";
 import Bodega from '@pages/Bodega';
+import Solicitudes from '@pages/Solicitudes';
 
 export default function App() {
     return (
@@ -19,6 +20,7 @@ export default function App() {
                 <Route path="recursos/detalles" element={<Detalles />} />
                 <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                 <Route path="bodega" element={<Bodega />} />
+                <Route path="solicitudes" element={<Solicitudes />} />
                 <Route path="cliente"  >
                 <Route path="registrar" element={<RegisterClienteForm />} />
             </Route>

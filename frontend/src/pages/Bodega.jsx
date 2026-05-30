@@ -1,21 +1,17 @@
 import Table from '@components/Table';
 import useItems from '@hooks/items/useGetItems.jsx';
 import useEditItems from '@hooks/items/useEditItems';
-import useUsers from '@hooks/users/useGetUsers.jsx';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import ItemModal from './AgregarItemModal.jsx';
 import Popup from '../components/Popup';
+import { deleteItem } from '@services/item.service.js';
+import useDeleteItem from '@hooks/items/useDeleteItems.jsx';
 
 
 const Bodega = () => {
   const { items, fetchItems, setItems } = useItems();
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
-  const token = localStorage.getItem('token');
-
-  const headers = {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
+  const [ itemsSeleccionados, setItemsSeleccionados] = useState([]);
 
   //tabla que muestra los datos de los items que existen en bodega
   const columns = [
@@ -85,6 +81,21 @@ const Bodega = () => {
     }
   };
 
+  const handleDeleteItem = async () => {
+    if (!itemsSeleccionados || itemsSeleccionados.length === 0) {
+    }
+
+    const selectedIds = selectedItemsToDelete.map((item) => item.id);
+
+    await Promise.all(selectedIds.map(async (id) => {
+      const selectedIds = itemsSeleccionados.map((item) => item.id);
+    }));
+
+    setItems((prevItems) => prevItems.filter((item) => !selectedIds.includes(item.id)));
+    setItemsSeleccionados([]);
+    setDataItems([]);
+  }
+
   //puede q aquí esté mi problema. dsp d todo no trabajo con users
   const {
     handleClickUpdate,
@@ -97,6 +108,7 @@ const Bodega = () => {
   
     const handleSelectionChange = useCallback((selectedItems) => {
     setDataItems(selectedItems);
+    setItemsSeleccionados(selectedItems);
   }, [setDataItems]);
 
   return (
@@ -109,10 +121,13 @@ const Bodega = () => {
         <button onClick={() => setAgregarItemOpen(true)}>
           Agregar Item
         </button>
+        <button onClick= {() => handleDeleteItem() }>          Borrar Item
+        </button>
         <Table
           data={items}
           columns={columns}
           initialSortName='id'
+          onSelectionChange={handleSelectionChange}
         />
       </div>
       {/*puede q acá esté mi problema, pues la data con la q trabajo no son users */}
@@ -122,6 +137,7 @@ const Bodega = () => {
         onClose={()=>setAgregarItemOpen(false)}
         onSubmit={handleAddItem}
       />
+      <h1></h1>
     </div>
   );
 };
