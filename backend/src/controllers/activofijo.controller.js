@@ -1,12 +1,28 @@
-import { Query } from "pg";
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { registrarNuevoActivo, resumenActivos, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
+import { registrarNuevoActivo, resumenActivosAdmin, resumenActivosSupervisor, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
 import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
-
+import { AppDataSource } from "../config/configDb.js";
+import UserSchema from "../entity/user.entity.js";
 export const getResumenActivos = async (req, res) => {
-    try{
-        const {cliente_id} = req.params;
-        const resumen = await resumenActivos(cliente_id);
+try {
+        const user_id = req.user.id;
+        let resumen;
+        const userRepository = AppDataSource.getRepository(UserSchema);
+        const usuarioCompleto = await userRepository.findOne({
+            where: { id: user_id },
+            relations: ["rol", "cliente"]
+        });
+        const rol = usuarioCompleto.rol?.id || usuarioCompleto.rol?.rol_id;
+
+        console.log("¡El verdadero rol detectado es!:", rol);
+
+        if (rol === 1) {
+            resumen = await resumenActivosAdmin(user_id);
+
+        } else if (rol === 3) {
+            const id_del_cliente = req.params.cliente_id || usuarioCompleto.cliente?.cliente_id;
+            resumen = await resumenActivosSupervisor(id_del_cliente);
+        }
         return handleSuccess(res, 200, "Resumen obtenido correctamente", resumen);
     }catch(error){
         return handleErrorServer(res, 500, "Error interno del servidor", error.message);

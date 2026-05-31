@@ -59,21 +59,59 @@ export const registrarNuevoActivo = async (datos_activo) => {
     }
 };
 
-export const resumenActivos = async (cliente_id) => {
+export const resumenActivosSupervisor = async (cliente_id) => {
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
         const resumen = await activoFijoRepositorio
         .createQueryBuilder("activo")
         .select("activo.nombre", "nombre")
         .addSelect("COUNT(activo.activo_id)", "cantidad")
-        .where("activo.cliente_id = :id", { id: cliente_id })
+        .where("activo.cliente_id = :id", {id: cliente_id})
         .groupBy("activo.nombre")
         .getRawMany();
 
         return resumen;
     }catch(error){
-    console.error("Error al obtener resumen", error);
-    return [null, "Error223"];
+        console.error("Error al obtener resumen", error);
+        return [null, "Error223"];
+    }
+};
+
+export const resumenActivosAdmin = async (admin_id) => {
+try {
+        // 1. Usamos "User" en string para evitar el ReferenceError que acabas de tener
+        const userRepository = AppDataSource.getRepository("User");
+        
+        // 2. Buscamos al admin cruzando los datos con su cliente usando QueryBuilder
+        const admin = await userRepository.createQueryBuilder("user")
+            .leftJoinAndSelect("user.cliente", "cliente") // Traemos los datos de la empresa
+            .where("user.id = :id", { id: admin_id })
+            .getOne();
+
+        // 3. Validamos si tiene un cliente asignado
+        if (!admin || !admin.cliente) {
+            console.log("Este administrador no tiene ningún cliente asignado en la BD.");
+            return []; // Devolvemos el arreglo vacío para que el frontend no explote
+        }
+
+        // 4. Empaquetamos al único cliente en el arreglo para la presentación
+        const resumenFinal = [
+            {
+                id: admin.cliente.cliente_id,
+                compania: admin.cliente.nombreCliente,
+                ubicacion: admin.cliente.direccion,
+                
+                // Las luces fijas para la presentación
+                estadoSuministros: ['rojo', 'naranja', 'verde'], 
+                alerta: true 
+            }
+        ];
+
+        return resumenFinal;
+
+    } catch (error) {
+        console.error("Error al obtener el cliente del administrador:", error);
+        throw error;
     }
 };
 
@@ -124,7 +162,7 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
             .getMany();
 
         if (los_activos.length !== activos_ids.length){
-            return [null, `Error: Se intento devolver ${activos_ids.length} activos, pero solo se encontraron ${los_activos.length} con estos ids.`];
+            return [null, `Error: no se logro devolver los activos.`];
         }
 
         const activos_devueltos = [];

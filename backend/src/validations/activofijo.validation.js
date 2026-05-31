@@ -5,7 +5,7 @@ export const asignarActivosValidation = Joi.object({
         .integer()
         .positive()
         .required()
-        .message({
+        .messages({
             "number.base": "El id del cliente debe ser un numero.",
             "number.positive": "El id del cliente debe ser un numero positivo.",
             "any.required": "El id del cliente es obligatorio."
@@ -13,15 +13,15 @@ export const asignarActivosValidation = Joi.object({
         nombre_maquina: Joi.string()
             .trim()
             .required()
-            .message({
+            .messages({
                 "string.empty": "El nombre de la maquina no puede estar vacio.",
                 "any.required": "El nombre de la maquina es obligatorio."
             }),
-        catidad: Joi.number()
+        cantidad: Joi.number()
             .integer()
             .min(1)
             .required()
-            .message({
+            .messages({
                 "number.min": "La cantidad debe ser al menos 1.",
                 "any.required": "La cantidad es obligatoria."
             })
@@ -36,7 +36,7 @@ export const devolverActivosValidation = Joi.object({
         .integer()
         .positive()
         .required()
-        .message({
+        .messages({
             "number.base": "El id del cliente debe ser un numero.",
             "number.positive": "El id del cliente debe ser un numero positivo.",
             "any.required": "El id del cliente es obligatorio."
@@ -49,7 +49,7 @@ export const devolverActivosValidation = Joi.object({
         )
         .min(1)
         .required()
-        .message({
+        .messages({
             "array.min": "Se debe ingresar el id de al menos un activo a devolver."
         })
 }).options({
@@ -63,7 +63,7 @@ export const confirmarRecepcionValidation = Joi.object({
         .integer()
         .positive()
         .required()
-        .message({
+        .messages({
             "number.base": "El id del cliente debe ser un numero.",
             "number.positive": "El id del cliente debe ser un numero positivo.",
             "any.required": "El id del cliente es obligatorio."
@@ -76,7 +76,7 @@ export const confirmarRecepcionValidation = Joi.object({
         )
         .min(1)
         .required()
-        .message({
+        .messages({
             "array.min": "Se debe ingresar el id de al menos un activo a devolver."
         }),
 
@@ -84,7 +84,7 @@ export const confirmarRecepcionValidation = Joi.object({
         .integer()
         .positive()
         .required()
-        .message({
+        .messages({
             "any.required": "Debe ingresarse el id del trabajador que recibio el/los activo/s."
         }),
 }).options({
