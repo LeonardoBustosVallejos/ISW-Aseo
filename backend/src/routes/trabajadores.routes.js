@@ -16,7 +16,7 @@ router
   .get("/", getTrabajadoresController)
   .get("/detail/:id", getTrabajadorController)
   .patch("/detail/:id", uploadFiles, updateTrabajadorController)
-  .patch("/detail/:id/despedir", despidoTrabajadorController)
+  .patch("/detail/:id/despedir", uploadFiles, despidoTrabajadorController)
   .patch("/detail/:id/recontratar", recontratarTrabajadorController)
   .post("/create/", uploadFiles, createTrabajadoresController);
 

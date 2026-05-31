@@ -13,6 +13,7 @@ const folderForField = {
   cv: "cvs",
   antecedentes: "antecedentes",
   contrato: "contratos",
+  archivo: "archivos"
 };
 
 const allowedMimes = {
@@ -20,6 +21,7 @@ const allowedMimes = {
   cv: ["application/pdf"],
   antecedentes: ["application/pdf"],
   contrato: ["application/pdf"],
+  archivo: ["application/pdf"]
 };
 
 const storage = multer.diskStorage({
@@ -60,5 +62,6 @@ export const upload = multer({
 export const uploadFiles = upload.fields([
   { name: "foto", maxCount: 1 },
   { name: "cv", maxCount: 1 },
-  { name: "antecedentes", maxCoun: 1 },
+  { name: "antecedentes", maxCount: 1 },
+  { name: "archivo", maxCount: 1 },
 ]);

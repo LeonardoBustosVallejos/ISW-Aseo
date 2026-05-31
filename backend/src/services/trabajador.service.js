@@ -4,6 +4,7 @@ import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Contacto from "../entity/contacto.entity.js";
 import { getContactoByService } from "./cliente.service.js";
+import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 
 
 export async function getTrabajadoresService() {
@@ -32,6 +33,7 @@ export async function getTrabajadorService(id) {
         const trabajador = await TrabajadoresRepository.findOne({
             where:
                 { id: Number(id) },
+                relations: ["historialDesvinculaciones"],
         });
 
         if (!trabajador) return [null, "No se encontró el trabajador"];
@@ -96,7 +98,6 @@ export async function updateTrabajadorService(id, body) {
         }
         const dataTrabajadorUpdate = {
             grupo: body.grupo,
-            antecedentes: body.antecedentes,
             email: body.email,
             rol: body.rol,
             competencias: body.competencias,
@@ -144,9 +145,22 @@ export async function updateTrabajadorService(id, body) {
     }
 }
 
-export async function despidoTrabajadorService(id, despedido = true) {
+export async function despidoTrabajadorService(id, data) {
     try {
-        const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        const {
+            despedido = true,
+            motivo,
+            archivo = null
+        } = data;
+
+        if (!motivo || !motivo.trim()) {
+            return [null, "Debe indicar el motivo de su desvinculación"];
+        }
+
+        return await AppDataSource.transaction(async (manager) => {
+        const trabajadoresRepository = manager.getRepository(Trabajador);
+        const historialRepository = manager.getRepository(TrabajadorHistorialSchema);
+
         const trabajadorFound = await trabajadoresRepository.findOne({
             where:
             {
@@ -154,29 +168,43 @@ export async function despidoTrabajadorService(id, despedido = true) {
                 despedido: false,
             },
         })
-        if (!trabajadorFound) return [null, "Trabajador no encontrado"]
+        if (!trabajadorFound) {
+            return [null, "Trabajador no encontrado"]
+        };
 
-        const dataTrabajadorUpdate = {
-            despedido: Boolean(despedido),
-            updatedAt: new Date(),
-        }
+        await trabajadoresRepository.update (
+            { id: trabajadorFound.id },
+            { despedido: Boolean(despedido),
+                updatedAt: new Date()
+            }
+        );
 
-        await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
-
-        const trabajadorData = await trabajadoresRepository.findOne({
-            where: { id: trabajadorFound.id },
+        const historial = historialRepository.create({
+            motivo: motivo.trim(),
+            fechaDesvinculacion: new Date(),
+            archivoNombreOriginal: archivo?.original ?? null,
+            archivoNombreArchivo: archivo?.archivo ?? null,
+            archivoRuta: archivo?.ruta ?? null,
+            archivoMimeType: archivo?.mime ?? null,
+            archivoPeso: archivo?.peso ?? null,
+            trabajador: trabajadorFound.id,
         });
 
-        if (!trabajadorData) {
-            return [null, "Trabajador no encontrado después de despedirse"];
+        await historialRepository.save(historial);
+
+        const trabajadorData = await trabajadoresRepository.findOne({
+            where: { 
+                id: trabajadorFound.id 
+                },
+                relations: ["historialDesvinculaciones"],
+            });
+
+            return [trabajadorData, null];
+        });
+        } catch (error) {
+            console.error("Error al despedir un trabajador:", error);
+            return [null, "Error interno del servidor"];
         }
-
-        return [trabajadorData, null];
-
-    } catch (error) {
-        console.error("Error al despedir un trabajador:", error);
-        return [null, "Error interno del servidor"];
-    }
 }
 
 export async function recontratarTrabajadorService(id, despedido = false) {

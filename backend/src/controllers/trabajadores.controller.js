@@ -76,6 +76,7 @@ export async function createTrabajadoresController(req, res) {
     sexo,
     competencias,
     despedido,
+
     foto: foto
     ? {
       original: foto.originalname,
@@ -125,6 +126,7 @@ export async function updateTrabajadorController(req, res) {
 
     const payload = {
       ...body,
+
       foto: foto
       ? {
         original: foto.originalname,
@@ -151,7 +153,7 @@ export async function updateTrabajadorController(req, res) {
       } : null,
     };
 
-    const [trabajador, trabajadorError] = await updateTrabajadorService(id, body);
+    const [trabajador, trabajadorError] = await updateTrabajadorService(id, payload);
 
     if (trabajadorError) {
       return handleErrorClient(res, 400, "Error modificando al trabajador", trabajadorError);
@@ -172,7 +174,7 @@ export async function recontratarTrabajadorController(req, res) {
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
-    return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
+    return (handleSuccess(res, 200, "Trabajador recontratado", trabajador));
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);
@@ -183,8 +185,26 @@ export async function despidoTrabajadorController(req, res) {
   try {
     const { id } = req.params;
     const { despedido } = req.body;
+    const { motivo } = req.body;
+    
+    const files = req.files || {};
+    //const archivo = req.files.archivo?.[0];
+    const archivo = files.archivo?.[0];
+    const payload = {
+      despedido,
+      motivo,
 
-    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, despedido);
+      archivo: archivo
+      ? {
+        original: archivo.originalname,
+        archivo: archivo.filename,
+        ruta: archivo.path,
+        mime: archivo.mimetype,
+        peso: archivo.size,
+      } : null,
+    }
+
+    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, payload);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 

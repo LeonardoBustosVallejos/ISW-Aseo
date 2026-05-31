@@ -1,5 +1,5 @@
 "use strict";
-import { EntitySchema } from "typeorm";
+import { EntitySchema, JoinColumn } from "typeorm";
 
 const TrabajadorSchema = new EntitySchema({
   name: "Trabajador",
@@ -58,6 +58,11 @@ const TrabajadorSchema = new EntitySchema({
       nullable: true
     },
     fotoNombreArchivo: {
+      type: "varchar",
+      length: 255,
+      nullable: true
+    },
+    fotoRuta: {
       type: "varchar",
       length: 255,
       nullable: true
@@ -137,6 +142,13 @@ const TrabajadorSchema = new EntitySchema({
       onUpdate: "CURRENT_TIMESTAMP",
       nullable: false,
     },
+  },
+    relations: {
+      historialDesvinculaciones: {
+        type: "one-to-many",
+        target: "TrabajadorHistorial",
+        inverseSide: "trabajador",
+      },
   },
 });
 
