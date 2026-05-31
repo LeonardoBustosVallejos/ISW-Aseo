@@ -6,10 +6,20 @@ import indexRoutes from "./routes/index.routes.js";
 import session from "express-session";
 import passport from "passport";
 import express, { json, urlencoded } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { cookieKey, HOST, PORT } from "./config/configEnv.js";
 import { connectDB } from "./config/configDb.js";
-import { createTrabajadores, createUsers, createRoles, createClientes, createContactos, createSedes } from "./config/initialSetup.js";
+import { 
+        createClientes,
+        createContactos,
+        createRoles,
+        createSedes,
+        createTrabajadores, 
+        createUsers, } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
+
+
 
 async function setupServer() {
   try {
@@ -60,6 +70,9 @@ async function setupServer() {
     passportJwtSetup();
 
     app.use("/api", indexRoutes);
+
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
     app.listen(PORT, () => {
       console.log(`=> Servidor corriendo en ${HOST}:${PORT}/api`);

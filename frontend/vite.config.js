@@ -9,6 +9,14 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  //esto podría tener que retirarse
+  server: {
+    host: '0.0.0.0',
+    watch: {
+      usePolling: true,
+      interval: 100
+    }
+  },
   preview: { port: 443, host: true },
   resolve: {
     alias: {

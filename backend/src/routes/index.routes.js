@@ -2,16 +2,21 @@
 import { Router } from "express";
 import userRoutes from "./user.routes.js";
 import authRoutes from "./auth.routes.js";
+import ActivoFijo from "../entity/activofijo.entity.js";
+import activoFijoRoutes from "./activoFijo.routes.js";
 import itemRoutes from "./item.routes.js";
 import trabajadoresRoutes from "./trabajadores.routes.js";
+import capacitacionesRoutes from "./capacitacion.route.js";
 import clienteRoutes from "./cliente.routes.js";
 const router = Router();
 
 router
     .use("/auth", authRoutes)
     .use("/user", userRoutes)
+    .use("/activos", activoFijoRoutes)
     .use("/item", itemRoutes)
     .use("/clientes", clienteRoutes)
-    .use("/trabajadores", trabajadoresRoutes);
+    .use("/trabajadores", trabajadoresRoutes)
+    .use("/capacitaciones", capacitacionesRoutes);
 
 export default router;

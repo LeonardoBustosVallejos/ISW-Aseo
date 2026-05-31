@@ -4,7 +4,7 @@ import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
 import contratoComercialSchema from "../entity/contratos/contratoComercial.entity.js";
 import contratoLaboralSchema from "../entity/contratos/contratoLaboral.entity.js";
 import DocumentoSchema from "../entity/contratos/documentoContrato.entity.js"
-import { createUploadMiddleware } from "../middlewares/multer.middleware.js"
+import { createUploadMiddleware } from "../middlewares/multer2.middleware.js"
 import path from "path";
 export const uploadContratoComercialService =
     createUploadMiddleware({

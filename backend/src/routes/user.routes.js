@@ -17,6 +17,6 @@ router
   .get("/", isAdmin(["Administrador"]), getUsers)
   .get("/detail/", getUser)
   .patch("/detail/", updateUser)
-  .delete("/detail/", isAdmin(['Administrador']), deleteUser);
+  .delete("/detail/", isAdmin(["Administrador"]), deleteUser);
 
 export default router;

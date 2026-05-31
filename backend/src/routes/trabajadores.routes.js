@@ -1,5 +1,6 @@
 "use strict";
 import { Router } from "express";
+import { uploadFiles } from "../middlewares/multer.middleware.js";
 import {
   createTrabajadoresController,
   despidoTrabajadorController,
@@ -14,9 +15,9 @@ const router = Router();
 router
   .get("/", getTrabajadoresController)
   .get("/detail/:id", getTrabajadorController)
-  .patch("/detail/:id", updateTrabajadorController)
-  .patch("/detail/:id/despedir", despidoTrabajadorController)
+  .patch("/detail/:id", uploadFiles, updateTrabajadorController)
+  .patch("/detail/:id/despedir", uploadFiles, despidoTrabajadorController)
   .patch("/detail/:id/recontratar", recontratarTrabajadorController)
-  .post("/create/", createTrabajadoresController);
+  .post("/create/", uploadFiles, createTrabajadoresController);
 
 export default router;

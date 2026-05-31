@@ -49,28 +49,61 @@ export async function getTrabajadorController(req, res) {
 
 export async function createTrabajadoresController(req, res) {
   try {
-    const { nombreCompleto,
-      nacimiento,
-      rut,
-      email,
-      grupo,
-      antecedentes,
-      rol,
-      sexo,
-      competencias,
-      despedido } = req.body;
-    const [created, err] = await createTrabajadoresService({
+    const {
       nombreCompleto,
       nacimiento,
       rut,
       email,
       grupo,
-      antecedentes,
       rol,
       sexo,
       competencias,
-      despedido
-    });
+      despedido,
+    } = req.body;
+
+  const files = req.files || {};
+  const foto = files.foto?.[0];
+  const cv = files.cv?.[0];
+  const antecedentes = files.antecedentes?.[0];
+
+  const payload = {
+    nombreCompleto,
+    nacimiento,
+    rut,
+    email,
+    grupo,
+    rol,
+    sexo,
+    competencias,
+    despedido,
+
+    foto: foto
+    ? {
+      original: foto.originalname,
+      archivo: foto.filename,
+      ruta: foto.path,
+      mime: foto.mimetype,
+      peso: foto.size,
+    } : null,
+    cv: cv
+    ? {
+      original: cv.originalname,
+      archivo: cv.filename,
+      ruta: cv.path,
+      mime: cv.mimetype,
+      peso: cv.size,
+    } : null,
+    antecedentes: antecedentes
+    ? {
+      original: antecedentes.originalname,
+      archivo: antecedentes.filename,
+      ruta: antecedentes.path,
+      mime: antecedentes.mimetype,
+      peso: antecedentes.size,
+    } : null
+  };
+
+    const [created, err] = await createTrabajadoresService(payload);
     if (err) return handleErrorServer(res, 500, err);
 
     return handleSuccess(res, 201, "Trabajador creado correctamente", created);
@@ -86,7 +119,41 @@ export async function updateTrabajadorController(req, res) {
     const { id } = req.params;
     const { body } = req;
 
-    const [trabajador, trabajadorError] = await updateTrabajadorService(id, body);
+    const files = req.files || {};
+    const foto = files.foto?.[0];
+    const cv = files.cv?.[0];
+    const antecedentes = files.antecedentes?.[0];
+
+    const payload = {
+      ...body,
+
+      foto: foto
+      ? {
+        original: foto.originalname,
+        archivo: foto.filename,
+        ruta: foto.path,
+        mime: foto.mimetype,
+        peso: foto.size,
+      } : null,
+      cv: cv
+      ? {
+        original: cv.originalname,
+        archivo: cv.filename,
+        ruta: cv.path,
+        mime: cv.mimetype,
+        peso: cv.size,
+      } : null,
+      antecedentes : antecedentes
+      ? {
+        original: antecedentes.originalname,
+        archivo: antecedentes.filename,
+        ruta: antecedentes.path,
+        mime: antecedentes.mimetype,
+        peso: antecedentes.size,
+      } : null,
+    };
+
+    const [trabajador, trabajadorError] = await updateTrabajadorService(id, payload);
 
     if (trabajadorError) {
       return handleErrorClient(res, 400, "Error modificando al trabajador", trabajadorError);
@@ -107,7 +174,7 @@ export async function recontratarTrabajadorController(req, res) {
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
-    return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
+    return (handleSuccess(res, 200, "Trabajador recontratado", trabajador));
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);
@@ -118,8 +185,26 @@ export async function despidoTrabajadorController(req, res) {
   try {
     const { id } = req.params;
     const { despedido } = req.body;
+    const { motivo } = req.body;
+    
+    const files = req.files || {};
+    //const archivo = req.files.archivo?.[0];
+    const archivo = files.archivo?.[0];
+    const payload = {
+      despedido,
+      motivo,
 
-    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, despedido);
+      archivo: archivo
+      ? {
+        original: archivo.originalname,
+        archivo: archivo.filename,
+        ruta: archivo.path,
+        mime: archivo.mimetype,
+        peso: archivo.size,
+      } : null,
+    }
+
+    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, payload);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
