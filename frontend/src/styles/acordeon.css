@@ -46,7 +46,7 @@
 }
 
 .arrow {
-    align-items: center;
+    margin: 0 3%;
 }
 
 .arrow.open {

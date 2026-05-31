@@ -38,21 +38,7 @@ export async function register(data) {
         return error.response.data;
     }
 }
-export async function registerCliente(data) {
-    try {
-        console.log(data);
-        const { cliente, supervisor } = data
 
-        if (cliente.phone === "") cliente.phone = null;
-        if (supervisor.phone === "") supervisor.phone = null;
-
-        const response = await axios.post('/auth/registerCliente', { cliente, supervisor })
-        return response.data
-    } catch (error) {
-        console.error("Error 400 - Detalle del Backend:", error.response?.data);
-        return error.response?.data || { message: "Error de conexión" };
-    }
-}
 export async function logout() {
     try {
         await axios.post('/auth/logout');
