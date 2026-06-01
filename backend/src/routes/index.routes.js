@@ -6,7 +6,9 @@ import ActivoFijo from "../entity/activofijo.entity.js";
 import activoFijoRoutes from "./activoFijo.routes.js";
 import itemRoutes from "./item.routes.js";
 import trabajadoresRoutes from "./trabajadores.routes.js";
-
+import capacitacionesRoutes from "./capacitacion.route.js";
+import clienteRoutes from "./cliente.routes.js";
+import solicitudRoutes from "./solicitud.routes.js";
 const router = Router();
 
 router
@@ -14,6 +16,9 @@ router
     .use("/user", userRoutes)
     .use("/activos", activoFijoRoutes)
     .use("/item", itemRoutes)
-    .use("/trabajadores", trabajadoresRoutes);
+    .use("/solicitud", solicitudRoutes)
+    .use("/clientes", clienteRoutes)
+    .use("/trabajadores", trabajadoresRoutes)
+    .use("/capacitaciones", capacitacionesRoutes);
 
 export default router;

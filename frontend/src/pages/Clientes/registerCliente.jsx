@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/auth.service';
-import { Acordeon } from '../components/acordeon';
+import { Acordeon } from '@components/acordeon';
 
 
 /**
@@ -12,7 +12,9 @@ import { Acordeon } from '../components/acordeon';
 const RegisterClienteForm = () => {
     const [openSection, setOpenSection] = useState(null);
     const [openContacto, setOpenContacto] = useState(null);
+    const [showPassword, setShowPassword] = useState('')
     const [errors, setErrors] = useState({});
+
     const [formData, setFormData] = useState({
         cliente: {
             nombreCliente: '',
@@ -109,6 +111,20 @@ const RegisterClienteForm = () => {
         }));
     };
 
+    const formatRut = (value) => {
+        // eliminar todo lo que no sea número o K/k
+        let clean = value.replace(/[^0-9kK]/g, "").toUpperCase();
+
+        if (clean.length === 0) return "";
+
+        let body = clean.slice(0, -1);
+        let dv = clean.slice(-1);
+
+        // agregar puntos al cuerpo
+        body = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+        return `${body}-${dv}`;
+    };
     const handleChange = (e, section) => {
         const { name, value } = e.target;
         console.log(name, value);
@@ -237,16 +253,22 @@ const RegisterClienteForm = () => {
                                     </div>
 
                                     <div className="container_inputs">
-                                        <label className="label">Password</label>
-                                        <input type="password" name="password" value={formData.supervisor.password} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
+                                        <label className="label">Contraseña</label>
+                                        <input type={showPassword ? "text" : "password"} name="password" value={formData.supervisor.password} onChange={(e) => handleChange(e, 'supervisor')} className="input" required />
+                                        <label style={{ display: 'flex', marginRight: "80%" }}>
+                                            <input type="checkbox" name="show" onChange={(e) => setShowPassword(e.target.checked)} />
+                                            <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>Ver contraseña</span>
+                                        </label>
                                     </div>
                                 </section>
                             } />
 
                     </div>
-                    <span className={`error-message ${errors.nombreCompleto ? 'visible' : ''}`}>
-                        {errors.nombreCompleto || 'Campo requerido'}
-                    </span>
+                    <div>
+                        <span className={`error-message`}>
+                            {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
+                        </span>
+                    </div>
                     <hr />
                     <button type="submit">Registrar</button>
                 </form>

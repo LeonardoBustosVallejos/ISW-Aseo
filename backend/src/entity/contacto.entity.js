@@ -18,11 +18,10 @@ const ContactoSchema = new EntitySchema({
             length: 255,
             nullable: false,
         },
-        contacto_rut: {
+        contacto_rut: {         //no es único, pueden ser varios correos y telefonos de la misma persona
             type: "varchar",
-            length: 12,
+            length: 15,
             nullable: false,
-            unique: true,
         },
         email: {
             type: "varchar",
@@ -32,17 +31,19 @@ const ContactoSchema = new EntitySchema({
         },
         phone: {
             type: "varchar",
-            length: 12,
+            length: 15,
             nullable: true,
             unique: true
         },
     },
     relations: {
-        cliente: {
+        //varios contactos pueden ser de la misma sede
+        sede: {
             type: "many-to-one",
-            target: "Cliente",
-            joinColumn: { name: "cliente_id" },
-            onDelete: "CASCADE"
+            target: "Sede",
+            joinColumn: { name: "sede_id" },
+            onDelete: "CASCADE",
+            nullable: false
         }
     }
 })

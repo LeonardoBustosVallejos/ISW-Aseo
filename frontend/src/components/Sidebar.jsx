@@ -8,8 +8,12 @@ import { logout } from "../services/auth.service.js";
  */
 const menuData = [
     {
-        title: "Inventario",
-        path: "/inventario",
+        title: "Bodega",
+        path: "/bodega",
+    },
+    {
+        title: "Solicitudes",
+        path: "/solicitudes",
     },
     {
         title: "Recursos",
