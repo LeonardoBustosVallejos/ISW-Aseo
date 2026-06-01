@@ -21,3 +21,13 @@ export async function updateEdit(data, id) {
         return error.response.data;
     }
 }
+
+export async function deleteItem(id) {
+    try {
+        const response = await axios.delete(`/item/delete/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting item', error);
+        return error.response?.data || { success: false, message: 'Error deleting item' };
+    }
+}

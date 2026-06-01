@@ -12,6 +12,10 @@ const menuData = [
         path: "/bodega",
     },
     {
+        title: "Solicitudes",
+        path: "/solicitudes",
+    },
+    {
         title: "Recursos",
         children: [
             { title: "Resumen", path: "/recursos/resumen" },

@@ -5,10 +5,10 @@ import { formatItemPostUpdate } from '@helpers/formatData.js';
 
 const useEditItems = (setItems) => {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [dataItem, setDataItem] = useState([]);
+    const [dataItems, setDataItems] = useState([]);
     
     const handleClickUpdate = () => {
-        if (dataItem.length > 0) {
+        if (dataItems.length > 0) {
             setIsPopupOpen(true);
         }
     };
@@ -16,7 +16,7 @@ const useEditItems = (setItems) => {
     const handleUpdate = async (updatedItemData) => {
         if (updatedItemData) {
             try {
-            const updatedItem = await updateEdit(updatedItemData, dataItem[0].id);
+            const updatedItem = await updateEdit(updatedItemData, dataItems[0].id);
             showSuccessAlert('¡Actualizado!','El item ha sido actualizado correctamente.');
             setIsPopupOpen(false);
             const formattedItem = formatItemPostUpdate(updatedItem);
@@ -30,7 +30,7 @@ const useEditItems = (setItems) => {
             }));
             
 
-            setDataItem([]);
+            setDataItems([]);
             } catch (error) {
                 console.error('Error al actualizar el item:', error);
                 showErrorAlert('Cancelado','Ocurrió un error al actualizar el item.');
@@ -43,8 +43,8 @@ const useEditItems = (setItems) => {
         handleUpdate,
         isPopupOpen,
         setIsPopupOpen,
-        dataItem,
-        setDataItem
+        dataItems,
+        setDataItems
     };
 };
 
