@@ -8,51 +8,33 @@ import {
   authValidation,
   registerValidation,
 } from "../validations/auth.validation.js";
-import { getItemsService,
-         createItemService,
-         deleteItemService,
-         updateItemService,
+import {
+  getItemsService,
+  createItemService,
+  deleteItemService,
+  updateItemService,
 } from "../services/item.service.js";
 import { AppDataSource } from "../config/configDb.js";
 import Item from "../entity/item.entity.js";
 
 export async function getItemsController(req, res) {
-        try {
-            const [items, error] = await getItemsService();
-            
-            if (error) return handleErrorClient(res, 404, error);
-            
-            handleSuccess(res, 200, "Items encontrados", items);
-
-            /*
-            if (result.success) {
-                return res.status(200).json({
-                    success: true,
-                    data: result.data,
-                    message: result.message
-                });
-            } else {
-                return res.status(500).json({
-                    success: false,
-                    message: result.message,
-                    error: result.error
-                });
-            }
-            */
-
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Internal server error",
-                error: error.message
-            });
-        }
+  try {
+    const [items, error] = await getItemsService();
+    if (error) return handleErrorClient(res, 404, error);
+    handleSuccess(res, 200, "Items encontrados", items);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
 }
 
 export async function createItemController(req, res) {
   try {
-    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
-    const [created, err] = await createItemService({ nombre, descripcion, disponibilidadActual, disponibilidadTotal });
+    const { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
+    const [created, err] = await createItemService({ nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
     if (err) return handleErrorServer(res, 500, err);
     handleSuccess(res, 201, "Items creado", created);
   } catch (error) {
@@ -82,7 +64,7 @@ export async function deleteItemController(req, res) {
 export async function updateItemController(req, res) {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
+    const { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal } = req.body;
     const itemId = parseInt(id);
     if (isNaN(itemId)) {
       return res.status(400).json({ success: false, message: "ID de item inválida"});
@@ -90,7 +72,7 @@ export async function updateItemController(req, res) {
     if (!nombre || nombre.trim() === '') {
       return res.status(400).json({ success: false, message: "Debe cambiarse al menos un atributo" });
     }
-    const result = await updateItemService(itemId, { nombre, descripcion, disponibilidadActual, disponibilidadTotal });
+    const result = await updateItemService(itemId, { nombre, codigo, tipo, descripcion, disponibilidadActual, disponibilidadTotal });
     if (result.success) {
       return res.status(200).json({ success: true, data: result.data, message: result.message });
     } else {
