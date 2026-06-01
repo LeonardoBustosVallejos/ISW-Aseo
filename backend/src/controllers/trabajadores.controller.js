@@ -9,6 +9,7 @@ import {
   registerValidation,
 } from "../validations/auth.validation.js";
 import {
+  createGrupoService,
   createTrabajadoresService,
   despidoTrabajadorService,
   getTrabajadoresService,
@@ -211,6 +212,38 @@ export async function despidoTrabajadorController(req, res) {
     return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
   }
   catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function createGrupoController(req, res) {
+  try {
+    const {
+      nombre,
+      sede_id,
+      supervisor_id,
+      miembros
+    } = req.body;
+
+    const miembros_ids = Array.isArray(miembros)
+    ? miembros
+    : typeof miembros === "string"
+      ? JSON.parse(miembros)
+      : [];
+
+    const [grupo, error] = await createGrupoService({
+      nombre,
+      sede_id,
+      supervisor_id,
+      miembros_ids,
+    });
+
+    if (error) {
+      return handleErrorClient(res, 400, error);
+    }
+
+    return handleSuccess(res, 201, "Grupo creado correctamente", grupo);
+  } catch(error) {
     handleErrorServer(res, 500, error.message);
   }
 }
