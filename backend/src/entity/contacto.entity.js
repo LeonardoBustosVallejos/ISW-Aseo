@@ -1,4 +1,5 @@
-import { EntitySchema } from "typeorm";
+import { BeforeInsert, BeforeUpdate, EntitySchema } from "typeorm";
+import { cleanContactoEntity } from "../cleaners/cliente.cleaner.js";
 
 /**
  * esquema de tabla de contactos de las empresas
@@ -27,16 +28,45 @@ const ContactoSchema = new EntitySchema({
             type: "varchar",
             length: 255,
             nullable: false,
-            unique: true,
         },
         phone: {
             type: "varchar",
             length: 15,
             nullable: true,
-            unique: true
+        },
+        tipoContacto: {
+            type: "enum",
+            enum: ["PRINCIPAL", "SECUNDARIO", "EMERGENCIA", "OTRO"],
+            default: "PRINCIPAL"
+        },
+        createdAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            nullable: false,
+        },
+        updatedAt: {
+            type: "timestamp with time zone",
+            default: () => "CURRENT_TIMESTAMP",
+            onUpdate: "CURRENT_TIMESTAMP",
+            nullable: false,
         },
     },
+    listeners: {
+        BeforeInsert(entity) {
+            cleanContactoEntity(entity)
+        },
+        BeforeUpdate(entity) {
+            cleanContactoEntity(entity)
+        }
+    },
     relations: {
+        cliente: {
+            type: "many-to-one",
+            target: "Cliente",
+            joinColumn: { name: "cliente_id" },
+            nullable: false,
+            onDelete: "CASCADE"
+        },
         //varios contactos pueden ser de la misma sede
         sede: {
             type: "many-to-one",

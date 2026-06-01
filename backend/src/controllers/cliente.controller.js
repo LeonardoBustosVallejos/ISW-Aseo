@@ -1,10 +1,10 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClientService } from "../services/cliente.service.js";
-import { registerClienteValidation } from "../validations/cliente.validation.js";
-
+import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService } from "../services/cliente.service.js";
+import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteJerarquicoYArchivoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
+import fs from "fs";
 export async function getClientes(req, res) {
     try {
-        const [clientes, err] = await getClientesService()
+        const [clientes, err] = await listarClientesService()
 
         if (err) return handleErrorClient(res, 404, err)
 
@@ -16,6 +16,35 @@ export async function getClientes(req, res) {
     }
 }
 
+export async function deleteCliente(req, res) {
+    try {
+        const { cliente_id } = req.params
+
+        const [data, err] = await deleteClienteService(cliente_id)
+        if (err) return handleErrorClient(res, 404, "Error eliminado al cliente", err)
+
+        handleSuccess(res, 200, "Cliente eliminado correctamente", data);
+
+    } catch (error) {
+        handleErrorServer(res, 500, error.message)
+    }
+}
+
+export async function createSede(req, res) {
+    try {
+        const { error } = createSedeValidation.validate(req.body);
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const { cliente_id, sede, contacto, trabajador_id } = req.body
+
+        const [data, err] = await registerSedeSimpleService(sede, contacto, cliente_id, trabajador_id)
+        if (err) handleErrorClient(res, 400, err)
+
+        return handleSuccess(res, 201, "Sede registrada con éxito", data)
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
 
 
 
@@ -31,23 +60,142 @@ export async function getContactos(req, res) {
         handleErrorServer(res, 500, error.message);
     }
 }
+export async function getInfoSede(req, res) {
+    try {
+        const { rutCliente, sede_id } = req.params
+
+        const [data, error] = await getInfoSedeService(rutCliente, sede_id)
+        if (error) return handleErrorClient(res, 404, error)
+
+        handleSuccess(res, 200, "Sede encontrada", data);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function getInfoCliente(req, res) {
+    try {
+        const { rutCliente } = req.params
+
+        const [data, error] = await getInfoClienteService(rutCliente)
+        if (error) return handleErrorClient(res, 404, error)
+
+        handleSuccess(res, 200, "Cliente encontrado", data);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
 export async function registerCliente(req, res) {
     try {
 
         const { error } = registerClienteValidation.validate(req.body);
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
 
-        const { cliente, supervisor } = req.body;
+        const { cliente, filial, sede, contacto, trabajador_id } = req.body;
 
 
 
-        const [data, errorNewCliente] = await registerClientService(cliente, supervisor)
+        const [data, errorNewCliente] = await registerClienteSimpleService({ cliente, filial, sede, contacto }, trabajador_id)
 
         if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
 
-        return handleSuccess(res, 201, "Datos del cliente registrados con éxito", data);
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
 
     } catch (error) {
         handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function registrarClienteJerarquico(req, res) {
+    try {
+        const { cliente, sedes } = req.body;
+        const { error } = registerClienteJerarquicoValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+        const [data, errorNewCliente] = await registerClienteJerarquicoService(cliente, sedes)
+        if (errorNewCliente) return handleErrorClient(res, 400, "Error registrando", errorNewCliente);
+
+        return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
+    } catch (error) {
+        handleErrorServer(res, 500, error.message);
+    }
+}
+
+export async function registrarClienteYArchivo(req, res) {
+    try {
+
+
+        const { cliente, sedes, contrato, anexos, metadataDocumentosContrato } = req.body
+        const bodyParsed = {
+
+            cliente: typeof cliente === "string" ? JSON.parse(cliente) : cliente,
+
+            sedes: typeof sedes === "string" ? JSON.parse(sedes) : sedes,
+
+            contrato: typeof contrato === "string" ? JSON.parse(contrato) : contrato,
+
+            anexos: typeof anexos === "string" ? JSON.parse(anexos) : anexos || [],
+
+            metadataDocumentosContrato: typeof metadataDocumentosContrato === "string" ? JSON.parse(metadataDocumentosContrato) : metadataDocumentosContrato || []
+        }
+        const { error } = registerClienteJerarquicoYArchivoValidation.validate(bodyParsed, {
+
+            abortEarly: false
+        })
+
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
+
+
+        /**
+         * Parse JSON
+         */
+
+        const clienteParsed = typeof cliente === "string" ? JSON.parse(cliente) : cliente
+        const sedesParsed = typeof sedes === "string" ? JSON.parse(sedes) : sedes
+        const contratoParsed = typeof contrato === "string" ? JSON.parse(contrato) : contrato
+        const anexosParsed = typeof anexos === "string" ? JSON.parse(anexos) : anexos || []
+        const metadataContratoParsed = typeof metadataDocumentosContrato === "string" ? JSON.parse(metadataDocumentosContrato) : metadataDocumentosContrato || []
+
+        /**
+         * Documentos contrato
+         */
+
+        const documentosContratoFinales = metadataContratoParsed.map(doc => ({
+            file: req.files?.[doc.fileKey]?.[0],
+            nombrePersonalizado: doc.nombrePersonalizado,
+            tipoDocumento: doc.tipoDocumento
+        }))
+
+        /**
+         * Documentos anexos
+         */
+
+        for (const anexo of anexosParsed) {
+            anexo.documentos = (anexo.documentos || []).map(doc => ({
+                file: req.files?.[doc.fileKey]?.[0],
+                nombrePersonalizado:
+                    doc.nombrePersonalizado,
+                tipoDocumento: doc.tipoDocumento
+            }))
+        }
+
+        /**
+         * Registrar
+         */
+
+        const [data, errorRegistro] = await registerClienteJerarquicoYArchivoService({
+            cliente: clienteParsed,
+            sedes: sedesParsed,
+            contrato: contratoParsed,
+            documentosContrato: documentosContratoFinales,
+            anexos: anexosParsed
+        })
+
+        if (errorRegistro) return handleErrorClient(res, 400, "Error registrando", errorRegistro)
+        return handleSuccess(res, 201, "Cliente registrado con éxito", data)
+
+    } catch (error) {
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }

@@ -3,6 +3,8 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Contacto from "../entity/contacto.entity.js";
+import { getContactoByService } from "./cliente.service.js";
+import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 
 
 export async function getTrabajadoresService() {
@@ -31,7 +33,39 @@ export async function getTrabajadorService(id) {
         const trabajador = await TrabajadoresRepository.findOne({
             where:
                 { id: Number(id) },
+                relations: ["historialDesvinculaciones"],
         });
+
+        if (!trabajador) return [null, "No se encontró el trabajador"];
+
+        return [trabajador, null];
+    }
+    catch (error) {
+        console.error("Error al obtener el trabajador:", error);
+        return [null, "Error interno del servidor"];
+    }
+}
+
+/**
+ * Busqueda estricta OR para obtener un trabajador por id, rut o email. 
+ * Se puede usar cualquiera de estos criterios de búsqueda, pero se recomienda usar el id para una búsqueda más rápida y precisa.
+ * @param data datos de búsqueda, debe contener al menos uno de los siguientes: id, rut o email
+ * @returns trabajador encontrado o mensaje de error si no se encuentra o si no se proporcionó un criterio de búsqueda válido
+ */
+export async function getORTrabajadorService(data) {
+    try {
+        const { id, rut, email } = data;
+
+        if (!id && !rut && !email) return [null, "Debe proporcionar al menos un criterio de búsqueda"]
+
+        const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
+
+        const where = [];
+        if (id) where.push({ id });
+        if (rut) where.push({ rut });
+        if (email) where.push({ email })
+
+        const trabajador = await TrabajadoresRepository.findOne({ where });
 
         if (!trabajador) return [null, "No se encontró el trabajador"];
 
@@ -53,29 +87,46 @@ export async function updateTrabajadorService(id, body) {
         });
         if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
-        const existingEmail = await trabajadoresRepository.findOne({
-            where: { email: body.email },
-        });
-
-        const existingContactoEmail = await contactoRepository.findOne({
-            where: { email: body.email },
-        });
-
-        if (
-            (existingEmail && existingEmail.id !== trabajadorFound.id) ||
-            existingContactoEmail
-        ) {
-            return [null, "Email ya en uso"];
+        //verificar que el correo electrónico no esté registrado
+        if (body.email) {
+            const existingEmail = await trabajadoresRepository.findOne(
+                { where: [{ email: body.email }] })
+            const existingContactoEmail = await contactoRepository.findOne(
+                { where: [{ email: body.email }] })
+            if (existingEmail || existingContactoEmail) {
+                return [null, "Email ya en uso"]};
         }
-
         const dataTrabajadorUpdate = {
             grupo: body.grupo,
-            antecedentes: body.antecedentes,
             email: body.email,
             rol: body.rol,
             competencias: body.competencias,
             updatedAt: new Date(),
         };
+
+        if (body.foto) {
+        dataTrabajadorUpdate.fotoNombreOriginal = body.foto.original;
+        dataTrabajadorUpdate.fotoNombreArchivo = body.foto.archivo;
+        dataTrabajadorUpdate.fotoRuta = body.foto.ruta;
+        dataTrabajadorUpdate.fotoMimeType = body.foto.mime;
+        dataTrabajadorUpdate.fotoPeso = body.foto.peso;
+        }
+
+        if (body.cv) {
+        dataTrabajadorUpdate.cvNombreOriginal = body.cv.original;
+        dataTrabajadorUpdate.cvNombreArchivo = body.cv.archivo;
+        dataTrabajadorUpdate.cvRuta = body.cv.ruta;
+        dataTrabajadorUpdate.cvMimeType = body.cv.mime;
+        dataTrabajadorUpdate.cvPeso = body.cv.peso;
+        }
+
+        if (body.antecedentes) {
+        dataTrabajadorUpdate.antecedentesNombreOriginal = body.antecedentes.original;
+        dataTrabajadorUpdate.antecedentesNombreArchivo = body.antecedentes.archivo;
+        dataTrabajadorUpdate.antecedentesRuta = body.antecedentes.ruta;
+        dataTrabajadorUpdate.antecedentesMimeType = body.antecedentes.mime;
+        dataTrabajadorUpdate.antecedentesPeso = body.antecedentes.peso;
+        }
 
         await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
 
@@ -94,9 +145,22 @@ export async function updateTrabajadorService(id, body) {
     }
 }
 
-export async function despidoTrabajadorService(id, despedido = true) {
+export async function despidoTrabajadorService(id, data) {
     try {
-        const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        const {
+            despedido = true,
+            motivo,
+            archivo = null
+        } = data;
+
+        if (!motivo || !motivo.trim()) {
+            return [null, "Debe indicar el motivo de su desvinculación"];
+        }
+
+        return await AppDataSource.transaction(async (manager) => {
+        const trabajadoresRepository = manager.getRepository(Trabajador);
+        const historialRepository = manager.getRepository(TrabajadorHistorialSchema);
+
         const trabajadorFound = await trabajadoresRepository.findOne({
             where:
             {
@@ -104,29 +168,43 @@ export async function despidoTrabajadorService(id, despedido = true) {
                 despedido: false,
             },
         })
-        if (!trabajadorFound) return [null, "Trabajador no encontrado"]
+        if (!trabajadorFound) {
+            return [null, "Trabajador no encontrado"]
+        };
 
-        const dataTrabajadorUpdate = {
-            despedido: Boolean(despedido),
-            updatedAt: new Date(),
-        }
+        await trabajadoresRepository.update (
+            { id: trabajadorFound.id },
+            { despedido: Boolean(despedido),
+                updatedAt: new Date()
+            }
+        );
 
-        await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
-
-        const trabajadorData = await trabajadoresRepository.findOne({
-            where: { id: trabajadorFound.id },
+        const historial = historialRepository.create({
+            motivo: motivo.trim(),
+            fechaDesvinculacion: new Date(),
+            archivoNombreOriginal: archivo?.original ?? null,
+            archivoNombreArchivo: archivo?.archivo ?? null,
+            archivoRuta: archivo?.ruta ?? null,
+            archivoMimeType: archivo?.mime ?? null,
+            archivoPeso: archivo?.peso ?? null,
+            trabajador: trabajadorFound.id,
         });
 
-        if (!trabajadorData) {
-            return [null, "Trabajador no encontrado después de despedirse"];
+        await historialRepository.save(historial);
+
+        const trabajadorData = await trabajadoresRepository.findOne({
+            where: { 
+                id: trabajadorFound.id 
+                },
+                relations: ["historialDesvinculaciones"],
+            });
+
+            return [trabajadorData, null];
+        });
+        } catch (error) {
+            console.error("Error al despedir un trabajador:", error);
+            return [null, "Error interno del servidor"];
         }
-
-        return [trabajadorData, null];
-
-    } catch (error) {
-        console.error("Error al despedir un trabajador:", error);
-        return [null, "Error interno del servidor"];
-    }
 }
 
 export async function recontratarTrabajadorService(id, despedido = false) {
@@ -171,7 +249,6 @@ export async function createTrabajadoresService(trabajadoresData) {
             rut,
             email,
             grupo,
-            antecedentes,
             rol,
             sexo,
             competencias,
@@ -181,8 +258,8 @@ export async function createTrabajadoresService(trabajadoresData) {
 
 
         //verificar que el rut no esté ya registrado
-        const existingRut = await TrabajadoresRepository.findOne({ where: [{ rut: rut }] })
-        const existingContacto = await contactoRepository.findOne({ where: [{ contacto_rut: rut }] })
+        const existingRut = await TrabajadoresRepository.findOne({ where: { rut } })
+        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rut } })
         if (existingContacto || existingRut) return [null, "Rut ya registrado previamente"]
 
         //verificar que el correo electrónico no esté registrado
@@ -196,12 +273,35 @@ export async function createTrabajadoresService(trabajadoresData) {
             rut,
             email,
             grupo,
-            antecedentes,
             rol,
             sexo,
             competencias,
             despedido: despedido ?? false,
         });
+        
+        if (trabajadoresData.foto) {
+        newTrabajador.fotoNombreOriginal = trabajadoresData.foto.original;
+        newTrabajador.fotoNombreArchivo = trabajadoresData.foto.archivo;
+        newTrabajador.fotoRuta = trabajadoresData.foto.ruta;
+        newTrabajador.fotoMimeType = trabajadoresData.foto.mime;
+        newTrabajador.fotoPeso = trabajadoresData.foto.peso;
+        }
+        if (trabajadoresData.cv) {
+        newTrabajador.cvNombreOriginal = trabajadoresData.cv.original;
+        newTrabajador.cvNombreArchivo = trabajadoresData.cv.archivo;
+        newTrabajador.cvRuta = trabajadoresData.cv.ruta;
+        newTrabajador.cvMimeType = trabajadoresData.cv.mime;
+        newTrabajador.cvPeso = trabajadoresData.cv.peso;
+        }
+        if (trabajadoresData.antecedentes) {
+        newTrabajador.antecedentesNombreOriginal = trabajadoresData.antecedentes.original;
+        newTrabajador.antecedentesNombreArchivo = trabajadoresData.antecedentes.archivo;
+        newTrabajador.antecedentesRuta = trabajadoresData.antecedentes.ruta;
+        newTrabajador.antecedentesMimeType = trabajadoresData.antecedentes.mime;
+        newTrabajador.antecedentesPeso = trabajadoresData.antecedentes.peso;
+        }
+
+
         const trabajadorGuardado = await TrabajadoresRepository.save(newTrabajador);
         return [trabajadorGuardado, null];
     }

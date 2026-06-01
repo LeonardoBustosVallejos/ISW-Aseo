@@ -123,3 +123,17 @@ export async function deleteUser(req, res) {
     handleErrorServer(res, 500, error.message);
   }
 }
+
+export async function asignarSupervisor(req, res) {
+  try {
+    const { trabajador, cliente_id } = req.body;
+    const { error: bodyError } = userBodyValidation.validate({ trabajador, cliente_id });
+    if (bodyError) return handleErrorClient(res, 400, "Error de validación en los datos enviados", bodyError.message);
+
+    const [nuevoSupervisor, errorAsignar] = await asignarSupervisorService(trabajador, cliente_id);
+    if (errorAsignar) return handleErrorClient(res, 400, "Error asignando supervisor", errorAsignar);
+    handleSuccess(res, 201, "Supervisor asignado correctamente", nuevoSupervisor);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
