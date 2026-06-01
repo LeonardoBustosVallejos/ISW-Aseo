@@ -5,6 +5,7 @@ import {
   createGrupoController,
   createTrabajadoresController,
   despidoTrabajadorController,
+  getGruposController,
   getTrabajadorController,
   getTrabajadoresController,
   recontratarTrabajadorController,
@@ -16,6 +17,7 @@ const router = Router();
 router
   .get("/", getTrabajadoresController)
   .get("/detail/:id", getTrabajadorController)
+  .get("/grupos", getGruposController)
   .patch("/detail/:id", uploadFiles, updateTrabajadorController)
   .patch("/detail/:id/despedir", uploadFiles, despidoTrabajadorController)
   .patch("/detail/:id/recontratar", recontratarTrabajadorController)

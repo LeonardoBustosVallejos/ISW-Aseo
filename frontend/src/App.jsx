@@ -7,6 +7,7 @@ import RegisterClienteForm from "@pages/Clientes/registerCliente";
 import Bodega from '@pages/Bodega';
 import Solicitudes from '@pages/Solicitudes';
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
+import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
                 
             </Route>
             <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
+            <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
             </Route>
 
 

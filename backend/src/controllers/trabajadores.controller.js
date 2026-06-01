@@ -12,6 +12,7 @@ import {
   createGrupoService,
   createTrabajadoresService,
   despidoTrabajadorService,
+  getGruposService,
   getTrabajadoresService,
   getTrabajadorService,
   recontratarTrabajadorService,
@@ -244,6 +245,16 @@ export async function createGrupoController(req, res) {
 
     return handleSuccess(res, 201, "Grupo creado correctamente", grupo);
   } catch(error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function getGruposController(req, res) {
+  try {
+    const [grupos, error] = await getGruposService();
+    if (error) return handleErrorClient(res, 404, error);
+    return handleSuccess(res, 200, "Grupos encontrados", grupos);
+  } catch (error) {
     handleErrorServer(res, 500, error.message);
   }
 }

@@ -398,3 +398,18 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
         return [null, error.message]
     }
 }
+
+export async function getGruposService() {
+  try {
+    const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
+    const grupos = await gruposRepo.find({
+      relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
+    });
+
+    if (!grupos || grupos.length === 0) return [null, "No hay grupos"];
+    return [grupos, null];
+  } catch (error) {
+    console.error("Error al obtener grupos:", error);
+    return [null, "Error interno del servidor"];
+  }
+}
