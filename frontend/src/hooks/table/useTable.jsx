@@ -29,7 +29,7 @@ function useTable({ data, columns, filter, dataToFilter, initialSortName, onSele
                 responsiveLayout: "collapse",
                 pagination: true,
                 paginationSize: 6,
-                selectableRows: 1,
+                selectable: 1,
                 rowHeight: 46,
                 langs: {
                     "default": {

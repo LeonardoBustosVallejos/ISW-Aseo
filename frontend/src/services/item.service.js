@@ -24,7 +24,7 @@ export async function updateEdit(data, id) {
 
 export async function deleteItem(id) {
     try {
-        const response = await axios.delete(`/item/delete/?=${id}`);
+        const response = await axios.delete(`/item/delete/${id}`);
         return response.data;
     } catch (error) {
         console.error('Error deleting item', error);

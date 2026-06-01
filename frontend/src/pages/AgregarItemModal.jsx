@@ -166,36 +166,6 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
             
       <hr />
       
-      {/* borrar item */}
-      <h3>Borrar Item Existente</h3>
-      <div>
-        <label htmlFor="delete-item">Selecciona el item a borrar:</label>
-        {Array.isArray(itemList) && itemList.length > 0 ? (
-          <select
-            id="delete-item"
-            value={itemToDelete}
-            onChange={(e) => setItemToDelete(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', marginTop: '6px', minWidth: '220px' }}
-          >
-            <option value="">-- Seleccionar item --</option>
-            {itemList.map((s) => (
-              <option key={s.id} value={s.nombre}>{s.nombre}</option>
-            ))}
-          </select>
-        ) : (
-          <div style={{ color: '#666', marginTop: '6px' }}>No hay items creados por ti aún.</div>
-        )}
-      </div>
-
-      <button
-        className="delete-button"
-        onClick={handleDeleteClick}
-        disabled={isLoading || !itemToDelete}
-      >
-        {isLoading ? 'Procesando...' : 'Borrar Item'}
-      </button>
-      
       {message.text && (
         <div className={`message ${message.type}`}>
           {message.text}
