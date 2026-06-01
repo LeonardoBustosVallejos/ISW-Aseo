@@ -222,7 +222,6 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
                                     formatPhone(e.target.value)
                                 )
                             }
-                            className="input"
                             placeholder="+56912345678"
                             onFocus={(e) => {
                                 if (!e.target.value.startsWith("+56")) {
