@@ -292,10 +292,10 @@ export async function createTrabajadoresService(trabajadoresData) {
             const grupoObj = await gruposRepository.findOneBy({
                 grupo_id: Number(grupo_id)
             });
-            if (!grupo) {
+            if (!grupoObj) {
                 return [null, "Grupo no encontrado"];
-                newTrabajador.grupoAsignado = grupoObj;
             }
+            newTrabajador.grupoAsignado = grupoObj;
         }
 
         if (trabajadoresData.foto) {

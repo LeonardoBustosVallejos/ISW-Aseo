@@ -2,10 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginForm from '@pages/Login';
 import Root from '@pages/Root';
 import Error404 from '@pages/Error404';
-import ProtectedRoute from '@components/ProtectedRoute';
+//import ProtectedRoute from '@components/ProtectedRoute';
 import RegisterClienteForm from "@pages/Clientes/registerCliente";
 import Bodega from '@pages/Bodega';
 import Solicitudes from '@pages/Solicitudes';
+import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
+
 
 export default function App() {
     return (
@@ -23,7 +25,9 @@ export default function App() {
                 <Route path="solicitudes" element={<Solicitudes />} />
                 <Route path="cliente"  >
                 <Route path="registrar" element={<RegisterClienteForm />} />
+                
             </Route>
+            <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
             </Route>
 
 

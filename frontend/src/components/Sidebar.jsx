@@ -27,7 +27,7 @@ const menuData = [
         children: [
             { title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
             { title: "Asignar Trabajador", path: "/trabajadores/asignar" },
-            { title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
+            { title: "Desvincular Trabajador", path: "/trabajadores/desvincular" },
         ],
     },
     {
