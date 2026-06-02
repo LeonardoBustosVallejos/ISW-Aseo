@@ -3,48 +3,57 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
 
-/**
- * Contiene los campos del menu lateral
- */
-const menuData = [
-    {
-        title: "Bodega",
-        path: "/bodega",
-    },
-    {
-        title: "Solicitudes",
-        path: "/solicitudes",
-    },
-    {
-        title: "Recursos",
-        children: [
-            { title: "Resumen", path: "/recursos/resumen" },
-            { title: "Detalles", path: "/recursos/detalles" },
-        ],
-    },
-    {
-        title: "Trabajadores",
-        children: [
-            { title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
-            { title: "Asignar Trabajador", path: "/trabajadores/asignar" },
-            { title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
-        ],
-    },
-    {
-        title: "Clientes",
-        children: [
-            { title: "Lista de Clientes", path: "/clientes" },
-            { title: "Agregar", path: "/cliente/registrar" },
-        ],
-
-    },
-];
-
-
 const Sidebar = () => {
     const navigate = useNavigate();
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
+
+    let rolUsuario = null;
+    try{
+        const usuarioGuardado = sessionStorage.getItem("usuario"); 
+            console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
+        if(usuarioGuardado && usuarioGuardado !== "undefined"){
+            const usuarioLogueado = JSON.parse(usuarioGuardado);
+            rolUsuario = usuarioLogueado.rol.id;
+        }        
+        console.log("¡Por fin encontramos el rol! Es:", rolUsuario);
+        
+    }catch(error){
+        console.error("Error al intentar leer el perfil del usuario:", error);
+    }
+    const menuData = [
+        {
+            title: "Bodega",
+            path: "/bodega",
+        },
+        {
+            title: "Solicitudes",
+            path: "/solicitudes",
+        },
+        {
+            title: "Recursos",
+            children:[
+                ...(rolUsuario == 1 ? [{title: "Resumen", path: "/recursos/resumen"}] : []),
+                { title: "Detalles", path: "/recursos/detalles" },
+            ],
+        },
+        {
+            title: "Trabajadores",
+            children: [
+                { title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
+                { title: "Asignar Trabajador", path: "/trabajadores/asignar" },
+                { title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
+            ],
+        },
+        {
+            title: "Clientes",
+            children: [
+                { title: "Lista de Clientes", path: "/clientes" },
+                { title: "Agregar", path: "/cliente/registrar" },
+            ],
+
+        },
+    ];
 
     const toggleMenu = (index) => {
         setOpenMenu(openMenu === index ? null : index);
