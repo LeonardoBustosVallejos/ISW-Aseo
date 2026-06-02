@@ -8,6 +8,7 @@ import Bodega from '@pages/Bodega';
 import ResumenRecursos from "@pages/Recursos/resumen.jsx";
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
+import ListaClientes from "@pages/Clientes/ListaClientes";
 
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             </Route>
             <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
             <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
+            <Route path="clientes" element={<ListaClientes />} />
             </Route>
 
 
