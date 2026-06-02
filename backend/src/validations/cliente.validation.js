@@ -1,5 +1,7 @@
 import Joi from "joi";
-import { domainEmailValidator, registerValidation } from "./auth.validation.js";
+import { domainEmailValidator } from "./auth.validation.js";
+import { anexoCompletoValidation, contratoComercialValidation } from "./contratos.validation.js";
+import { documentoValidation } from "./documentos.validation.js";
 
 
 
@@ -53,6 +55,13 @@ export const contactoValidation = Joi.object({
             "string.min": "El número telefónico debe tener al menos 8 caracteres.",
             "string.max": "El número telefónico debe tener como máximo 15 caracteres.",
             "string.pattern.base": "Formato del número telefónico inválido.",
+        }),
+    tipoContacto: Joi.string()
+        .valid("PRINCIPAL", "SECUNDARIO")
+        .default("SECUNDARIO")
+        .messages({
+            "any.only":
+                "El tipo de contacto es inválido."
         }),
 })
 export const sedeValidation = Joi.object({
@@ -256,6 +265,13 @@ export const sedeJerarquicoValidation = Joi.object({
     trabajadores: Joi.array()
         .items(Joi.number().integer().positive())
         .default([]),
+    tipoSede: Joi.string()
+        .valid(
+            "PRINCIPAL",
+            "SUCURSAL",
+            "SECUNDARIA"
+        )
+        .default("SUCURSAL"),
 })
 
 
@@ -279,3 +295,24 @@ export const registerClienteJerarquicoValidation = Joi.object({
         .items(sedeJerarquicoValidation)
         .default([])
 }).id("clienteJerarquicoValidation")
+
+export const registerClienteJerarquicoYArchivoValidation = Joi.object({
+
+    cliente: clienteJerarquicoValidation
+        .required(),
+
+    sedes: Joi.array()
+        .items(sedeJerarquicoValidation)
+        .default([]),
+
+    contrato: contratoComercialValidation
+        .required(),
+
+    metadataDocumentosContrato: Joi.array()
+        .items(documentoValidation)
+        .default([]),
+
+    anexos: Joi.array()
+        .items(anexoCompletoValidation)
+        .default([])
+}).id("clienteJerarquicoYArchivoValidation")

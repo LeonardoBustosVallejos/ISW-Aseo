@@ -29,7 +29,7 @@ export const authValidation = Joi.object({
       "string.empty": "El correo electrónico no puede estar vacío.",
       "any.required": "El correo electrónico es obligatorio.",
       "string.base": "El correo electrónico debe ser de tipo texto.",
-      "string.email": "El correo electrónico debe finalizar en @gmail.com.",
+      "string.email": "Correo electrónico no válido",
       "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
       "string.max": "El correo electrónico debe tener como máximo 35 caracteres.",
     })

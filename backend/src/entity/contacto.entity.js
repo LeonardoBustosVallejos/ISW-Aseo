@@ -34,6 +34,11 @@ const ContactoSchema = new EntitySchema({
             length: 15,
             nullable: true,
         },
+        tipoContacto: {
+            type: "enum",
+            enum: ["PRINCIPAL", "SECUNDARIO", "EMERGENCIA", "OTRO"],
+            default: "PRINCIPAL"
+        },
         createdAt: {
             type: "timestamp with time zone",
             default: () => "CURRENT_TIMESTAMP",

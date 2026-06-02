@@ -1,9 +1,9 @@
 import { EntitySchema } from "typeorm";
 
 
-const DocumentoComercialSchema = new EntitySchema({
-    name: "DocumentoComercial",
-    tableName: "documento_comercial",
+const DocumentoContratoSchema = new EntitySchema({
+    name: "DocumentoContrato",
+    tableName: "documento_contrato",
     columns: {
         id_documento: {
             type: "int",
@@ -46,7 +46,8 @@ const DocumentoComercialSchema = new EntitySchema({
         },
         tipoDocumento: {
             type: "enum",
-            enum: ["CONTRATO", "ANEXO", "RENOVACION", "OTRO"]
+            enum: ["CONTRATO", "ANEXO", "RENOVACION", "RESPALDO", "PDF_FIRMADO", "CERTIFICADO", "OTRO"],
+            default: "OTRO"
         },
         createdAt: {
             type: "timestamp with time zone",
@@ -74,9 +75,16 @@ const DocumentoComercialSchema = new EntitySchema({
             joinColumn: { name: "contrato_laboral_id" },
             nullable: true,
             onDelete: "CASCADE"
+        },
+        anexo: {
+            target: "ContratoAnexo",
+            type: "many-to-one",
+            joinColumn: { name: "anexo_id" },
+            nullable: true,
+            onDelete: "CASCADE",
         }
     }
 })
 
 
-export default DocumentoComercialSchema
+export default DocumentoContratoSchema

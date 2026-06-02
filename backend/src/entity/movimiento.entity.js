@@ -1,39 +1,35 @@
-"use strict";
 import { EntitySchema } from "typeorm";
 
-const ActivoFijo = new EntitySchema({
-    name: "ActivoFijo",
-    tablename: "activos_fijos",
-
+const Movimiento = new EntitySchema({
+    name: "Movimiento",
+    tableName: "movimientos_activos",
     columns:{
-
-        activo_id:{
-            primary:true,
-            type:"int",
-            generated:true
+        movimiento_id:{
+            primary: true,
+            type: "int",
+            generated: true
         },
-        codigo_inventario:{
-            type:"varchar",
-            unique:true,
+        tipo_movimiento:{
+            type: "varchar"
         },
-        nombre:{
-            type:"varchar",
+        descripcion:{
+            type: "varchar"
         },
-        estado:{
-            type:"varchar",
-            default:"Buen Estado",
+        fecha:{
+            type: "timestamp",
+            createDate: true
         },
         cliente_id:{
-            type:"int",
-            nullable:true,
+            type: "int",
+            nullable: true
+        },
+        activos_ids:{
+            type: "simple-array",
+            nullable: true
         },
         trabajador_id:{
-            type:"int",
-            nullable:true,
-        },
-        fecha_ingreso:{
-            type: "date",
-            createDate:true,
+            type: "int",
+            nullable: true
         }
     },
 
@@ -60,4 +56,4 @@ const ActivoFijo = new EntitySchema({
     }
 });
 
-export default ActivoFijo;
+export default Movimiento;

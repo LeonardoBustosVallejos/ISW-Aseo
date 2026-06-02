@@ -1,72 +1,121 @@
 import { useNavigate } from 'react-router-dom';
 import { login } from '@services/auth.service.js';
-import Form from '@components/Form';
 import useLogin from '@hooks/auth/useLogin.jsx';
-import '@styles/form.css';
+import '@styles/login.css';
+import { useEffect, useState } from 'react';
 
 const LoginForm = () => {
-    const navigate = useNavigate();
-    const {
-        errorMessage,
-        errorData,
-        handleInputChange
-    } = useLogin();
 
-    const loginSubmit = async (data) => {
+    const navigate = useNavigate();
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('')
+
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+
+    useEffect(() => {
+        if (formData.email || formData.password) setError('');
+    }, [formData.email, formData.password]);
+
+    const handleChange = (e) => {
+
+        const { name, value } = e.target;
+        setError('')
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const loginSubmit = async (e) => {
+
+        e.preventDefault();
+
         try {
-            const response = await login(data);
+
+            const response = await login(formData);
+
             if (response.status === 'Success') {
+
                 navigate('/home');
+
             } else if (response.status === 'Client error') {
-                errorData(response.details);
+
+                setError(response.details.message || response.details);
             }
+
         } catch (error) {
+
             console.log(error);
         }
     };
 
     return (
-        <main className="container">
-            <Form
-                title="Iniciar sesión"
-                fields={[
-                    {
-                        label: "Correo electrónico",
-                        name: "email",
-                        placeholder: "example@gmail.com",
-                        fieldType: 'input',
-                        type: "email",
-                        required: true,
-                        minLength: 10,
-                        maxLength: 30,
-                        validate: {
-                            emailDomain: (value) => value.endsWith('@gmail.com') || 'Error en el formato del correo'
-                        },
-                        onChange: (e) => handleInputChange('email', e.target.value),
-                    },
-                    {
-                        label: "Contraseña",
-                        name: "password",
-                        placeholder: "**********",
-                        fieldType: 'input',
-                        type: "password",
-                        required: true,
-                        minLength: 8,
-                        maxLength: 26,
-                        pattern: /^[a-zA-Z0-9]+$/,
-                        patternMessage: "Debe contener solo letras y números",
-                        onChange: (e) => handleInputChange('password', e.target.value),
-                    },
-                ]}
-                LoginError={errorMessage}
-                buttonText="Iniciar sesión"
+
+        <main className="login">
+            <form
+                className="login-form"
                 onSubmit={loginSubmit}
-                footerContent={
-                    <p>
-                        ¿No tienes cuenta?, <a href="/register">¡Regístrate aquí!</a>
+            >
+                <label>
+                    <h1>
+                        <strong>
+                            Iniciar sesión
+                        </strong>
+                    </h1>
+                </label>
+                {/*Correo */}
+                <div className="container_inputs">
+                    <label className="label">Email</label>
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="input"
+                        required
+                    />
+                </div>
+                {/*Contraseña */}
+                <div className="container_inputs">
+                    <label className="label">Contraseña</label>
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="input"
+                        required
+                    />
+                    {/*ver contraseña */}
+                    <label className="password-options">
+                        <input
+                            type="checkbox"
+                            checked={showPassword}
+                            onChange={(e) =>
+                                setShowPassword(e.target.checked)
+                            }
+                        />
+                        <span>Ver contraseña</span>
+                    </label>
+                </div>
+
+                {error && (
+                    <p className="error-message">
+                        {error}
                     </p>
-                }
-            />
+                )}
+
+                <button
+                    type="submit"
+                    className="login-button"
+                >
+                    Ingresar
+                </button>
+            </form>
         </main>
     );
 };
