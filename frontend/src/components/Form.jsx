@@ -48,7 +48,6 @@ const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundCo
                                     field.type}
                             defaultValue={field.defaultValue || ''}
                             disabled={field.disabled}
-                            onChange={field.onChange}
                         />
                     )}
                     {field.fieldType === 'textarea' && (
@@ -64,7 +63,6 @@ const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundCo
                             placeholder={field.placeholder}
                             defaultValue={field.defaultValue || ''}
                             disabled={field.disabled}
-                            onChange={field.onChange}
                         />
                     )}
                     {field.fieldType === 'select' && (
@@ -76,7 +74,6 @@ const Form = ({ title, fields, buttonText, onSubmit, footerContent, backgroundCo
                             name={field.name}
                             defaultValue={field.defaultValue || ''}
                             disabled={field.disabled}
-                            onChange={field.onChange}
                         >
                             <option value="">Seleccionar opción</option>
                             {field.options && field.options.map((option, optIndex) => (
