@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import '@styles/form.css';
+//import '@styles/form.css';
 import '@styles/AgregarItemModal.css'; 
 
 const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
