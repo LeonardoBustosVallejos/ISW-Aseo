@@ -1,34 +1,34 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { registrarNuevoActivo, resumenActivosAdmin, resumenActivosSupervisor, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
+import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
 import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
 import { AppDataSource } from "../config/configDb.js";
 import UserSchema from "../entity/user.entity.js";
+
 export const getResumenActivos = async (req, res) => {
-try {
+    try {
         const user_id = req.user.id;
         let resumen;
         const userRepository = AppDataSource.getRepository(UserSchema);
         const usuarioCompleto = await userRepository.findOne({
             where: { id: user_id },
-            relations: ["rol", "cliente"]
+            relations: ["rol"]
         });
-        const rol = usuarioCompleto.rol?.id || usuarioCompleto.rol?.rol_id;
+        if (!usuarioCompleto) {
+            return res.status(404).json({ status: "Error", message: "Usuario no encontrado", data: [] });
+        }
+        const rol_id = usuarioCompleto.rol?.id || usuarioCompleto.rol?.rol_id;
 
-        console.log("¡El verdadero rol detectado es!:", rol);
-
-        if (rol === 1) {
-            resumen = await resumenActivosAdmin(user_id);
-
-        } else if (rol === 3) {
-            const id_del_cliente = req.params.cliente_id || usuarioCompleto.cliente?.cliente_id;
-            resumen = await resumenActivosSupervisor(id_del_cliente);
+        if(rol_id == 1){
+            resumen = await resumenActivosAdmin();
+        }else{
+            return res.status(403).json({ status: "Error", message: "No tienes permisos para ver el resumen", data: [] });
         }
         return handleSuccess(res, 200, "Resumen obtenido correctamente", resumen);
+
     }catch(error){
-        return handleErrorServer(res, 500, "Error interno del servidor", error.message);
+        return res.status(500).json({ status: "Error", message: "Error interno del servidor", error: error.message });
     }
 };
-
 export const crearActivoFijo = async (req, res) => {
     try{
         const datos_ingresados = req.body;

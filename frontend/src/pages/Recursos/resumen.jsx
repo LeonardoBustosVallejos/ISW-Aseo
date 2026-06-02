@@ -41,15 +41,17 @@ const ResumenRecursos = () => {
                 <table className="resumen-table">
                     <thead>
                         <tr>
-                            <th style={{width: "10%"}}>Id</th>
-                            <th style={{width: "35%"}}>Compañías</th>
-                            <th style={{width: "25%"}}>Estado Suministros</th>
+                            <th style={{ width: "5%"}}>N</th>
+                            <th style={{width: "15%"}}>RUT</th>
+                            <th style={{width: "30%"}}>Compañías</th>
+                            <th style={{width: "20%"}}>Estado Suministros</th>
                             <th style={{width: "30%"}}>Ubicación</th>
                         </tr>
                     </thead>
                     <tbody>
                         {datosFiltrados.map((fila, index) => (
-                            <tr key={fila.id || index}>
+                            <tr key={`${fila.id}-${index}`}>
+                                <td><strong>{index + 1}</strong></td>
                                 <td className="td-id">{fila.id}</td>
                                 <td>{fila.compania}</td>
                                 <td>
@@ -66,7 +68,7 @@ const ResumenRecursos = () => {
                         {Array.from({length: filasVacias}).map((_, i) => (
                             <tr key={`vacia-${i}`}>
                                 <td style={{padding: "24px"}} />
-                                <td /><td /><td />
+                                <td /><td /><td /><td />
                             </tr>
                         ))}
                     </tbody>

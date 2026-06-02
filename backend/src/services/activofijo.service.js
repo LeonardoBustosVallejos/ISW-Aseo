@@ -3,11 +3,11 @@ import { AppDataSource } from "../config/configDb.js";
 import ActivoFijo from "../entity/activofijo.entity.js";
 import { registrarMovimiento } from "./movimiento.service.js";
 import TrabajadorSchema from "../entity/trabajador.entity.js";
+import ClienteSchema from "../entity/cliente.entity.js";
 
 const generarCodigo = async (prefijo) => {
 
     const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-
     const ultimo_activo = await activoFijoRepositorio
     .createQueryBuilder("activo")
     .where("activo.codigo_inventario LIKE :prefijo", {prefijo: `${prefijo}-%`})
@@ -59,56 +59,39 @@ export const registrarNuevoActivo = async (datos_activo) => {
     }
 };
 
-export const resumenActivosSupervisor = async (cliente_id) => {
-    try{
-        const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
-        const resumen = await activoFijoRepositorio
-        .createQueryBuilder("activo")
-        .select("activo.nombre", "nombre")
-        .addSelect("COUNT(activo.activo_id)", "cantidad")
-        .where("activo.cliente_id = :id", {id: cliente_id})
-        .groupBy("activo.nombre")
-        .getRawMany();
+export const resumenActivosAdmin = async () => {
+    try {
+        const clienteRepository = AppDataSource.getRepository("Cliente");
+        const todosLosClientes = await clienteRepository.find({
+            relations: ["sede"] 
+        });
 
-        return resumen;
-    }catch(error){
-        console.error("Error al obtener resumen", error);
-        return [null, "Error223"];
-    }
-};
-
-export const resumenActivosAdmin = async (admin_id) => {
-try {
-        // 1. Usamos "User" en string para evitar el ReferenceError que acabas de tener
-        const userRepository = AppDataSource.getRepository("User");
-        
-        // 2. Buscamos al admin cruzando los datos con su cliente usando QueryBuilder
-        const admin = await userRepository.createQueryBuilder("user")
-            .leftJoinAndSelect("user.cliente", "cliente") // Traemos los datos de la empresa
-            .where("user.id = :id", { id: admin_id })
-            .getOne();
-
-        // 3. Validamos si tiene un cliente asignado
-        if (!admin || !admin.cliente) {
-            console.log("Este administrador no tiene ningún cliente asignado en la BD.");
-            return []; // Devolvemos el arreglo vacío para que el frontend no explote
+        if (!todosLosClientes || todosLosClientes.length === 0) {
+            return []; 
         }
 
-        // 4. Empaquetamos al único cliente en el arreglo para la presentación
-        const resumenFinal = [
-            {
-                id: admin.cliente.cliente_id,
-                compania: admin.cliente.nombreCliente,
-                ubicacion: admin.cliente.direccion,
-                
-                // Las luces fijas para la presentación
-                estadoSuministros: ['rojo', 'naranja', 'verde'], 
-                alerta: true 
+        const resumenFinal = todosLosClientes.flatMap(cliente => {
+            if (!cliente.sede || cliente.sede.length === 0) {
+                return [{
+                    id: cliente.rutCliente,
+                    compania: cliente.nombreCliente || "Sin Nombre",
+                    ubicacion: "Sin Dirección",
+                    estadoSuministros: ['rojo', 'naranja', 'verde'], 
+                    alerta: true 
+                }];
             }
-        ];
+            return cliente.sede.map(sede => {
+                return {
+                    id: cliente.rutCliente, 
+                    compania: cliente.nombreCliente || "Sin Nombre",
+                    ubicacion: sede.direccion || "Sin Dirección",
+                    estadoSuministros: ['rojo', 'naranja', 'verde'], 
+                    alerta: true 
+                };
+            });
+        });
 
         return resumenFinal;
-
     } catch (error) {
         console.error("Error al obtener el cliente del administrador:", error);
         throw error;
