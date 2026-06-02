@@ -114,9 +114,9 @@
 		background-position: right 30px center;
 		background-size: 25px 25px;
 		box-sizing: border-box;
-		background-image: url('../assets/ChevronDownIcon.svg');
+		/*background-image: url('../assets/ChevronDownIcon.svg');
 		background-repeat: no-repeat;
-		background-position: calc(100% - 12px) center;
+		background-position: calc(100% - 12px) center;*/
 		-webkit-appearance: none;
 		-moz-appearance: none;
 		appearance: none;
@@ -221,7 +221,7 @@
 	/* Evita que se pegue arriba/abajo */
 }
 
-input[type='email'] {
+/*input[type='email'] {
 	background-image: url('../assets/MentionIcon.svg');
 }
 
@@ -236,7 +236,7 @@ input[name='nombreCompleto'] {
 input[name='rol'] {
 	background-image: url('../assets/PasskeyIcon.svg');
 
-}
+}*/
 
 .container_inputs input {
 	width: 100% !important;
