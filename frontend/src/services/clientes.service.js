@@ -5,7 +5,7 @@ export async function listarClientesTope() {
         const response = await axios.get("/clientes")
         return response.data
     } catch (error) {
-
+        return error.response?.data || { message: "Error de conexión" };
     }
 }
 export async function registerCliente(data) {

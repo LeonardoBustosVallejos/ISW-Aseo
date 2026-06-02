@@ -5,7 +5,8 @@ import Trabajador from "../entity/trabajador.entity.js";
 import Contacto from "../entity/contacto.entity.js";
 import { getContactoByService } from "./cliente.service.js";
 import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
-
+import Sede from "../entity/sede.entity.js"
+import TrabajadoresGruposSchema from "../entity/trabajadoresGrupos.entity.js";
 
 export async function getTrabajadoresService() {
     try {
@@ -81,6 +82,7 @@ export async function updateTrabajadorService(id, body) {
     try {
         const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
+        const gruposRepository = AppDataSource.getTreeRepository(TrabajadoresGruposSchema);
 
         const trabajadorFound = await trabajadoresRepository.findOne({
             where: { id: Number(id) },
@@ -96,13 +98,29 @@ export async function updateTrabajadorService(id, body) {
             if (existingEmail || existingContactoEmail) {
                 return [null, "Email ya en uso"]};
         }
-        const dataTrabajadorUpdate = {
-            grupo: body.grupo,
-            email: body.email,
-            rol: body.rol,
-            competencias: body.competencias,
-            updatedAt: new Date(),
-        };
+
+        if (body.nombreCompleto !== undefined) trabajadorFound.nombreCompleto = body.nombreCompleto;
+        if (body.email !== undefined) trabajadorFound.email = body.email;
+        if (body.rol !== undefined) trabajadorFound.rol = body.rol;
+        if (body.competencias !== undefined) trabajadorFound.competencias = body.competencias;
+        if (body.sexo !== undefined) trabajadorFound.sexo = body.sexo;
+        trabajadorFound.updatedAt = new Date();
+
+        if (Object.prototype.hasOwnProperty.call(body, "grupo_id")) {
+            if (BeforeUpdate.grupo_id == null) {
+                trabajadorFound.grupoAsignado = null;
+            } else {
+                const grupoObj = await gruposRepository.findOneBy({
+                    grupo_id: Number(body.grupo_id)
+                });
+
+                if (!grupo) {
+                    return [null, "Grupo no encontrado"];
+
+                    trabajadorFound.grupoAsignado = grupoObj;
+                }
+            }
+        }
 
         if (body.foto) {
         dataTrabajadorUpdate.fotoNombreOriginal = body.foto.original;
@@ -128,17 +146,9 @@ export async function updateTrabajadorService(id, body) {
         dataTrabajadorUpdate.antecedentesPeso = body.antecedentes.peso;
         }
 
-        await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
+        const saved = await trabajadoresRepository.save(trabajadorFound);
 
-        const trabajadorData = await trabajadoresRepository.findOne({
-            where: { id: trabajadorFound.id },
-        });
-
-        if (!trabajadorData) {
-            return [null, "Trabajador no encontrado después de actualizar"];
-        }
-
-        return [trabajadorData, null];
+        return [saved, null];
     } catch (error) {
         console.error("Error al modificar un trabajador:", error);
         return [null, "Error interno del servidor"];
@@ -248,14 +258,14 @@ export async function createTrabajadoresService(trabajadoresData) {
             nacimiento,
             rut,
             email,
-            grupo,
+            grupo_id,
             rol,
             sexo,
             competencias,
             despedido } = trabajadoresData;
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
-
+        const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
 
         //verificar que el rut no esté ya registrado
         const existingRut = await TrabajadoresRepository.findOne({ where: { rut } })
@@ -272,13 +282,22 @@ export async function createTrabajadoresService(trabajadoresData) {
             nacimiento,
             rut,
             email,
-            grupo,
             rol,
             sexo,
             competencias,
             despedido: despedido ?? false,
         });
         
+        if (grupo_id) {
+            const grupoObj = await gruposRepository.findOneBy({
+                grupo_id: Number(grupo_id)
+            });
+            if (!grupoObj) {
+                return [null, "Grupo no encontrado"];
+            }
+            newTrabajador.grupoAsignado = grupoObj;
+        }
+
         if (trabajadoresData.foto) {
         newTrabajador.fotoNombreOriginal = trabajadoresData.foto.original;
         newTrabajador.fotoNombreArchivo = trabajadoresData.foto.archivo;
@@ -308,4 +327,89 @@ export async function createTrabajadoresService(trabajadoresData) {
     catch (error) {
         return [null, error.message];
     }
+}
+
+export async function createGrupoService({ nombre, sede_id, supervisor_id, miembros_ids }) {
+    try {
+        const sedeRepo = AppDataSource.getRepository(Sede);
+        const trabajadorRepo = AppDataSource.getRepository(Trabajador);
+        const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
+
+        const sede = await sedeRepo.findOneBy({
+            sede_id: Number(sede_id)
+        });
+        if (!sede) {
+            return [null, "Sede no encontrada"];
+        }
+
+        const supervisor = await trabajadorRepo.findOne({
+            where: {
+                id: Number(supervisor_id) }
+        });
+
+        if (!supervisor || supervisor.despedido) return [null, "Supervisor inválido"];
+    if (String(supervisor.rol).toLowerCase() !== "supervisor") return [null, "El trabajador no tiene rol 'Supervisor'"];
+
+    if (!Array.isArray(miembros_ids) || miembros_ids.length < 1) {
+        return [null, "Debe indicar al menos 1 miembro"];
+    }
+
+    const miembros = await trabajadorRepo.find({
+        where: miembros_ids.map((id) => ({
+            id: Number(id) })),
+    });
+
+    if (miembros.length !== miembros_ids.length) {
+        return [null, "Alguno de los miembros no existe"];
+    }
+
+    if (miembros.some(m => m.despedido)) {
+        return [null, "Alguno de los miembros está despedido"];
+    }
+
+    return await AppDataSource.transaction(async (manager) => {
+        const gruposRepoTx = manager.getRepository(TrabajadoresGruposSchema);
+        const trabajadorRepoTx = manager.getRepository(Trabajador);
+
+        const grupoToSave = gruposRepoTx.create({
+            nombre,
+            sedeAsignada: sede,
+            supervisorAsignado: supervisor,
+        });
+
+        const savedGrupo = await gruposRepoTx.save(grupoToSave);
+
+        for (const miembro of miembros) {
+        miembro.grupoAsignado = savedGrupo;
+        await trabajadorRepoTx.save(miembro);
+        }
+
+        const grupoFull = await gruposRepoTx.findOne({
+            where: { 
+                grupo_id: savedGrupo.grupo_id },
+            relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
+        });
+
+        return [grupoFull, null];
+    });
+
+    } catch (error) {
+        console.log("Hubo un error al crear los grupos");
+        return [null, error.message]
+    }
+}
+
+export async function getGruposService() {
+  try {
+    const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
+    const grupos = await gruposRepo.find({
+      relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
+    });
+
+    if (!grupos || grupos.length === 0) return [null, "No hay grupos"];
+    return [grupos, null];
+  } catch (error) {
+    console.error("Error al obtener grupos:", error);
+    return [null, "Error interno del servidor"];
+  }
 }

@@ -31,11 +31,11 @@ const TrabajadorSchema = new EntitySchema({
       nullable: false,
       unique: true,
     },
-    grupo: {
+    /*grupo: {
       type: "varchar",
       length: 255,
       nullable: true,
-    },
+    },*/
     rol: {
       type: "varchar",
       length: 255,
@@ -149,6 +149,19 @@ const TrabajadorSchema = new EntitySchema({
         target: "TrabajadorHistorial",
         inverseSide: "trabajador",
       },
+      grupoAsignado: {
+        type: "many-to-one",
+        target: "TrabajadoresGrupos",
+        JoinColumn: { name: "grupo_id" },
+        nullable: true,
+        onDelete: "SET NULL",
+        inverseSide: "miembros"
+      },
+      supervisorDeGrupo: {
+        type: "one-to-any",
+        target: "TrabajadoresGrupos",
+        inverseSide: "supervisorAsignado"
+      }
   },
 });
 
