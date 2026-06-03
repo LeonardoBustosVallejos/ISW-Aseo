@@ -80,24 +80,6 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
         })
     }
 
-    // agregar archivo
-    const addArchivo = () => {
-
-        setFormData(prev => {
-
-            const copia = structuredClone(prev)
-
-            const ref = getReference(copia)
-
-            ref.push({
-                nombrePersonalizado: "",
-                tipoDocumento: "",
-                file: null
-            })
-
-            return copia
-        })
-    }
 
     // actualizar archivo
     const updateArchivo = (fileIndex, field, value) => {
@@ -140,7 +122,7 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
                         <h3 className="document-title">Documentos</h3>
 
                         <button type="button"
-                            onClick={addArchivo}
+                            onClick={addDocumento}
                             className="add-button"
                         >
                             <Plus size={16} />

@@ -31,13 +31,13 @@ const RegisterClienteForm = () => {
                 nombre_sede: '',
                 direccion: '',
                 personalSolicitado: '',
-                tipoSede: '',
+                tipoSede: 'PRINCIPAL',
                 contactos: [{
                     nombreContacto: '',
                     contacto_rut: '',
                     email: '',
                     phone: '',
-                    tipoContacto: '',
+                    tipoContacto: 'PRINCIPAL',
                 }]
             }
         ],
@@ -57,7 +57,7 @@ const RegisterClienteForm = () => {
         metadataDocumentos: [
             {
                 nombrePersonalizado: '',
-                tipoDocumento: '',
+                tipoDocumento: 'CONTRATO',
                 fileKey: "contrato_pdf",
                 file: null
             }
