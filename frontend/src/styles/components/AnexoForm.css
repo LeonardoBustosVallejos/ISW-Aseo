@@ -1,0 +1,74 @@
+.anexo-card {
+    width: 100%;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.anexo-header {
+    display: grid;
+    grid-template-columns: 4fr 4fr auto;
+    gap: 1rem;
+    align-items: end;
+    padding: 1.25rem;
+}
+
+.anexo-body {
+    border-top: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.anexo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.anexo-field {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.textarea-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.textarea-large {
+    min-height: 9rem;
+    resize: vertical;
+}
+
+@media (max-width: 900px) {
+
+    .anexo-header {
+        grid-template-columns: 1fr;
+    }
+
+    .anexo-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .textarea-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .anexo-actions {
+        justify-content: flex-start;
+    }
+}

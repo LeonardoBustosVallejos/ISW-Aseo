@@ -3,8 +3,8 @@ import {
     ChevronDown,
     Trash2
 } from "lucide-react"
-
 import Documentos from "./Documentos"
+import "@styles/components/AnexoForm.css"
 
 export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contrato = null }) {
 
@@ -26,26 +26,19 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
     return (
 
         <div
-            className="
-                border
-                rounded-2xl
-                overflow-hidden
-                bg-white
-                shadow-sm
-                w-full
-            "
+            className="anexo-card"
         >
 
             {/* HEADER */}
 
-            <div className=" grid grid-cols-1 md:grid-cols-3 xl:grid-cols-10 gap-4 items-end p-5  ">
+            <div className="anexo-header ">
 
                 {/* numero */}
 
-                <div className="xl:col-span-4 flex flex-col">
+                <div className="anexo-field">
 
                     <label className="label">Nº Anexo
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -59,11 +52,11 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                 {/* tipo de anexo*/}
 
-                <div className="xl:col-span-4 flex flex-col">
+                <div className="anexo-field">
 
                     <label className="label">
                         Tipo Anexo
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <select
@@ -87,34 +80,17 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                 {/* botones */}
 
-                <div
-                    className="
-                        xl:col-span-2
-                        md:col-span-1
-                        flex
-                        justify-end
-                        gap-2
-                    "
-                >
+                <div className="action-buttons">
 
                     {/* abrir */}
 
                     <button
                         type="button"
                         onClick={() => setOpen(!open)}
-                        className="
-                            bg-slate-100
-                            hover:bg-slate-200
-                            p-3
-                            rounded-xl
-                        "
+                        className="expand-button"
                     >
 
-                        <ChevronDown
-                            className={`
-                                transition-transform
-                                ${open ? "rotate-180" : ""}
-                            `}
+                        <ChevronDown color="white" className={`${open ? "rotate" : ""}`}
                         />
 
                     </button>
@@ -124,13 +100,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
                     <button
                         type="button"
                         onClick={() => removeAnexo(index)}
-                        className="
-                            bg-red-500
-                            hover:bg-red-600
-                            text-white
-                            p-3
-                            rounded-xl
-                        "
+                        className="remove-button"
                     >
 
                         <Trash2 size={18} />
@@ -145,28 +115,14 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
             {open && (
 
-                <div
-                    className="
-                        border-t
-                        bg-slate-50
-                        p-5
-                        space-y-6
-                    "
-                >
+                <div className="anexo-body">
 
                     {/* GRID */}
 
-                    <div
-                        className="
-                            grid
-                            grid-cols-1
-                            md:grid-cols-2
-                            gap-5
-                        "
-                    >
+                    <div className="anexo-grid">
                         {/* inicio */}
 
-                        <div >
+                        <div className="anexo-field">
 
                             <label className="label">Inicio</label>
 
@@ -181,7 +137,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* fin */}
 
-                        <div >
+                        <div className="anexo-field">
 
                             <label className="label">Fin</label>
 
@@ -197,7 +153,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* max trabajadores */}
 
-                        <div >
+                        <div className="anexo-field">
 
                             <label className="label">Máx Trabajadores</label>
 
@@ -213,7 +169,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* monto */}
 
-                        <div>
+                        <div className="anexo-field">
 
                             <label className="label">Monto Nuevo</label>
 
@@ -229,7 +185,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* jornada */}
 
-                        <div>
+                        <div className="anexo-field">
 
                             <label className="label">Tipo Jornada</label>
 
@@ -250,7 +206,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* tamaño */}
 
-                        <div>
+                        <div className="anexo-field">
 
                             <label className="label">Tamaño Instalación</label>
 
@@ -271,7 +227,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                         {/* min trabajadores */}
 
-                        <div>
+                        <div className="anexo-field">
 
                             <label className="label">Min Trabajadores</label>
 
@@ -289,7 +245,7 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
                     {/* guardias */}
 
-                    <div className="flex items-center gap-3">
+                    <div className="checkbox-row">
 
                         <input
                             type="checkbox"
@@ -297,47 +253,34 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
                             onChange={(e) => handleChange("requiereGuardias", e.target.checked)}
                         />
 
-                        <label>
-                            Requiere guardias
-                        </label>
+                        <label>Requiere guardias</label>
 
                     </div>
 
                     {/* observaciones + detalles */}
 
-                    <div className="grid
-                            grid-cols-1
-                            lg:grid-cols-2
-                            gap-5
-                            items-start"
-                    >
+                    <div className="textarea-grid">
 
-                        <div className="flex flex-col">
+                        <div className="anexo-field">
 
                             <label className="label">Observaciones</label>
 
                             <textarea
                                 value={anexo?.datos?.observacionesOperativas}
                                 onChange={(e) => handleChange("observacionesOperativas", e.target.value)}
-                                className="
-                                    input
-                                    min-h-36
-                                "
+                                className="input textarea-large"
                             />
 
                         </div>
 
-                        <div className="flex flex-col">
+                        <div className="anexo-field">
 
                             <label className="label">Detalles</label>
 
                             <textarea
                                 value={anexo?.datos?.detalles}
                                 onChange={(e) => handleChange("detalles", e.target.value)}
-                                className="
-                                    input
-                                    min-h-36
-                                "
+                                className="input textarea-large"
                             />
 
                         </div>
