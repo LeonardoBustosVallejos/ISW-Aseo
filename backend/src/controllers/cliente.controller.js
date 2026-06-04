@@ -75,9 +75,9 @@ export async function getInfoSede(req, res) {
 
 export async function getInfoCliente(req, res) {
     try {
-        const { rutCliente } = req.params
+        const { rutCliente, cliente_id } = req.params
 
-        const [data, error] = await getInfoClienteService(rutCliente)
+        const [data, error] = await getInfoClienteService({ rutCliente, cliente_id }, null)
         if (error) return handleErrorClient(res, 404, error)
 
         handleSuccess(res, 200, "Cliente encontrado", data);

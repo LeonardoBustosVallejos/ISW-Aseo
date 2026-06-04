@@ -174,6 +174,8 @@ const RegisterClienteForm = () => {
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();
+            console.log(formData.anexos[0].documentos[0]);
+
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
@@ -264,7 +266,6 @@ const RegisterClienteForm = () => {
                                     type="button"
                                     onClick={() => {
 
-                                        console.log(formData.sedes);
                                         setFormData(prev => ({
 
                                             ...prev,
@@ -383,7 +384,7 @@ const RegisterClienteForm = () => {
                                                     documentos: [
                                                         {
                                                             nombrePersonalizado: '',
-                                                            tipoDocumento: '',
+                                                            tipoDocumento: 'ANEXO',
                                                             fileKey: "anexo_pdf",
                                                             file: null
                                                         }

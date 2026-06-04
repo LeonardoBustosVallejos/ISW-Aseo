@@ -83,7 +83,6 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
 
     // actualizar archivo
     const updateArchivo = (fileIndex, field, value) => {
-        console.log(field, value);
 
         setFormData(prev => {
 

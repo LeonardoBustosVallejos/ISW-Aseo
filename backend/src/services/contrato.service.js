@@ -58,14 +58,23 @@ export async function createContratoComercialService(data, cliente_id, manager =
 
             if (sedes?.length > 0) {
 
-                sedesEncontradas = await sedeRepository.find({
-                    where: sedes.map(id => ({
-                        sede_id: id
-                    }))
+                for (const sede of sedes) {
+                    const [sedeFound, errSede] = await getSedeByService({ sede_id: sede.sede_id }, transactionManager)
+                    if (errSede) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
+                    sedesEncontradas.push({ sede_id: sedeFound.sede_id })
+                }
+
+
+            } else {
+                // Si no se proporcionan sedes, asignar la sede principal del cliente
+                const sedePrincipal = await sedeRepository.findOne({
+                    where: {
+                        cliente: { cliente_id },
+                        tipo_sede: "PRINCIPAL"
+                    }
                 })
-
-                if (sedesEncontradas.length !== sedes.length) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
-
+                if (!sedePrincipal) throw [null, createErrorMessage("sede", "Sede principal no encontrada para el cliente")]
+                sedesEncontradas.push({ sede_id: sedePrincipal.sede_id })
             }
 
             // Estado automático
@@ -106,7 +115,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
     } catch (error) {
 
         console.error(
-            "Error creando contrato",
+            "Error creando contrato: ",
             error
         )
 
@@ -145,7 +154,8 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 requiereGuardias,
                 observacionesOperativas,
                 detalles,
-                tipoAnexo
+                tipoAnexo,
+                sedes
             } = data
 
             // Validaciones básicas
@@ -217,43 +227,43 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
             }
 
             // Cambio monto
-            if (montoNuevo && montoNuevo > 0) {
+            if (montoNuevo && montoNuevo > 0 && montoNuevo !== contrato.monto) {
                 contrato.monto = montoNuevo
                 contratoActualizado = true
             }
 
             // Trabajadores mínimos
-            if (cantidadMinTrabajadores) {
+            if (cantidadMinTrabajadores && cantidadMinTrabajadores !== contrato.cantidadMinTrabajadores) {
                 contrato.cantidadMinTrabajadores = cantidadMinTrabajadores
                 contratoActualizado = true
             }
 
             // Trabajadores máximos
-            if (cantidadMaxTrabajadores) {
+            if (cantidadMaxTrabajadores && cantidadMaxTrabajadores !== contrato.cantidadMaxTrabajadores) {
                 contrato.cantidadMaxTrabajadores = cantidadMaxTrabajadores
                 contratoActualizado = true
             }
 
             // Jornada contractual
-            if (jornada) {
+            if (jornada && jornada !== contrato.jornada) {
                 contrato.jornada = jornada
                 contratoActualizado = true
             }
 
             // Tipo jornada
-            if (tipoJornada) {
+            if (tipoJornada && tipoJornada !== contrato.tipoJornada) {
                 contrato.tipoJornada = tipoJornada
                 contratoActualizado = true
             }
 
             // Tamaño instalación
-            if (tamanoInstalacion) {
+            if (tamanoInstalacion && tamanoInstalacion !== contrato.tamanoInstalacion) {
                 contrato.tamanoInstalacion = tamanoInstalacion
                 contratoActualizado = true
             }
 
             // Guardias
-            if (requiereGuardias !== undefined) {
+            if (requiereGuardias !== undefined && requiereGuardias !== contrato.requiereGuardias) {
                 contrato.requiereGuardias = requiereGuardias
                 contratoActualizado = true
             }
@@ -289,6 +299,92 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
             return error
         }
         if (manager) throw error
+        return [null, "Error interno"]
+    }
+}
+
+
+export async function getContratoComercialService(contrato = null, data = null, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            let contrato_id = null, codigoContrato = null, cliente_id = null, sede_id = null
+            if (contrato) {
+                contrato_id = contrato.contrato_id
+                codigoContrato = contrato.codigoContrato
+            }
+            if (data) {
+                cliente_id = data.cliente_id
+                sede_id = data.sede_id
+
+            }
+
+            const contratoRepository = transactionManager.getRepository(Contrato)
+
+            const where = {}
+            if (contrato_id) where.id_contrato_comercial = contrato_id
+            if (codigoContrato) where.codigoContrato = codigoContrato
+            if (cliente_id) where.cliente = { cliente_id }
+            if (sede_id) where.sedes = { sede_id }
+
+            const contratos = await contratoRepository.find({
+                relations: ["cliente", "sedes", "documentos"],
+                where
+            })
+
+
+            if (!contratos || contratos.length === 0) return [null, "Contrato no encontrado"]
+
+            return [contratos, null]
+        }
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+    } catch (error) {
+        console.error("Error obteniendo contratos: ", error);
+        if (Array.isArray(error)) {
+
+            if (manager) throw error
+
+            return error
+        }
+
+        if (manager) throw error
+
+        return [null, "Error interno"]
+    }
+}
+
+export async function getAnexoComercialService(anexo_id = null, sede_id = null, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const anexoRepository = transactionManager.getRepository(ContratoAnexoSchema)
+            const where = {}
+            if (anexo_id) where.id_anexo = anexo_id
+            if (sede_id) where.sedes = { sede_id: sede_id }
+
+            const anexo = await anexoRepository.find({
+                where,
+                relations: ["contratoComercial", "sedes", "documentos"],
+            })
+            if (!anexo || anexo.length === 0) return [null, "Anexos no encontrados"]
+
+            return [anexo, null]
+        }
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+
+    } catch (error) {
+        console.error("Error obteniendo anexos: ", error);
+        if (Array.isArray(error)) {
+
+            if (manager) throw error
+
+            return error
+        }
+
+        if (manager) throw error
+
         return [null, "Error interno"]
     }
 }
