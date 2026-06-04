@@ -12,7 +12,7 @@ export default function Acordeon({ title, content, onToggle, isOpen, required })
                     <strong>
                         {title}
                     </strong>
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span style={{ color: "red", marginLeft: "4px" }}>*</span>}
                 </h3>
                 <span className={`accordion-icon arrow ${isOpen ? "open" : ""}`}>▼</span>
 

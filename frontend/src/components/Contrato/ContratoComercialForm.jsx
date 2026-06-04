@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import Documentos from "./Documentos"
+import "@styles/components/ContratoComercialForm.css"
 
 export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
@@ -28,38 +29,19 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
     return (
 
-        <div
-            className="
-                w-full
-                border
-                rounded-2xl
-                overflow-hidden
-                bg-white
-                shadow-sm
-            "
-        >
+        <div className="contrato-card">
 
             {/* HEADER */}
 
-            <div
-                className="
-                    grid
-                    grid-cols-1
-                    md:grid-cols-2
-                    xl:grid-cols-2
-                    gap-4
-                    p-4
-                    items-end
-                "
-            >
+            <div className="contrato-header contrato-grid">
 
                 {/* inicio */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         Inicio
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -73,11 +55,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                 {/* fin */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         Fin
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -91,11 +73,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                 {/* jornada */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         Jornada
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <select
@@ -113,11 +95,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                 {/* tipo jornada */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         Tipo Jornada
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <select
@@ -137,11 +119,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                 {/* tamaño */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         Tamaño
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <select
@@ -161,11 +143,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                 {/* trabajadores */}
 
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         N° Mínimo Trabajadores
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -179,11 +161,11 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
                     />
 
                 </div>
-                <div className="flex flex-col">
+                <div className="contrato-field">
 
                     <label className="label">
                         N° Máximo Trabajadores
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -198,20 +180,12 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
                 </div>
 
                 {/* monto + botón */}
+                <div className="contrato-grid">
 
-                <div
-                    className="
-                        flex
-                        items-end
-                        gap-3
-                    "
-                >
-
-                    <div className="flex-1 flex flex-col">
-
+                    <div className="contrato-field">
                         <label className="label">
                             Monto
-                            <span className="text-red-500 ml-1">*</span>
+                            <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                         </label>
 
                         <input
@@ -223,35 +197,23 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
                         />
 
                     </div>
+                    <div className="contrato-actions">
 
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setOpen(!open)
-                        }
-                        className="
-                            h-[46px]
-                            w-[46px]
-                            flex
-                            items-center
-                            justify-center
-                            bg-sky-900
-                            hover:bg-sky-800
-                            rounded-xl
-                            shrink-0
-                        "
-                    >
 
-                        <ChevronDown color="white"
-                            className={`
-                                transition-transform
-                                duration-300
-                                ${open ? "rotate-180" : ""}
-                            `}
-                        />
 
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setOpen(!open)
+                            }
+                            className="expand-button"
+                        >
 
+                            <ChevronDown color="white" className={`${open ? "rotate" : ""}`} />
+
+                        </button>
+
+                    </div>
                 </div>
 
             </div>
@@ -260,59 +222,36 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
             {open && (
 
-                <div
-                    className="
-                        border-t
-                        bg-slate-50
-                        p-5
-                        space-y-6
-                    "
-                >
+                <div className="contrato-body">
 
                     {/* textareas */}
 
-                    <div
-                        className="
-                            grid
-                            grid-cols-1
-                            lg:grid-cols-2
-                            gap-5
-                            items-start
-                        "
-                    >
+                    <div className="contrato-grid">
 
                         {/* observaciones */}
 
-                        <div className="flex flex-col">
+                        <div className="contrato-field">
 
                             <label className="label">Observaciones</label>
 
                             <textarea
                                 value={contrato?.observacionesOperativas}
                                 onChange={(e) => handleChange("observacionesOperativas", e.target.value)}
-                                className="
-                                    input
-                                    min-h-[140px]
-                                    resize-none
-                                "
+                                className="input textarea-large"
                             />
 
                         </div>
 
                         {/* detalles */}
 
-                        <div className="flex flex-col">
+                        <div className="contrato-field">
 
                             <label className="label">Detalles</label>
 
                             <textarea
                                 value={contrato?.detalles}
                                 onChange={(e) => handleChange("detalles", e.target.value)}
-                                className="
-                                    input
-                                    min-h-[140px]
-                                    resize-none
-                                "
+                                className="input textarea-large"
                             />
 
                         </div>
@@ -321,22 +260,20 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                     {/* checkbox */}
 
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-3
-                        "
-                    >
+                    <div className="checkbox-row">
 
                         <input
                             type="checkbox"
                             checked={contrato?.requiereGuardias}
-                            onChange={(e) => handleChange("requiereGuardias", e.target.checked)}
-                            className="h-5 w-5"
+                            onChange={(e) =>
+                                handleChange(
+                                    "requiereGuardias",
+                                    e.target.checked
+                                )
+                            }
                         />
 
-                        <label className="label m-0">
+                        <label>
                             Requiere guardias
                         </label>
 

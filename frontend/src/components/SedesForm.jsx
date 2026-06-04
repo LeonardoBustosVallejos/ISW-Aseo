@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 
 import Contactos from "./ContactosForm"
+import "@styles/components/SedesForm.css"
 
 export default function SedeRow({ sede, setFormData, removeSede, index, largo, formatRut }) {
 
@@ -25,21 +26,21 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
 
     return (
 
-        <div className=" border rounded-2xl overflow-hidden bg-white shadow-sm w-full">
+        <div className=" card">
 
             {/* HEADER */}
 
-            <div className=" grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-4 ">
+            <div className="sede-header">
 
 
 
                 {/* direccion */}
 
-                <div className="md:col-span-5 flex flex-col">
+                <div className="form-group sede-direccion">
 
                     <label className="label">
                         Dirección
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input type="text"
@@ -52,11 +53,11 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
 
                 {/* tipo */}
 
-                <div className="md:col-span-3 flex flex-col">
+                <div className="form-group">
 
                     <label className="label">
                         Tipo
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <select
@@ -75,11 +76,11 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
 
                 {/* personal */}
 
-                <div className="md:col-span-2 flex flex-col">
+                <div className="form-group">
 
                     <label className="label">
                         Personal
-                        <span className="text-red-500 ml-1">*</span>
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                     </label>
 
                     <input
@@ -94,32 +95,18 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
 
                 {/* botones */}
 
-                <div
-                    className="md:col-span-2
-                        flex
-                        justify-end
-                        gap-2
-                    "
-                >
+                <div className="action-buttons">
 
                     {/* abrir */}
 
                     <button
                         type="button"
                         onClick={() => setOpen(!open)}
-                        className="
-                            bg-sky-900
-                            hover:bg-sky-800
-                            p-3
-                            rounded-xl
-                        "
+                        className="expand-button"
                     >
 
                         <ChevronDown color="white"
-                            className={`
-                                transition-transform
-                                ${open ? "rotate-180" : ""}
-                            `}
+                            className={`${open ? "rotate" : ""}`}
                         />
 
                     </button>
@@ -130,7 +117,7 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
                         type="button"
                         onClick={() => removeSede(index)}
                         disabled={largo === 1}
-                        className={`bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl ${largo === 1 ? "hidden" : ""}`}
+                        className={`remove-button ${largo === 1 ? "oculto" : ""}`}
 
                     >
 
@@ -144,21 +131,12 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
             {open && (
 
                 <div
-                    className="
-                        border-t
-                        bg-slate-50
-                        p-5
-                        space-y-5
-                    "
+                    className="card-body"
                 >
                     {/* nombre */}
-                    <div className="grid
-                            grid-cols-1
-                            lg:grid-cols-2
-                            gap-5
-                            items-start">
+                    <div className="sede-body-grid">
 
-                        <div className="flex flex-col">
+                        <div className="form-group">
 
                             <label className="label">Nombre Sede</label>
 
@@ -169,7 +147,7 @@ export default function SedeRow({ sede, setFormData, removeSede, index, largo, f
                             />
 
                         </div>
-                        <div className="flex flex-col">
+                        <div className="form-group">
                             <label className="label">
                                 RUT Secundario
                                 <span className="text-red-500 ml-1"></span>
