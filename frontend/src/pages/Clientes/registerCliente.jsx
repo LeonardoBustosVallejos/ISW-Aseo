@@ -174,7 +174,6 @@ const RegisterClienteForm = () => {
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();
-            console.log(formData.anexos[0].documentos[0]);
 
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
@@ -191,225 +190,229 @@ const RegisterClienteForm = () => {
 
     return (
         <div className="form-container">
-            <div className="form-card">
-
+            <div className='form-header'>
                 <h1 className="form-title">Registro de Cliente y Supervisor</h1>
-                <form onSubmit={handleSubmit} className="form-content">
-
-                    {/* SECCIÓN CLIENTE */}
-                    <Acordeon title={"Datos del Cliente"} isOpen={openSection === "cliente"}
-                        required={true}
-                        onToggle={() => {
-                            setOpenSection(openSection === "cliente" ? null : "cliente")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div className="form-grid">
-
-                                <div className="form-group">
-
-                                    <label className="label">
-                                        Nombre de Fantasía (Empresa)
-                                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                                    </label>
-                                    <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente}
-                                        minLength={3}
-                                        onChange={(e) => handleChange("nombreCliente", e.target.value)}
-                                        className='input'
-                                        required />
-                                </div>
-
-                                <div className="form-group">
-
-                                    <label className="label">
-                                        RUT de Empresa
-                                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                                    </label>
-                                    <input type="text" name="rutCliente" value={formData.cliente.rutCliente}
-                                        onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
-                                        className='input'
-                                        required />
-                                </div>
+            </div>
 
 
+            <form onSubmit={handleSubmit} className="form-card form-content">
+
+                {/* SECCIÓN CLIENTE */}
+                <Acordeon title={"Datos del Cliente"} isOpen={openSection === "cliente"}
+                    required={true}
+                    onToggle={() => {
+                        setOpenSection(openSection === "cliente" ? null : "cliente")
+                        setOpenContacto(null)
+                    }}
+                    content={
+                        <div className="form-grid">
+
+                            <div className="form-group">
+
+                                <label className="label">
+                                    Nombre de Fantasía (Empresa)
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
+                                <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente}
+                                    minLength={3}
+                                    onChange={(e) => handleChange("nombreCliente", e.target.value)}
+                                    className='input'
+                                    required />
                             </div>
-                        } />
 
-                    {/* SEDES */}
-                    <Acordeon title="Sede" isOpen={openSection === "sedes"}
-                        required={true}
-                        onToggle={() => {
-                            setOpenSection(openSection === "sedes" ? null : "sedes")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div>
-                                {formData.sedes.map((sede, index) => (
+                            <div className="form-group">
 
-                                    <SedeRow sede={sede}
-                                        key={index}
-                                        index={index}
-                                        largo={formData.sedes.length}
-                                        setFormData={setFormData}
-                                        formatRut={formatRut}
-                                        removeSede={(i) => {
+                                <label className="label">
+                                    RUT de Empresa
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
+                                <input type="text" name="rutCliente" value={formData.cliente.rutCliente}
+                                    onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
+                                    className='input'
+                                    required />
+                            </div>
 
-                                            setFormData(prev => {
-                                                const copia = structuredClone(prev)
-                                                copia.sedes.splice(i, 1)
-                                                return copia
-                                            })
-                                        }}
-                                    />
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => {
 
-                                        setFormData(prev => ({
+                        </div>
+                    } />
 
-                                            ...prev,
+                {/* SEDES */}
+                <Acordeon title="Sede" isOpen={openSection === "sedes"}
+                    required={true}
+                    onToggle={() => {
+                        setOpenSection(openSection === "sedes" ? null : "sedes")
+                        setOpenContacto(null)
+                    }}
+                    content={
+                        <div>
+                            {formData.sedes.map((sede, index) => (
 
-                                            sedes: [
+                                <SedeRow sede={sede}
+                                    key={index}
+                                    index={index}
+                                    largo={formData.sedes.length}
+                                    setFormData={setFormData}
+                                    formatRut={formatRut}
+                                    removeSede={(i) => {
 
-                                                ...prev.sedes,
-
-                                                {
-                                                    nombre_sede: '',
-                                                    direccion: '',
-                                                    personalSolicitado: '',
-                                                    tipoSede: '',
-                                                    contactos: [{
-                                                        nombreContacto: '',
-                                                        contacto_rut: '',
-                                                        email: '',
-                                                        phone: '',
-                                                        tipoContacto: '',
-                                                    }]
-                                                }
-                                            ]
-
-                                        }))
+                                        setFormData(prev => {
+                                            const copia = structuredClone(prev)
+                                            copia.sedes.splice(i, 1)
+                                            return copia
+                                        })
                                     }}
-                                    className="add-button">
+                                />
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => {
 
-                                    <Plus size={16} />
+                                    setFormData(prev => ({
 
-                                    Agregar Sede
-                                </button>
-                            </div>
-                        }
+                                        ...prev,
 
-                    />
-                    {/*CONTRATO */}
-                    <Acordeon title="Contrato"
-                        isOpen={openSection === "contrato"}
-                        onToggle={() => {
-                            setOpenSection(openSection === "contrato" ? null : "contrato")
-                            setOpenContacto(null)
-                        }}
-                        required={true}
+                                        sedes: [
 
-                        content={
+                                            ...prev.sedes,
 
-                            <ContratoRow
-                                contrato={formData.contrato}
-                                documentos={formData.metadataDocumentos}
-                                setFormData={setFormData}
-                            />
-                        }
-                    />
-                    {/*ANEXOS */}
-                    <Acordeon title="Anexo(s)"
-                        isOpen={openSection === "anexo"}
-                        onToggle={() => {
-                            setOpenSection(openSection === "anexo" ? null : "anexo")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div>
+                                            {
+                                                nombre_sede: '',
+                                                direccion: '',
+                                                personalSolicitado: '',
+                                                tipoSede: '',
+                                                contactos: [{
+                                                    nombreContacto: '',
+                                                    contacto_rut: '',
+                                                    email: '',
+                                                    phone: '',
+                                                    tipoContacto: '',
+                                                }]
+                                            }
+                                        ]
 
-                                {formData.anexos.map((anexo, index) => (
+                                    }))
+                                }}
+                                className="add-button">
 
-                                    <AnexoRow anexo={anexo}
-                                        key={index}
-                                        index={index}
-                                        setFormData={setFormData}
-                                        contrato={formData.contrato}
-                                        removeAnexo={(i) => {
+                                <Plus size={16} />
 
-                                            setFormData(prev => {
+                                Agregar Sede
+                            </button>
+                        </div>
+                    }
 
-                                                const copia =
-                                                    structuredClone(prev)
+                />
+                {/*CONTRATO */}
+                <Acordeon title="Contrato"
+                    isOpen={openSection === "contrato"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "contrato" ? null : "contrato")
+                        setOpenContacto(null)
+                    }}
+                    required={true}
 
-                                                copia.anexos.splice(i, 1)
+                    content={
 
-                                                return copia
-                                            })
-                                        }}
-                                    />
+                        <ContratoRow
+                            contrato={formData.contrato}
+                            documentos={formData.metadataDocumentos}
+                            setFormData={setFormData}
+                        />
+                    }
+                />
+                {/*ANEXOS */}
+                <Acordeon title="Anexo(s)"
+                    isOpen={openSection === "anexo"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "anexo" ? null : "anexo")
+                        setOpenContacto(null)
+                    }}
+                    content={
+                        <div>
 
-                                )
-                                )}
-                                {/*Botón de agregar anexo */}
-                                <button
-                                    type="button"
-                                    onClick={() => {
+                            {formData.anexos.map((anexo, index) => (
 
-                                        setFormData(prev => ({
+                                <AnexoRow anexo={anexo}
+                                    key={index}
+                                    index={index}
+                                    setFormData={setFormData}
+                                    contrato={formData.contrato}
+                                    removeAnexo={(i) => {
 
-                                            ...prev,
+                                        setFormData(prev => {
 
-                                            anexos: [
+                                            const copia =
+                                                structuredClone(prev)
 
-                                                ...prev.anexos,
+                                            copia.anexos.splice(i, 1)
 
-                                                {
-                                                    datos: {
-                                                        numeroAnexo: "",
-                                                        fechaInicio: formData.contrato.fechaInicio,
-                                                        fechaFin: formData.contrato.fechaFinOriginal,
-                                                        montoNuevo: formData.contrato.monto,
-                                                        cantidadMinTrabajadores: formData.contrato.cantidadMinTrabajadores,
-                                                        cantidadMaxTrabajadores: formData.contrato.cantidadMaxTrabajadores,
-                                                        tipoJornada: formData.contrato.tipoJornada,
-                                                        tipoAnexo: '',
-                                                        detalles: '',
-                                                        observacionesOperativas: '',
-                                                        requiereGuardias: formData.contrato.requiereGuardias,
-                                                        tamanoInstalacion: formData.contrato.tamanoInstalacion
-                                                    },
-
-                                                    documentos: [
-                                                        {
-                                                            nombrePersonalizado: '',
-                                                            tipoDocumento: 'ANEXO',
-                                                            fileKey: "anexo_pdf",
-                                                            file: null
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }))
+                                            return copia
+                                        })
                                     }}
-                                    className="add-button">
+                                />
 
-                                    <Plus size={16} />
+                            )
+                            )}
+                            {/*Botón de agregar anexo */}
+                            <button
+                                type="button"
+                                onClick={() => {
 
-                                    Agregar Anexo
-                                </button>
-                            </div>
-                        }
-                    />
-                    <div>
-                        <span className={`error-message`}>
-                            {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
-                        </span>
-                    </div>
-                    <hr />
-                    <button type="submit">Registrar</button>
-                </form>
+                                    setFormData(prev => ({
+
+                                        ...prev,
+
+                                        anexos: [
+
+                                            ...prev.anexos,
+
+                                            {
+                                                datos: {
+                                                    numeroAnexo: "",
+                                                    fechaInicio: formData.contrato.fechaInicio,
+                                                    fechaFin: formData.contrato.fechaFinOriginal,
+                                                    montoNuevo: formData.contrato.monto,
+                                                    cantidadMinTrabajadores: formData.contrato.cantidadMinTrabajadores,
+                                                    cantidadMaxTrabajadores: formData.contrato.cantidadMaxTrabajadores,
+                                                    tipoJornada: formData.contrato.tipoJornada,
+                                                    tipoAnexo: '',
+                                                    detalles: '',
+                                                    observacionesOperativas: '',
+                                                    requiereGuardias: formData.contrato.requiereGuardias,
+                                                    tamanoInstalacion: formData.contrato.tamanoInstalacion
+                                                },
+
+                                                documentos: [
+                                                    {
+                                                        nombrePersonalizado: '',
+                                                        tipoDocumento: 'ANEXO',
+                                                        fileKey: "anexo_pdf",
+                                                        file: null
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }))
+                                }}
+                                className="add-button">
+
+                                <Plus size={16} />
+
+                                Agregar Anexo
+                            </button>
+                        </div>
+                    }
+                />
+                <div>
+                    <span className={`error-message`}>
+                        {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
+                    </span>
+                </div>
+                <hr />
+                <button type="submit">Registrar</button>
+            </form>
+            <div className="">
+
             </div >
         </div >
     );

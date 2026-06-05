@@ -58,7 +58,7 @@ const ListaClientes = () => {
     return (
         <div className="gestion-clientes">
             <div className="gestion-header">
-                <h1>Gestión de Clientes</h1>
+                <h1 className="form-title">Lista de Empresas Representantes Legales</h1>
 
                 <Link to="/cliente/registrar" className="btn-nuevo-cliente">+ Nuevo Cliente</Link>
 

@@ -13,6 +13,12 @@
     color: #003366;
 }
 
+.form-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
 .gestion-header button {
     background: #003366;
     color: white;

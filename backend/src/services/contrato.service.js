@@ -59,7 +59,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
             if (sedes?.length > 0) {
 
                 for (const sede of sedes) {
-                    const [sedeFound, errSede] = await getSedeByService({ sede_id: sede.sede_id }, transactionManager)
+                    const sedeFound = await sedeRepository.findOne({ where: sede })
                     if (errSede) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
                     sedesEncontradas.push({ sede_id: sedeFound.sede_id })
                 }
@@ -140,6 +140,7 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
             const contratoRepository = transactionManager.getRepository(Contrato)
 
             const anexoRepository = transactionManager.getRepository(ContratoAnexoSchema)
+            const sedeRepository = transactionManager.getRepository(Sedes)
 
             const {
                 numeroAnexo,
@@ -162,22 +163,31 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
             if (!numeroAnexo || !fechaInicio || !contrato_id) throw [null, createErrorMessage("anexo", "Datos incompletos")]
 
             // Buscar contrato
-            const contrato =
-                await contratoRepository.findOne({
-                    where: { id_contrato_comercial: contrato_id }
-                })
+            const contrato = await contratoRepository.findOne({
+                where: { id_contrato_comercial: contrato_id }
+            })
 
             if (!contrato) throw [null, createErrorMessage("contrato", "Contrato no encontrado")]
 
 
+            let sedesEncontradas = []
+            if (sedes) {
+                for (const sede of sedes) {
+                    const sedeFound = await sedeRepository.findOne({
+                        where: sede
+                    })
+                    if (!sedeFound) throw [null, createErrorMessage("sede", "Sede principal no encontrada para el cliente")]
+                    sedesEncontradas.push({ sede_id: sedeFound.sede_id })
+                }
+            }
+
             // Validar número anexo
-            const existe =
-                await anexoRepository.findOne({
-                    where: {
-                        numeroAnexo,
-                        contratoComercial: { id_contrato_comercial: contrato_id }
-                    }
-                })
+            const existe = await anexoRepository.findOne({
+                where: {
+                    numeroAnexo,
+                    contratoComercial: { id_contrato_comercial: contrato_id }
+                }
+            })
 
             if (existe) throw [null, createErrorMessage("anexo", "Número de anexo ya registrado")]
 
@@ -209,7 +219,8 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 observacionesOperativas,
                 detalles,
                 tipoAnexo: tipoAnexo || "OTRO",
-                contratoComercial: { id_contrato_comercial: contrato_id }
+                contratoComercial: { id_contrato_comercial: contrato_id },
+                sedes: sedesEncontradas.length > 0 ? sedesEncontradas : null
             })
 
             await anexoRepository.save(anexo)
@@ -282,7 +293,7 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
 
             // Guardar cambios contrato
             if (contratoActualizado) {
-                await contratoRepository.save(contrato)
+                await contratoRepository.save({ ...contrato, updatedAt: new Date() })
             }
 
             return [anexo, null]
