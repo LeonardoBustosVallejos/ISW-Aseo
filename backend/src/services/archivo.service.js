@@ -118,7 +118,7 @@ export async function createDocumentoService(data, manager = null) {
                 anexo_id
             } = data
 
-            if (!file) throw [null, "Debe proporcionar un archivo"]
+            if (!file) throw [null, createErrorMessage("archivo", "Debe proporcionar un archivo")]
 
             //asegurar que el documento pertenezca a un contrato o anexo
             if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato", "Debe proporcionar un contrato válido")]

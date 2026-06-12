@@ -9,16 +9,16 @@ const Sidebar = () => {
     const location = useLocation();
 
     let rolUsuario = null;
-    try{
-        const usuarioGuardado = sessionStorage.getItem("usuario"); 
-            console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
-        if(usuarioGuardado && usuarioGuardado !== "undefined"){
+    try {
+        const usuarioGuardado = sessionStorage.getItem("usuario");
+        console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
+        if (usuarioGuardado && usuarioGuardado !== "undefined") {
             const usuarioLogueado = JSON.parse(usuarioGuardado);
             rolUsuario = usuarioLogueado.rol.id;
-        }        
+        }
         console.log("¡Por fin encontramos el rol! Es:", rolUsuario);
-        
-    }catch(error){
+
+    } catch (error) {
         console.error("Error al intentar leer el perfil del usuario:", error);
     }
     const menuData = [
@@ -32,8 +32,8 @@ const Sidebar = () => {
         },
         {
             title: "Recursos",
-            children:[
-                ...(rolUsuario == 1 ? [{title: "Resumen", path: "/recursos/resumen"}] : []),
+            children: [
+                ...(rolUsuario == 1 ? [{ title: "Resumen", path: "/recursos/resumen" }] : []),
                 { title: "Detalles", path: "/recursos/detalles" },
             ],
         },
@@ -116,7 +116,9 @@ const Sidebar = () => {
                 ))}
             </div>
             <div>
+                {/*
                 <div className="profile">Perfil</div>
+                */}
 
                 <div className="logout" onClick={logoutSubmit}>Cerrar Sesión</div>
             </div>

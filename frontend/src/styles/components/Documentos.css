@@ -1,0 +1,129 @@
+@media (max-width: 992px) {
+
+    .document-row {
+        grid-template-columns: 1fr;
+    }
+
+    .document-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .75rem;
+    }
+
+    .remove-button {
+        width: 100%;
+    }
+}
+
+.adjuntar-documentos {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.document-card {
+    background: #fff;
+    border: 1px solid #dbe3ea;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.document-body {
+    background: #f8fafc;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.document-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+
+.document-row {
+    display: grid;
+    grid-template-columns: 4fr 4fr 3fr auto;
+    gap: 0.75rem;
+    align-items: end;
+
+    border: 1px solid #dbe3ea;
+    border-radius: 0.75rem;
+    background: white;
+    padding: 1rem;
+}
+
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+
+.input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0.65rem 0.75rem;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+
+    background: white;
+    font-size: 0.95rem;
+
+    transition: border-color .2s ease;
+    box-sizing: border-box;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #003366;
+}
+
+
+.file-selector {
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    display: flex;
+    align-items: center;
+}
+
+
+
+.document-row>.remove-button {
+    align-self: end;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.checkbox-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    white-space: nowrap;
+    cursor: pointer;
+}

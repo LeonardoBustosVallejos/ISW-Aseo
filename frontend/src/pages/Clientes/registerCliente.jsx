@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/clientes.service';
 import Acordeon from '@components/acordeon';
-import DocumentoRow from '../../components/Contrato/Documentos';
-import SedeRow from '../../components/SedesForm';
-import ContratoRow from '../../components/Contrato/ContratoComercialForm';
-import AnexoRow from '../../components/Contrato/AnexoComercial';
+import DocumentoRow from '@components/Contrato/Documentos';
+import SedeRow from '@components/SedesForm';
+import ContratoRow from '@components/Contrato/ContratoComercialForm';
+import AnexoRow from '@components/Contrato/AnexoComercial';
 import { Plus } from 'lucide-react';
-
+import "@styles/registerCliente.css"
 
 /**
  * 
@@ -31,13 +31,13 @@ const RegisterClienteForm = () => {
                 nombre_sede: '',
                 direccion: '',
                 personalSolicitado: '',
-                tipoSede: '',
+                tipoSede: 'PRINCIPAL',
                 contactos: [{
                     nombreContacto: '',
                     contacto_rut: '',
                     email: '',
                     phone: '',
-                    tipoContacto: '',
+                    tipoContacto: 'PRINCIPAL',
                 }]
             }
         ],
@@ -57,7 +57,7 @@ const RegisterClienteForm = () => {
         metadataDocumentos: [
             {
                 nombrePersonalizado: '',
-                tipoDocumento: '',
+                tipoDocumento: 'CONTRATO',
                 fileKey: "contrato_pdf",
                 file: null
             }
@@ -188,10 +188,11 @@ const RegisterClienteForm = () => {
     }
 
     return (
-        <div className="container" style={{ height: "auto", minHeight: "100%", padding: "0 0" }}>
-            <div className='form'>
-                <h1>Registro de Cliente y Supervisor</h1>
-                <form onSubmit={handleSubmit}>
+        <div className="form-container">
+            <div className="form-card">
+
+                <h1 className="form-title">Registro de Cliente y Supervisor</h1>
+                <form onSubmit={handleSubmit} className="form-content">
 
                     {/* SECCIÓN CLIENTE */}
                     <Acordeon title={"Datos del Cliente"} isOpen={openSection === "cliente"}
@@ -201,25 +202,31 @@ const RegisterClienteForm = () => {
                             setOpenContacto(null)
                         }}
                         content={
-                            <div >
+                            <div className="form-grid">
 
-                                <div className="container_inputs">
+                                <div className="form-group">
+
                                     <label className="label">
-                                        Nombre Empresa (Nombre de Fantasía)
-                                        <span className="text-red-500 ml-1">*</span>
+                                        Nombre de Fantasía (Empresa)
+                                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                                     </label>
                                     <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente}
                                         minLength={3}
-                                        onChange={(e) => handleChange("nombreCliente", e.target.value)} className="input" required />
+                                        onChange={(e) => handleChange("nombreCliente", e.target.value)}
+                                        className='input'
+                                        required />
                                 </div>
 
-                                <div className="container_inputs">
+                                <div className="form-group">
+
                                     <label className="label">
                                         RUT de Empresa
-                                        <span className="text-red-500 ml-1">*</span>
+                                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                                     </label>
                                     <input type="text" name="rutCliente" value={formData.cliente.rutCliente}
-                                        onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} className="input" placeholder="12345678-9" required />
+                                        onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
+                                        className='input'
+                                        required />
                                 </div>
 
 
@@ -283,7 +290,7 @@ const RegisterClienteForm = () => {
 
                                         }))
                                     }}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                    className="add-button">
 
                                     <Plus size={16} />
 
@@ -385,7 +392,7 @@ const RegisterClienteForm = () => {
                                             ]
                                         }))
                                     }}
-                                    className="bg-sky-900 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                    className="add-button">
 
                                     <Plus size={16} />
 
@@ -394,8 +401,6 @@ const RegisterClienteForm = () => {
                             </div>
                         }
                     />
-                    <hr />
-
                     <div>
                         <span className={`error-message`}>
                             {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}

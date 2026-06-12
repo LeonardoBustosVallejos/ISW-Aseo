@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from "lucide-react"
+import "@styles/components/ContactosForm.css"
 
 export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
@@ -97,30 +98,20 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
     return (
 
-        <div className="space-y-4">
+        <div className="contactos-container">
 
             {/* titulo */}
 
-            <div className="flex justify-between items-center">
+            <div className="contactos-header">
 
-                <h3 className="font-semibold text-lg">
+                <h3 className="section-title">
                     Contactos
                 </h3>
 
                 <button
                     type="button"
                     onClick={addContacto}
-                    className="
-                        bg-blue-600
-                        hover:bg-blue-700
-                        text-white
-                        px-4
-                        py-2
-                        rounded-lg
-                        flex
-                        items-center
-                        gap-2
-                    "
+                    className="add-button"
                 >
 
                     <Plus size={16} />
@@ -134,28 +125,15 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
             {contactos.map((contacto, index) => (
 
-                <div
-                    key={index}
-                    className="
-                        grid
-                        grid-cols-1
-                        md:grid-cols-12
-                        gap-4
-                        items-end
-                        border
-                        rounded-xl
-                        p-4
-                        bg-white
-                    "
-                >
+                <div key={index} className="contacto-card">
 
                     {/* nombre */}
 
-                    <div className="md:col-span-3 flex flex-col">
+                    <div className="contacto-field">
 
                         <label className="label">
                             Nombre
-                            <span className="text-red-500 ml-1">*</span>
+                            <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                         </label>
 
                         <input
@@ -169,11 +147,11 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
                     {/* rut */}
 
-                    <div className="md:col-span-2 flex flex-col">
+                    <div className="contacto-field">
 
                         <label className="label">
                             RUT
-                            <span className="text-red-500 ml-1">*</span>
+                            <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                         </label>
 
                         <input
@@ -187,11 +165,11 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
                     {/* email */}
 
-                    <div className="md:col-span-2 flex flex-col">
+                    <div className="contacto-field">
 
                         <label className="label">
                             Email
-                            <span className="text-red-500 ml-1">*</span>
+                            <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                         </label>
 
                         <input
@@ -205,11 +183,9 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
                     {/* Telefono */}
 
-                    <div className="md:col-span-2 flex flex-col">
+                    <div className="contacto-field">
 
-                        <label className="label">
-                            Teléfono
-                        </label>
+                        <label className="label">Teléfono</label>
 
                         <input
                             type="tel"
@@ -235,11 +211,11 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
                     {/* tipo */}
 
-                    <div className="md:col-span-2 flex flex-col">
+                    <div className="contacto-field">
 
                         <label className="label">
                             Tipo
-                            <span className="text-red-500 ml-1">*</span>
+                            <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                         </label>
 
                         <select
@@ -257,13 +233,13 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
 
                     {/* eliminar */}
 
-                    <div className="col-span-1 flex justify-end">
+                    <div className="contacto-actions">
 
                         <button
                             disabled={contactos.length <= 1}
                             type="button"
                             onClick={() => removeContacto(index)}
-                            className={`bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg ${contactos.length <= 1 ? "hidden" : ""}`}
+                            className={`remove-button ${contactos.length <= 1 ? "oculto" : ""}`}
                         >
                             <Trash2 size={16} />
                         </button>
