@@ -66,7 +66,7 @@ const SedeSchema = new EntitySchema({
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
             nullable: false,
-            onDelete: "CASCADE" //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
+            cascade: true, //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
         },
         //una sede puede tener varias personas de contactos
         contactos: {

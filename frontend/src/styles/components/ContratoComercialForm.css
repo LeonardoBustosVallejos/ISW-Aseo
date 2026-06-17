@@ -1,6 +1,6 @@
 .contrato-card {
     width: 100%;
-    background: white;
+    background: var(--ubb-texto);
     border: 1px solid #e5e7eb;
     border-radius: 1rem;
     overflow: hidden;
@@ -17,7 +17,7 @@
 
 .contrato-body {
     border-top: 1px solid #e5e7eb;
-    background: #f8fafc;
+    background: var(--ubb-fondo);
     padding: 1.25rem;
 
     display: flex;
@@ -44,9 +44,7 @@
 }
 
 .checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
+    width: 25%;
 }
 
 .textarea-grid {

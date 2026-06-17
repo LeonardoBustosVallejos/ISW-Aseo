@@ -65,14 +65,14 @@ const ContactoSchema = new EntitySchema({
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
             nullable: false,
-            onDelete: "CASCADE"
+            cascade: true,
         },
         //varios contactos pueden ser de la misma sede
         sede: {
             type: "many-to-one",
             target: "Sede",
             joinColumn: { name: "sede_id" },
-            onDelete: "CASCADE",
+            cascade: true,
             nullable: false
         }
     }

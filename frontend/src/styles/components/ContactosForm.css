@@ -22,7 +22,7 @@
 
     padding: 1rem;
 
-    background: white;
+    background: var(--ubb-fondo);
 
     border: 1px solid #e5e7eb;
     border-radius: 0.75rem;

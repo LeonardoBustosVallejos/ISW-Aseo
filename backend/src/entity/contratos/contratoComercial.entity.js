@@ -112,14 +112,14 @@ const contratoComercialSchema = new EntitySchema({
             type: "many-to-one",
             joinColumn: { name: "cliente_id" },
             nullable: false, //el contrato si o si debe ser dirigido a alguien
-            onDelete: "CASCADE"
+            cascade: true,
         },
         sedes: {
             target: "Sede",
             type: "many-to-many",
-            joinTable: { name: "sede_id", referencedColumnName: "sede_id" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
+            joinTable: { name: "rel_contrato_sede", referencedColumnName: "sede_id" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
             nullable: false,
-            onDelete: "CASCADE"
+            cascade: true,
         }
     }
 });

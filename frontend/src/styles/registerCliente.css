@@ -20,7 +20,7 @@
 }
 
 .form-header h1 {
-    color: #003366;
+    color: var(--ubb-azul-principal);
 }
 
 
@@ -75,8 +75,8 @@
     justify-content: center;
     gap: .5rem;
 
-    background-color: #003366;
-    color: white;
+    background-color: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
 
     border: none;
     border-radius: .5rem;
@@ -100,7 +100,7 @@
     height: 42px;
 
     background-color: #dc2626;
-    color: white;
+    color: var(--ubb-texto);
 
     border: none;
     border-radius: .5rem;
@@ -125,8 +125,8 @@
 }
 
 .expand-button {
-    background: #003366;
-    color: white;
+    background: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
     border: none;
     border-radius: .75rem;
     padding: .75rem;
@@ -134,7 +134,7 @@
 }
 
 .expand-button:hover {
-    background: #004a99;
+    background: var(--ubb-azul-secundario);
 }
 
 .rotate {

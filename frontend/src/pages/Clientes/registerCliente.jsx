@@ -4,11 +4,12 @@ import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/clientes.service';
 import Acordeon from '@components/acordeon';
 import DocumentoRow from '@components/Contrato/Documentos';
-import SedeRow from '@components/SedesForm';
+import SedeRow from '@components/Clientes/SedesForm';
 import ContratoRow from '@components/Contrato/ContratoComercialForm';
 import AnexoRow from '@components/Contrato/AnexoComercial';
 import { Plus } from 'lucide-react';
 import "@styles/registerCliente.css"
+import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
 
 /**
  * 
@@ -17,6 +18,9 @@ import "@styles/registerCliente.css"
 const RegisterClienteForm = () => {
     const [openSection, setOpenSection] = useState('cliente');
     const [openContacto, setOpenContacto] = useState(null);
+    const [openSedes, setOpenSedes] = useState(null);
+    const [openFilial, setOpenFilial] = useState(null);
+
     const [errors, setErrors] = useState({});
 
     /**Inicializar las variables/objetos base que son obligatorios para el registro */
@@ -69,6 +73,8 @@ const RegisterClienteForm = () => {
     });
 
 
+
+
     const getSectionFromErrors = (errors) => {
         if (
             errors.nombreCliente ||
@@ -108,9 +114,12 @@ const RegisterClienteForm = () => {
         if (section === "cliente") {
             setOpenSection("cliente");
         }
-
+        if (section === "sedes") {
+            setOpenSedes("sedes");
+        }
         if (section === "contacto") {
-            setOpenSection("cliente");   // 👈 contacto está dentro de cliente
+            setOpenSection("cliente");   //contacto está dentro de cliente
+            setOpenSedes("sedes");
             setOpenContacto("contacto");
         }
 
@@ -126,6 +135,38 @@ const RegisterClienteForm = () => {
         }));
     };
 
+    const addFilial = () => {
+        setFormData(prev => ({
+            ...prev,
+            cliente: {
+                ...prev.cliente,
+                filiales: [
+                    ...prev.cliente.filiales,
+                    {
+                        nombreCliente: "",
+                        rutCliente: "",
+                        sedes: [
+                            {
+                                nombre_sede: "",
+                                direccion: "",
+                                personalSolicitado: "",
+                                tipoSede: "PRINCIPAL",
+                                contactos: [
+                                    {
+                                        nombreContacto: "",
+                                        contacto_rut: "",
+                                        email: "",
+                                        phone: "",
+                                        tipoContacto: "PRINCIPAL"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }));
+    };
 
     const formatRut = (value) => {
 
@@ -157,19 +198,7 @@ const RegisterClienteForm = () => {
 
         return `${body}-${dv}`
     }
-    const handleChange = (field, value) => {
 
-
-        setFormData((prev) => ({
-            ...prev,
-            cliente: {
-                ...prev.cliente,
-
-                [field]: value
-
-            }
-        }));
-    };
 
     const handleSubmit = async (e) => {
         try {
@@ -184,6 +213,7 @@ const RegisterClienteForm = () => {
             }
         } catch (error) {
             console.error("Error al registrar un usuario: ", error);
+            getSectionFromErrors(error)
             showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
         }
     }
@@ -205,9 +235,17 @@ const RegisterClienteForm = () => {
                         setOpenContacto(null)
                     }}
                     content={
-                        <div className="form-grid">
+                        <div className="">
+                            <DataClienteOFilial data={formData.cliente} sedes={formData.sedes}
+                                dataPath={["cliente"]}
+                                sedesPath={["sedes"]}
+                                setFormData={setFormData}
+                                formatRut={formatRut}
 
-                            <div className="form-group">
+
+                            />
+                            {/*
+                            <div className="form-grid form-group">
 
                                 <label className="label">
                                     Nombre de Fantasía (Empresa)
@@ -231,77 +269,78 @@ const RegisterClienteForm = () => {
                                     className='input'
                                     required />
                             </div>
+                            <br />
+                             SEDES
+                            <Acordeon title="Sede" isOpen={openSedes === "sedes"}
+                                required={true}
+                                onToggle={() => {
+                                    setOpenSedes(openSedes === "sedes" ? null : "sedes")
+                                    setOpenContacto(null)
+                                }}
+                                content={
+                                    <div>
+                                        {formData.sedes.map((sede, index) => (
 
+                                            <SedeRow sede={sede}
+                                                key={index}
+                                                index={index}
+                                                largo={formData.sedes.length}
+                                                setFormData={setFormData}
+                                                formatRut={formatRut}
+                                                removeSede={(i) => {
 
+                                                    setFormData(prev => {
+                                                        const copia = structuredClone(prev)
+                                                        copia.sedes.splice(i, 1)
+                                                        return copia
+                                                    })
+                                                }}
+                                            />
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+
+                                                setFormData(prev => ({
+
+                                                    ...prev,
+
+                                                    sedes: [
+
+                                                        ...prev.sedes,
+
+                                                        {
+                                                            nombre_sede: '',
+                                                            direccion: '',
+                                                            personalSolicitado: '',
+                                                            tipoSede: '',
+                                                            contactos: [{
+                                                                nombreContacto: '',
+                                                                contacto_rut: '',
+                                                                email: '',
+                                                                phone: '',
+                                                                tipoContacto: '',
+                                                            }]
+                                                        }
+                                                    ]
+
+                                                }))
+                                            }}
+                                            className="add-button">
+
+                                            <Plus size={16} />
+
+                                            Agregar Sede
+                                        </button>
+                                    </div>
+                                }
+
+                            />
+                              */}
                         </div>
                     } />
 
                 {/* SEDES */}
-                <Acordeon title="Sede" isOpen={openSection === "sedes"}
-                    required={true}
-                    onToggle={() => {
-                        setOpenSection(openSection === "sedes" ? null : "sedes")
-                        setOpenContacto(null)
-                    }}
-                    content={
-                        <div>
-                            {formData.sedes.map((sede, index) => (
-
-                                <SedeRow sede={sede}
-                                    key={index}
-                                    index={index}
-                                    largo={formData.sedes.length}
-                                    setFormData={setFormData}
-                                    formatRut={formatRut}
-                                    removeSede={(i) => {
-
-                                        setFormData(prev => {
-                                            const copia = structuredClone(prev)
-                                            copia.sedes.splice(i, 1)
-                                            return copia
-                                        })
-                                    }}
-                                />
-                            ))}
-                            <button
-                                type="button"
-                                onClick={() => {
-
-                                    setFormData(prev => ({
-
-                                        ...prev,
-
-                                        sedes: [
-
-                                            ...prev.sedes,
-
-                                            {
-                                                nombre_sede: '',
-                                                direccion: '',
-                                                personalSolicitado: '',
-                                                tipoSede: '',
-                                                contactos: [{
-                                                    nombreContacto: '',
-                                                    contacto_rut: '',
-                                                    email: '',
-                                                    phone: '',
-                                                    tipoContacto: '',
-                                                }]
-                                            }
-                                        ]
-
-                                    }))
-                                }}
-                                className="add-button">
-
-                                <Plus size={16} />
-
-                                Agregar Sede
-                            </button>
-                        </div>
-                    }
-
-                />
                 {/*CONTRATO */}
                 <Acordeon title="Contrato"
                     isOpen={openSection === "contrato"}
@@ -399,6 +438,46 @@ const RegisterClienteForm = () => {
                                 <Plus size={16} />
 
                                 Agregar Anexo
+                            </button>
+                        </div>
+                    }
+                />
+                <Acordeon title="Filial(es)"
+                    isOpen={openSection === "filiales"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "filiales" ? null : "filiales")
+                        setOpenFilial(null)
+                    }}
+                    content={
+                        <div>
+                            {formData.cliente.filiales?.map((filial, index) => (
+                                <div>
+
+                                    <Acordeon title={`${index + 1}. ${filial?.nombreCliente || "Sin nombre"}`}
+                                        isOpen={openFilial === `${index + 1}`}
+                                        onToggle={() => setOpenFilial(openFilial === `${index + 1}` ? null : `${index + 1}`)}
+                                        content={
+
+                                            <DataClienteOFilial
+                                                data={filial}
+                                                sedes={filial.sedes}
+                                                dataPath={["cliente", "filiales", index]}
+                                                sedesPath={["cliente", "filiales", index, "sedes"]}
+                                                setFormData={setFormData}
+                                                formatRut={formatRut}
+                                            />
+                                        }
+                                    />
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addFilial}
+                                className="add-button">
+
+                                <Plus size={16} />
+
+                                Agregar Filial
                             </button>
                         </div>
                     }
