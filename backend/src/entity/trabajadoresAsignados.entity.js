@@ -49,27 +49,27 @@ const TrabajadoresAsignadosSchema = new EntitySchema({
             type: "many-to-one",
             target: "Trabajador",
             joinColumn: { name: "trabajador_id" },
-            cascade: true,
+            onDelete: "CASCADE",
             required: true
         },
         usuario: {
             type: "many-to-one",
             target: "User",
             joinColumn: { name: "usuario_id" },
-            cascade: true,
+            onDelete: "CASCADE",
         },
         cliente: {
             type: "many-to-one",
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
-            cascade: true,
+            onDelete: "CASCADE",
             required: true
         },
         sede: {
             type: "many-to-one",
             target: "Sede",
             joinColumn: { name: "sede_id" },
-            cascade: true,
+            onDelete: "CASCADE",
             required: true
         }
     }

@@ -60,7 +60,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
 
                 for (const sede of sedes) {
                     const sedeFound = await sedeRepository.findOne({ where: sede })
-                    if (errSede) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
+                    if (!sedeFound || sedeFound.length < 1) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
                     sedesEncontradas.push({ sede_id: sedeFound.sede_id })
                 }
 

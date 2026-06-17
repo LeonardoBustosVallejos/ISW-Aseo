@@ -7,167 +7,198 @@ import {
 
 import Contactos from "./ContactosForm"
 import "@styles/components/SedesForm.css"
+import Acordeon from "../Acordeon"
 
-export default function SedeRow({ sede, setFormData, removeSede, index, largo, formatRut }) {
+export default function SedeRow({ sede, setFormData, path, removeSede, index, largo, formatRut }) {
 
     const [open, setOpen] = useState(false)
+    const [openContactos, setOpenContactos] = useState(null)
+    const [openSede, setOpenSede] = useState(index)
+
+    const getReference = (obj) => {
+        let ref = obj
+
+        for (const key of path) {
+            ref = ref[key]
+        }
+
+        return ref
+    }
 
     const handleChange = (field, value) => {
-
         setFormData(prev => {
-
             const copia = structuredClone(prev)
 
-            copia.sedes[index][field] = value
+            const sedeRef = getReference(copia)
+
+            sedeRef[field] = value
 
             return copia
         })
     }
 
     return (
+        <div className="multiple-acordeon">
+            <Acordeon title={`${index + 1}. Sede ${sede.direccion || 'Sin Dirección'}`}
+                isOpen={openSede === index}
+                onToggle={() => setOpenSede(openSede === index ? null : index)}
+                content={
+                    <div >
 
-        <div className=" card">
+                        {/* HEADER */}
 
-            {/* HEADER */}
-
-            <div className="sede-header">
+                        <div className="sede-header">
 
 
 
-                {/* direccion */}
+                            {/* direccion */}
 
-                <div className="form-group sede-direccion">
+                            <div className="form-group sede-direccion">
 
-                    <label className="label">
-                        Dirección
-                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                    </label>
+                                <label className="label">
+                                    Dirección
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
 
-                    <input type="text"
-                        value={sede?.direccion}
-                        onChange={(e) => handleChange("direccion", e.target.value)}
-                        className="input"
-                    />
+                                <input type="text"
+                                    value={sede?.direccion}
+                                    onChange={(e) => handleChange("direccion", e.target.value)}
+                                    className="input"
+                                />
 
-                </div>
+                            </div>
 
-                {/* tipo */}
+                            {/* tipo */}
 
-                <div className="form-group">
+                            <div className="form-group">
 
-                    <label className="label">
-                        Tipo
-                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                    </label>
+                                <label className="label">
+                                    Tipo
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
 
-                    <select
-                        value={sede?.tipoSede}
-                        onChange={(e) => handleChange("tipoSede", e.target.value)}
-                        className="input"
-                    >
-                        <option value="">Seleccionar</option>
-                        <option value="PRINCIPAL">PRINCIPAL</option>
-                        <option value="SUCURSAL">SUCURSAL</option>
-                        <option value="FILIAL">FILIAL</option>
+                                <select
+                                    value={sede?.tipoSede}
+                                    onChange={(e) => handleChange("tipoSede", e.target.value)}
+                                    className="input"
+                                >
+                                    <option value="">Seleccionar</option>
+                                    <option value="PRINCIPAL">PRINCIPAL</option>
+                                    <option value="SUCURSAL">SUCURSAL</option>
+                                    <option value="FILIAL">FILIAL</option>
 
-                    </select>
+                                </select>
 
-                </div>
+                            </div>
 
-                {/* personal */}
+                            {/* personal */}
 
-                <div className="form-group">
+                            <div className="form-group">
 
-                    <label className="label">
-                        Personal
-                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                    </label>
+                                <label className="label">
+                                    Personal
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
 
-                    <input
-                        type="number"
-                        min={0}
-                        value={sede?.personalSolicitado}
-                        onChange={(e) => handleChange("personalSolicitado", e.target.value)}
-                        className="input"
-                    />
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={sede?.personalSolicitado}
+                                    onChange={(e) => handleChange("personalSolicitado", e.target.value)}
+                                    className="input"
+                                />
 
-                </div>
+                            </div>
 
-                {/* botones */}
+                            {/* botones */}
 
-                <div className="action-buttons">
+                            <div className="action-buttons">
 
-                    {/* abrir */}
+                                {/* abrir */}
 
-                    <button
-                        type="button"
-                        onClick={() => setOpen(!open)}
-                        className="expand-button"
-                    >
+                                <button
+                                    type="button"
+                                    onClick={() => setOpen(!open)}
+                                    className="expand-button"
+                                >
 
-                        <ChevronDown color="white"
-                            className={`${open ? "rotate" : ""}`}
+                                    <ChevronDown color="white"
+                                        className={`${open ? "rotate" : ""}`}
+                                    />
+
+                                </button>
+
+
+                            </div>
+                        </div>
+
+                        {/* BODY */}
+
+                        {open && (
+
+                            <div
+                                className="card-body"
+                            >
+                                {/* nombre */}
+                                <div className="sede-body-grid">
+
+                                    <div className="form-group">
+
+                                        <label className="label">Nombre Sede</label>
+
+                                        <input type="text"
+                                            value={sede?.nombre_sede}
+                                            onChange={(e) => handleChange("nombre_sede", e.target.value)}
+                                            className="input"
+                                        />
+
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="label">
+                                            RUT Secundario
+                                            <span className="text-red-500 ml-1"></span>
+                                        </label>
+                                        <input type="text" name="rutCliente" value={sede.rut_secundario}
+                                            onChange={(e) => handleChange("rut_secundario", formatRut(e.target.value))} className="input" placeholder="12345678-9" />
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        )}
+
+                        <Acordeon
+                            title={`Contactos de Sede ${sede?.nombre_sede || index + 1} (${sede.contactos.length})`} level={3}
+                            required={true}
+                            isOpen={openContactos === index}
+                            onToggle={() => setOpenContactos(openContactos === index ? null : index)}
+                            content={
+
+                                <Contactos
+                                    contactos={sede.contactos}
+                                    setFormData={setFormData}
+                                    path={[...path, "contactos"]}
+                                    formatRut={formatRut}
+                                />
+                            }
                         />
 
-                    </button>
-
-                    {/* eliminar */}
-
-                    <button
-                        type="button"
-                        onClick={() => removeSede(index)}
-                        disabled={largo === 1}
-                        className={`remove-button ${largo === 1 ? "oculto" : ""}`}
-
-                    >
-
-                        <Trash2 size={18} />
-                    </button>
-                </div>
-            </div>
-
-            {/* BODY */}
-
-            {open && (
-
-                <div
-                    className="card-body"
-                >
-                    {/* nombre */}
-                    <div className="sede-body-grid">
-
-                        <div className="form-group">
-
-                            <label className="label">Nombre Sede</label>
-
-                            <input type="text"
-                                value={sede?.nombre_sede}
-                                onChange={(e) => handleChange("nombre_sede", e.target.value)}
-                                className="input"
-                            />
-
-                        </div>
-                        <div className="form-group">
-                            <label className="label">
-                                RUT Secundario
-                                <span className="text-red-500 ml-1"></span>
-                            </label>
-                            <input type="text" name="rutCliente" value={sede.rut_secundario}
-                                onChange={(e) => handleChange("rut_secundario", formatRut(e.target.value))} className="input" placeholder="12345678-9" />
-                        </div>
                     </div>
-                    <Contactos
-                        contactos={sede.contactos}
-                        setFormData={setFormData}
-                        path={`sedes.${index}.contactos`}
-                        formatRut={formatRut}
-                    />
+                }
+            />
+            {/* eliminar */}
 
-                </div>
-            )}
+            <button
+                type="button"
+                onClick={() => removeSede(index)}
+                disabled={largo === 1}
+                className={`remove-button ${largo === 1 ? "oculto" : ""}`}
 
+            >
 
-
+                <Trash2 size={18} />
+            </button>
         </div>
+
     )
 }

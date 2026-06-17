@@ -40,7 +40,7 @@ export const contactoValidation = Joi.object({
             "string.empty": "El correo electrónico no puede estar vacío.",
             "any.required": "El correo electrónico es obligatorio.",
             "string.base": "El correo electrónico debe ser de tipo texto.",
-            "string.email": "El correo electrónico debe finalizar en @gmail.com.",
+            "string.email": "El correo electrónico no es válido",
             "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
             "string.max": "El correo electrónico debe tener como máximo 35 caracteres.",
         })
@@ -49,6 +49,7 @@ export const contactoValidation = Joi.object({
         .min(8)
         .max(15)
         .pattern(/^(?:\+56|56)?\s?(?:9\d{8}|[2-7]\d{8})$/)
+        .allow(null, '')
         .default(null)
         .messages({
             "string.base": "El número telefónico debe contener entre 11 y 15 dígitos,opcionalmente con +.",
@@ -68,9 +69,7 @@ export const sedeValidation = Joi.object({
     nombre_sede: Joi.string()
         .min(3)
         .max(100)
-        .required()
         .messages({
-            "string.empty": "El nombre de la sede no puede estar vacío.",
             "any.required": "El nombre de la sede es obligatorio.",
             "string.min": "El nombre de la sede debe tener al menos 3 caracteres.",
             "string.max": "El nombre de la sede debe tener como máximo 100 caracteres.",

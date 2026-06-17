@@ -1,5 +1,6 @@
 .anexo-card {
     width: 100%;
+    max-width: none;
     background: var(--ubb-fondo);
     border: 1px solid #e5e7eb;
     border-radius: 1rem;

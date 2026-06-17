@@ -161,18 +161,6 @@ export async function createDocumentoService(data, IDs, manager = null) {
                 anexo = await anexoRepository.findOne({ where: { id_anexo: anexo_id } })
             }
             if (!contratoComercial && !contratoLaboral && !anexo) throw [null, createErrorMessage("documento", "No existe informacion para el archivo")]
-            console.log({
-                nombreOriginal: file.originalname,
-                nombreArchivo: nombrePersonalizado || file.filename,
-                ruta: file.path,
-                mimeType: file.mimetype,
-                extension: path.extname(file.originalname),
-                peso: file.size,
-                tipoDocumento: tipoDocumento,
-                contratoComercial: { id_contrato_comercial: id_contrato_comercial || null },
-                contratoLaboral: { id_contrato_laboral: contrato_laboral_id || null },
-                anexo: { id_anexo: anexo_id || null }
-            });
 
             const documento = documentoRepository.create({
                 nombreOriginal: file.originalname,
@@ -188,7 +176,6 @@ export async function createDocumentoService(data, IDs, manager = null) {
             })
 
 
-            console.log(documento);
             await documentoRepository.save(documento)
 
 

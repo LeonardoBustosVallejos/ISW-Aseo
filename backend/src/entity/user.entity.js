@@ -98,7 +98,7 @@ const UserSchema = new EntitySchema({
       type: "many-to-one",
       joinColumn: { name: "rol_id" },
       nullable: false,
-      cascade: true,
+      onDelete: "CASCADE",
     },
     //varios usuarios pueden trabajar para la misma sede o ninguno
     asignacionSede: {

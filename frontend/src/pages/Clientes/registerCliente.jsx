@@ -7,7 +7,7 @@ import DocumentoRow from '@components/Contrato/Documentos';
 import SedeRow from '@components/Clientes/SedesForm';
 import ContratoRow from '@components/Contrato/ContratoComercialForm';
 import AnexoRow from '@components/Contrato/AnexoComercial';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import "@styles/registerCliente.css"
 import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
 
@@ -167,6 +167,21 @@ const RegisterClienteForm = () => {
             }
         }));
     };
+    const removeFilial = (index) => {
+
+        setFormData(prev => {
+
+            const copia = structuredClone(prev);
+
+            copia.cliente.filiales.splice(index, 1);
+
+            return copia;
+        });
+
+        if (openFilial === `${index + 1}`) {
+            setOpenFilial(null);
+        }
+    };
 
     const formatRut = (value) => {
 
@@ -228,7 +243,7 @@ const RegisterClienteForm = () => {
             <form onSubmit={handleSubmit} className="form-card form-content">
 
                 {/* SECCIÓN CLIENTE */}
-                <Acordeon title={"Datos del Cliente"} isOpen={openSection === "cliente"}
+                <Acordeon title={"Datos del Cliente"} level={0} isOpen={openSection === "cliente"}
                     required={true}
                     onToggle={() => {
                         setOpenSection(openSection === "cliente" ? null : "cliente")
@@ -236,7 +251,9 @@ const RegisterClienteForm = () => {
                     }}
                     content={
                         <div className="">
-                            <DataClienteOFilial data={formData.cliente} sedes={formData.sedes}
+                            <DataClienteOFilial
+                                data={formData.cliente}
+                                sedes={formData.sedes}
                                 dataPath={["cliente"]}
                                 sedesPath={["sedes"]}
                                 setFormData={setFormData}
@@ -340,9 +357,8 @@ const RegisterClienteForm = () => {
                         </div>
                     } />
 
-                {/* SEDES */}
                 {/*CONTRATO */}
-                <Acordeon title="Contrato"
+                <Acordeon title="Contrato" level={0}
                     isOpen={openSection === "contrato"}
                     onToggle={() => {
                         setOpenSection(openSection === "contrato" ? null : "contrato")
@@ -360,7 +376,7 @@ const RegisterClienteForm = () => {
                     }
                 />
                 {/*ANEXOS */}
-                <Acordeon title="Anexo(s)"
+                <Acordeon title={`Anexo(s) (${formData.anexos.length})`} level={0}
                     isOpen={openSection === "anexo"}
                     onToggle={() => {
                         setOpenSection(openSection === "anexo" ? null : "anexo")
@@ -442,18 +458,19 @@ const RegisterClienteForm = () => {
                         </div>
                     }
                 />
-                <Acordeon title="Filial(es)"
+                {/*FILIALES */}
+                <Acordeon title={`Filial(es) (${formData.cliente.filiales.length})`} level={1}
                     isOpen={openSection === "filiales"}
                     onToggle={() => {
                         setOpenSection(openSection === "filiales" ? null : "filiales")
                         setOpenFilial(null)
                     }}
                     content={
-                        <div>
-                            {formData.cliente.filiales?.map((filial, index) => (
-                                <div>
+                        <div >
+                            {formData.cliente.filiales.map((filial, index) => (
+                                <div className='multiple-acordeon'>
 
-                                    <Acordeon title={`${index + 1}. ${filial?.nombreCliente || "Sin nombre"}`}
+                                    <Acordeon title={`${index + 1}. ${filial?.nombreCliente || "Sin nombre"}`} level={1}
                                         isOpen={openFilial === `${index + 1}`}
                                         onToggle={() => setOpenFilial(openFilial === `${index + 1}` ? null : `${index + 1}`)}
                                         content={
@@ -468,6 +485,12 @@ const RegisterClienteForm = () => {
                                             />
                                         }
                                     />
+
+                                    <button type="button"
+                                        onClick={() => removeFilial(index)}
+                                        className={`remove-button`}>
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
                             ))}
                             <button
@@ -490,9 +513,7 @@ const RegisterClienteForm = () => {
                 <hr />
                 <button type="submit">Registrar</button>
             </form>
-            <div className="">
 
-            </div >
         </div >
     );
 };

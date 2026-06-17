@@ -2,11 +2,12 @@ import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import Documentos from "./Documentos"
 import "@styles/components/ContratoComercialForm.css"
+import Acordeon from "../Acordeon"
 
 export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
-    const [open, setOpen] =
-        useState(false)
+    const [open, setOpen] = useState(false)
+    const [openDocumento, setOpenDocumento] = useState('')
 
     const handleChange = (
         field,
@@ -279,7 +280,18 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
 
                     </div>
 
-                    {/* documentos */}
+
+                </div>
+            )}
+            {/* documentos */}
+            <Acordeon
+                title={`Documentos del contrato (${documentos.length})`}
+                required={true}
+                isOpen={openDocumento === `contrato`}
+                onToggle={() =>
+                    setOpenDocumento(openDocumento === `contrato` ? null : `contrato`)
+                }
+                content={
 
                     <Documentos
                         documentos={documentos}
@@ -287,9 +299,8 @@ export default function ContratoRow({ contrato, documentos, setFormData, }) {
                         path="metadataDocumentos"
                         tipo="CONTRATO"
                     />
-
-                </div>
-            )}
+                }
+            />
 
         </div>
     )

@@ -90,7 +90,7 @@ const ContratoAnexoSchema = new EntitySchema({
             type: "many-to-one",
             joinColumn: { name: "contrato_comercial_id" },
             nullable: false,
-            cascade: true,
+            onDelete: "CASCADE",
         },
 
         documentos: {
@@ -103,7 +103,7 @@ const ContratoAnexoSchema = new EntitySchema({
             type: "many-to-many",
             joinTable: { name: "rel_sede_anexo" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
             nullable: true,
-            cascade: true,
+            onDelete: "CASCADE",
         }
     }
 })

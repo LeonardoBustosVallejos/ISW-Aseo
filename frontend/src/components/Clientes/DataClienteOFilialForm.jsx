@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import Acordeon from "@components/acordeon";
 import SedeRow from "./SedesForm";
 import { useState } from "react";
+import "@styles/registerCliente.css"
 
 export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, setFormData, formatRut }) {
     const [openContacto, setOpenContacto] = useState(null);
@@ -99,7 +100,7 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
                     required />
             </div>
             <br />
-            <Acordeon title="Sede" isOpen={openSedes === "sedes"}
+            <Acordeon title={`Sedes (${sedes.length})`} level={2} isOpen={openSedes === "sedes"}
                 required={true}
                 onToggle={() => {
                     setOpenSedes(openSedes === "sedes" ? null : "sedes")
@@ -112,6 +113,7 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
                                 <SedeRow sede={sede}
                                     key={`${index} de ${data.nombreCliente}`}
                                     index={index}
+                                    path={[...sedesPath, index]}
                                     largo={sedes.length}
                                     setFormData={setFormData}
                                     formatRut={formatRut}

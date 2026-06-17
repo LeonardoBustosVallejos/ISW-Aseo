@@ -1375,15 +1375,21 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
 
             const [clientePadre, errorPadre] = await createCliente(cliente, null, transactionManager)
             if (errorPadre) throw [null, errorPadre]
-
+            console.log('=>Cliente creado');
 
             const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
             if (errSedes) throw [null, errSedes]
+            console.log("=>Sedes Creadas");
 
+            const sedes_ids = []
+            for (const sede of sedesCreadas) {
+                const { sede_id, ...sedeSeparada } = sede
+                sedes_ids.push(sede_id)
+            }
 
-            const [contratoCreado, errContrato] = await createContratoComercialService({ ...contrato, sedes: sedesCreadas }, clientePadre.cliente_id, transactionManager)
+            const [contratoCreado, errContrato] = await createContratoComercialService({ ...contrato, sedes: sedes_ids }, clientePadre.cliente_id, transactionManager)
             if (errContrato) throw [null, errContrato]
-
+            console.log("=>Contrato Creado");
             let documentosContratoCreados = []
 
 
@@ -1393,6 +1399,7 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                 if (errDocs) throw [null, errDocs]
 
                 documentosContratoCreados = docsContrato
+                console.log("=>Documentos del contrato Creados");
             }
 
 
@@ -1416,6 +1423,7 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
 
                     anexosCreados.push({ ...anexoCreado, documentos: documentosAnexo })
                 }
+                console.log("=>Anexos Creados");
             }
 
             let filialesCreadas = []
@@ -1425,6 +1433,7 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                     if (errCliente) throw [null, errCliente]
                     filialesCreadas.push(clienteJerarquico)
                 }
+                console.log("=>Filiales Creadas");
             }
 
             return [{

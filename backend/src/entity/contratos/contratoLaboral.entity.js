@@ -70,7 +70,7 @@ const contratoLaboralSchema = new EntitySchema({
             target: "User",
             type: "many-to-one",
             joinColumn: { name: "id" },
-            cascade: true,
+            onDelete: "CASCADE",
             nullable: false,
         },
     }

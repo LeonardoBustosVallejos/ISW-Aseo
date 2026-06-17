@@ -17,15 +17,10 @@
 
 .contacto-card {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(11, 1fr);
     gap: 1rem;
 
     padding: 1rem;
-
-    background: var(--ubb-fondo);
-
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
 }
 
 .contacto-field {
@@ -34,12 +29,6 @@
     gap: 0.35rem;
 }
 
-.contacto-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    align-self: auto;
-}
 
 /* Desktop */
 
@@ -63,9 +52,6 @@
     grid-column: span 2;
 }
 
-.contacto-actions {
-    grid-column: span 1;
-}
 
 /* Responsive */
 
