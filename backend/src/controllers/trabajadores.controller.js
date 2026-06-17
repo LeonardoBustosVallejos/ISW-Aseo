@@ -51,61 +51,24 @@ export async function getTrabajadorController(req, res) {
 
 export async function createTrabajadoresController(req, res) {
   try {
-    const {
-      nombreCompleto,
-      nacimiento,
-      rut,
-      email,
-      grupo_id,
-      rol,
-      sexo,
-      competencias,
-      despedido,
-    } = req.body;
+    const { body } = req;
 
-  const files = req.files || {};
-  const foto = files.foto?.[0];
-  const cv = files.cv?.[0];
-  const antecedentes = files.antecedentes?.[0];
+    const files = req.files || {};
+      if (files.foto && files.foto[0]) {
+        body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
+      }
+      if (files.cv && files.cv[0]) {
+        body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
+      }
+      if (files.antecedentes && files.antecedentes[0]) {
+        body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
+      }
 
-  const payload = {
-    nombreCompleto,
-    nacimiento,
-    rut,
-    email,
-    grupo_id,
-    rol,
-    sexo,
-    competencias,
-    despedido,
+  
+    if (body.grupo_id) body.grupo_id = parseInt(body.grupo_id, 10);
+    if (body.despedido) body.despedido = body.despedido === "true" || body.despedido === true;
 
-    foto: foto
-    ? {
-      original: foto.originalname,
-      archivo: foto.filename,
-      ruta: foto.path,
-      mime: foto.mimetype,
-      peso: foto.size,
-    } : null,
-    cv: cv
-    ? {
-      original: cv.originalname,
-      archivo: cv.filename,
-      ruta: cv.path,
-      mime: cv.mimetype,
-      peso: cv.size,
-    } : null,
-    antecedentes: antecedentes
-    ? {
-      original: antecedentes.originalname,
-      archivo: antecedentes.filename,
-      ruta: antecedentes.path,
-      mime: antecedentes.mimetype,
-      peso: antecedentes.size,
-    } : null
-  };
-
-    const [created, err] = await createTrabajadoresService(payload);
+    const [created, err] = await createTrabajadoresService(body);
     if (err) return handleErrorServer(res, 500, err);
 
     return handleSuccess(res, 201, "Trabajador creado correctamente", created);

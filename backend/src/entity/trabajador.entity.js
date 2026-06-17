@@ -51,79 +51,19 @@ const TrabajadorSchema = new EntitySchema({
       length: 255,
       nullable: true,
     },
-    // Metadatos de foto
-    fotoNombreOriginal: {
+    foto_url: {
       type: "varchar",
       length: 255,
       nullable: true
     },
-    fotoNombreArchivo: {
+    cv_url: {
       type: "varchar",
       length: 255,
       nullable: true
     },
-    fotoRuta: {
+    antecedentes_url: {
       type: "varchar",
       length: 255,
-      nullable: true
-    },  
-    fotoMimeType: {
-      type: "varchar", 
-      length: 100, 
-      nullable: true,
-    },
-    fotoPeso: {
-      type: "bigint",
-      nullable: true
-    },
-    // Metadatos de CV
-    cvNombreOriginal: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvNombreArchivo: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvRuta: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvMimeType: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvPeso: {
-      type: "bigint",
-      nullable: true
-    },
-    // Metadatos de antecedentes
-        antecedentesNombreOriginal: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesNombreArchivo: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesRuta: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesMimeType: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesPeso: {
-      type: "bigint",
       nullable: true
     },
     despedido: {
@@ -152,13 +92,13 @@ const TrabajadorSchema = new EntitySchema({
       grupoAsignado: {
         type: "many-to-one",
         target: "TrabajadoresGrupos",
-        JoinColumn: { name: "grupo_id" },
+        joinColumn: { name: "grupo_id" },
         nullable: true,
         onDelete: "SET NULL",
         inverseSide: "miembros"
       },
       supervisorDeGrupo: {
-        type: "one-to-any",
+        type: "one-to-many",
         target: "TrabajadoresGrupos",
         inverseSide: "supervisorAsignado"
       }

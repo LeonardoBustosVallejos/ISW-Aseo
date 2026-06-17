@@ -1,0 +1,206 @@
+/* ==========================================================================
+   Contenedor Principal y Títulos
+   ========================================================================== */
+.contenido-asignacion {
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #333333;
+}
+
+.contenido-asignacion h2 {
+  font-size: 1.8rem;
+  margin-bottom: 24px;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+/* ==========================================================================
+   Layout de Dos Columnas (Estructura Base)
+   ========================================================================== */
+.columnas-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Columna Izquierda: Lista de Trabajadores */
+.columna-lista-trabajadores {
+  flex: 1; /* Ocupa el 50% del ancho */
+  max-height: 75vh; /* Evita que crezca infinitamente hacia abajo */
+  overflow-y: auto;  /* Si hay demasiados trabajadores, añade scroll interno */
+  padding-right: 8px;
+}
+
+/* Columna Derecha: Ficha de Detalle */
+.columna-detalle {
+  flex: 1; /* Ocupa el otro 50% del ancho */
+  position: sticky;
+  top: 20px; /* Se queda fijo arriba si haces scroll en la lista */
+}
+
+/* ==========================================================================
+   Lista y Tarjetas de Trabajadores (Izquierda)
+   ========================================================================== */
+.lista-trabajadores {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tarjeta-trabajador {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.tarjeta-trabajador:hover {
+  border-color: #3b82f6;
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+/* Estilo dinámico cuando la tarjeta está seleccionada mediante el clic */
+.tarjeta-trabajador.seleccionado {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb, 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+}
+
+.tarjeta-trabajador p {
+  margin: 4px 0;
+  font-size: 0.95rem;
+}
+
+/* Resaltamos el nombre del trabajador */
+.tarjeta-trabajador p:first-child {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+/* El rol y rut con un tono más suave */
+.tarjeta-trabajador p:nth-child(2),
+.tarjeta-trabajador p:nth-child(3) {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   Ficha de Detalle e Inputs (Derecha)
+   ========================================================================== */
+.ficha-trabajador {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.ficha-trabajador p {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.ficha-trabajador p strong {
+  color: #0f172a;
+}
+
+/* Campos del Formulario (Inputs y Textareas) */
+.campo-editable {
+  margin-top: 18px;
+}
+
+.campo-editable label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.campo-editable input[type="text"],
+.campo-editable textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #334155;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.campo-editable input[type="text"]:focus,
+.campo-editable textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.campo-editable textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+/* Box del Historial de Desvinculaciones (TypeORM Relation) */
+.historial-box {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.historial-box h4 {
+  margin: 0 0 12px 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.historial-box ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.historial-box li {
+  font-size: 0.9rem;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   Estados Informativos (Carga, Errores, Mensaje Inicial)
+   ========================================================================== */
+.sin-seleccion {
+  text-align: center;
+  color: #94a3b8;
+  font-style: italic;
+  padding: 40px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  margin: 0;
+}
+
+.error-msg {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}

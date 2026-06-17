@@ -262,7 +262,10 @@ export async function createTrabajadoresService(trabajadoresData) {
             rol,
             sexo,
             competencias,
-            despedido } = trabajadoresData;
+            despedido,
+            foto_url,
+            cv_url,
+            antecedentes_url } = trabajadoresData;
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
@@ -286,6 +289,9 @@ export async function createTrabajadoresService(trabajadoresData) {
             sexo,
             competencias,
             despedido: despedido ?? false,
+            foto_url: foto_url ?? null,
+            cv_url: cv_url || null,
+            antecedentes_url: antecedentes_url || null
         });
         
         if (grupo_id) {
@@ -297,29 +303,6 @@ export async function createTrabajadoresService(trabajadoresData) {
             }
             newTrabajador.grupoAsignado = grupoObj;
         }
-
-        if (trabajadoresData.foto) {
-        newTrabajador.fotoNombreOriginal = trabajadoresData.foto.original;
-        newTrabajador.fotoNombreArchivo = trabajadoresData.foto.archivo;
-        newTrabajador.fotoRuta = trabajadoresData.foto.ruta;
-        newTrabajador.fotoMimeType = trabajadoresData.foto.mime;
-        newTrabajador.fotoPeso = trabajadoresData.foto.peso;
-        }
-        if (trabajadoresData.cv) {
-        newTrabajador.cvNombreOriginal = trabajadoresData.cv.original;
-        newTrabajador.cvNombreArchivo = trabajadoresData.cv.archivo;
-        newTrabajador.cvRuta = trabajadoresData.cv.ruta;
-        newTrabajador.cvMimeType = trabajadoresData.cv.mime;
-        newTrabajador.cvPeso = trabajadoresData.cv.peso;
-        }
-        if (trabajadoresData.antecedentes) {
-        newTrabajador.antecedentesNombreOriginal = trabajadoresData.antecedentes.original;
-        newTrabajador.antecedentesNombreArchivo = trabajadoresData.antecedentes.archivo;
-        newTrabajador.antecedentesRuta = trabajadoresData.antecedentes.ruta;
-        newTrabajador.antecedentesMimeType = trabajadoresData.antecedentes.mime;
-        newTrabajador.antecedentesPeso = trabajadoresData.antecedentes.peso;
-        }
-
 
         const trabajadorGuardado = await TrabajadoresRepository.save(newTrabajador);
         return [trabajadorGuardado, null];
