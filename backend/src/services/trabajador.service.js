@@ -1,5 +1,6 @@
 "use strict";
 import { Repository } from "typeorm";
+import Rut from "rutjs";
 import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
 import Contacto from "../entity/contacto.entity.js";
@@ -266,13 +267,20 @@ export async function createTrabajadoresService(trabajadoresData) {
             foto_url,
             cv_url,
             antecedentes_url } = trabajadoresData;
+
+        let rutConPuntos = rut;
+
+        if(rut) {
+            const rutObjt = new Rut(rut);
+            rutConPuntos = rutObjt.getNiceRut();
+        }
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
 
         //verificar que el rut no esté ya registrado
-        const existingRut = await TrabajadoresRepository.findOne({ where: { rut } })
-        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rut } })
+        const existingRut = await TrabajadoresRepository.findOne({ where: { rut: rutConPuntos } })
+        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rutConPuntos } })
         if (existingContacto || existingRut) return [null, "Rut ya registrado previamente"]
 
         //verificar que el correo electrónico no esté registrado
@@ -283,7 +291,7 @@ export async function createTrabajadoresService(trabajadoresData) {
         const newTrabajador = TrabajadoresRepository.create({
             nombreCompleto,
             nacimiento,
-            rut,
+            rut: rutConPuntos,
             email,
             rol,
             sexo,

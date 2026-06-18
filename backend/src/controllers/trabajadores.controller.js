@@ -1,4 +1,5 @@
 "use strict";
+import Rut  from "rutjs";
 import {
   handleErrorClient,
   handleErrorServer,
@@ -18,6 +19,10 @@ import {
   recontratarTrabajadorService,
   updateTrabajadorService,
 } from "../services/trabajador.service.js";
+import { 
+  formatDate,
+  formatNacimiento
+} from "../helpers/formatDate.helper.js"
 
 
 export async function getTrabajadoresController(req, res) {
@@ -42,7 +47,15 @@ export async function getTrabajadorController(req, res) {
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
-    return (handleSuccess(res, 200, "Trabajador encontrado", trabajador));
+    const responseData = {
+      ...trabajador,
+      rut: trabajador.rut ? new Rut(trabajador.rut).getNiceRut(false) : trabajador.rut,
+      nacimiento: formatNacimiento(trabajador.nacimiento),
+      createdAt: formatDate(trabajador.createdAt),
+      updatedAt: formatDate(trabajador.updatedAt)
+    }
+
+    return (handleSuccess(res, 200, "Trabajador encontrado", responseData));
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);
@@ -64,14 +77,23 @@ export async function createTrabajadoresController(req, res) {
         body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
       }
 
-  
+    
     if (body.grupo_id) body.grupo_id = parseInt(body.grupo_id, 10);
     if (body.despedido) body.despedido = body.despedido === "true" || body.despedido === true;
 
     const [created, err] = await createTrabajadoresService(body);
     if (err) return handleErrorServer(res, 500, err);
 
-    return handleSuccess(res, 201, "Trabajador creado correctamente", created);
+
+    const responseData = {
+      ...created,
+      rut: created.rut ? new Rut(created.rut).getNiceRut(false) : created.rut,
+      nacimiento: formatNacimiento(created.nacimiento),
+      createdAt: formatDate(created.createdAt), 
+      updatedAt: formatDate(created.updatedAt)  
+    };
+
+    return handleSuccess(res, 201, "Trabajador creado correctamente", responseData);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }
