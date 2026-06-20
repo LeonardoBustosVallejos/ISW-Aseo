@@ -45,12 +45,12 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 255,
       nullable: true,
-    },*/
+    },
     rol: {
       type: "varchar",
       length: 255,
       nullable: false,
-    },
+    },*/
     sexo: {
       type: "varchar",
       length: 1,
@@ -111,6 +111,14 @@ const TrabajadorSchema = new EntitySchema({
         type: "one-to-many",
         target: "TrabajadoresGrupos",
         inverseSide: "supervisorAsignado"
+      },
+      rol: {
+        type: "many-to-one",
+        target: "Rol",
+        joinColumn: {
+          name: "rol_id"
+        },
+        eager: true //hace que al buscar un trabajador, traiga automáticamente su rol
       }
   },
 });

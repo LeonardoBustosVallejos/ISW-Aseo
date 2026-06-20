@@ -97,6 +97,14 @@ export async function createTrabajadoresController(req, res) {
       return handleErrorClient(res, 404, "Error al crear un trabajador", error.message);
     }
 
+    const edad = calcularEdad(body.nacimiento);
+    if (edad < 18) {
+      return handleErrorClient(res, 400, "Error de validación", `El trabajador debe ser mayor de edad (mínimo 18 años). Actualmente tiene ${edad} años.`);
+    }
+    if (edad > 65) {
+      return handleErrorClient(res, 400, "Error de validación", `El trabajador no puede ser jubilado (mayor de 65 años). Actualmente tiene ${edad} años.`);
+    }
+
     const [created, err] = await createTrabajadoresService(body);
     if (err) return handleErrorServer(res, 500, err);
 
@@ -106,6 +114,7 @@ export async function createTrabajadoresController(req, res) {
       edad: calcularEdad(created.nacimiento),
       rut: created.rut ? new Rut(created.rut).getNiceRut(false) : created.rut,
       nacimiento: formatNacimiento(created.nacimiento),
+      rol: created.rol ? created.rol.nombre : null, // Asi solo devuelve el nombre
       nombreCompleto: `${created.nombres} ${created.apellidoPaterno} ${created.apellidoMaterno}`,
       createdAt: formatDate(created.createdAt), 
       updatedAt: formatDate(created.updatedAt)  

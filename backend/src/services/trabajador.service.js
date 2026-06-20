@@ -280,7 +280,12 @@ export async function createTrabajadoresService(trabajadoresData) {
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
+        const rolRepository = AppDataSource.getRepository("Rol");
 
+        // verificar que el rol exista en la base de datos antes de seguir
+        const rolObj = await rolRepository.findOne({ where: { nombre: rol } });
+        if (!rolObj) return [null, "El rol especificado no es válido en el sistema."];
+        
         //verificar que el rut no esté ya registrado
         const existingRut = await TrabajadoresRepository.findOne({ where: { rut: rutSinPuntos } })
         const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rutSinPuntos } })
@@ -298,7 +303,7 @@ export async function createTrabajadoresService(trabajadoresData) {
             nacimiento,
             rut: rutSinPuntos,
             email,
-            rol,
+            rol: rolObj,
             sexo,
             competencias,
             nombreCompleto: `${trabajadoresData.nombres} ${trabajadoresData.apellidoPaterno} ${trabajadoresData.apellidoMaterno}`,

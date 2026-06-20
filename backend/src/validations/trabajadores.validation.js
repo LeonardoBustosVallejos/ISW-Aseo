@@ -1,8 +1,8 @@
 "use strict"
 import Joi from "joi";
 
-// RegEx que permite solo letras (con tildes, mayúsculas, Ñ) y espacios
 
+// RegEx que permite solo letras (con tildes, mayúsculas, Ñ) y espacios
 const nombresRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const rutRegex = /^[0-9]{7,8}-([0-9]|k|K)$/;
 const nacimientoRegex = /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;

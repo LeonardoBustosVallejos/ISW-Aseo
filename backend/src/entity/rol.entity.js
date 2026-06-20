@@ -33,6 +33,11 @@ const rolSchema = new EntitySchema({
             type: "one-to-many",
             target: "User",
             inverseSide: "rol"
+        },
+        trabajadorres: {
+            type: "one-to-many",
+            target: "Trabajador",
+            inverseSide: "rol"
         }
     }
 });
