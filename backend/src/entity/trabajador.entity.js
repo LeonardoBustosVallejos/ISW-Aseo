@@ -10,9 +10,19 @@ const TrabajadorSchema = new EntitySchema({
       primary: true,
       generated: true,
     },
-    nombreCompleto: {
+    nombres: {
       type: "varchar",
-      length: 225,
+      length: 100,
+      nullable: false,
+    },
+    apellidoPaterno: {
+      type: "varchar",
+      length: 60,
+      nullable: false,
+    },
+    apellidoMaterno: {
+      type: "varchar",
+      length: 60,
       nullable: false,
     },
     rut: {

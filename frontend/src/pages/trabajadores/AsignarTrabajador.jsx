@@ -28,7 +28,7 @@ export default function Trabajadores() {
               className={`tarjeta-trabajador ${selectedId === trabajadores.id ? "seleccionado" : ""}`}
               onClick={() => setSelectedId(trabajadores.id)}
               >
-                <p>{trabajadores.nombreCompleto}</p>
+                <p>{`${trabajadores.apellidoPaterno} ${trabajadores.apellidoMaterno} ${trabajadores.nombres} `}</p>
                 <p>{trabajadores.rut}</p>
                 <p>{trabajadores.rol}</p>
               </li>
@@ -77,6 +77,7 @@ export default function Trabajadores() {
             </div>
               <p>Nombre: {detalle.nombreCompleto}</p>
               <p>Rut: {detalle.rut}</p>
+              <p>Edad: {detalle.edad}</p>
               <p>Sexo: {detalle.sexo}</p>
               <p>Rol actual: {detalle.rol}</p>
               <p>Fecha de nacimiento: {detalle.nacimiento} </p>

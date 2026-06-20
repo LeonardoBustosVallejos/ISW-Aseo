@@ -23,6 +23,12 @@ import {
   formatDate,
   formatNacimiento
 } from "../helpers/formatDate.helper.js"
+import {
+  calcularEdad
+} from "../helpers/calcularEdad.js"
+import {
+ createTrabajadorBodyValidation
+} from "../validations/trabajadores.validation.js"
 
 
 export async function getTrabajadoresController(req, res) {
@@ -49,6 +55,8 @@ export async function getTrabajadorController(req, res) {
 
     const responseData = {
       ...trabajador,
+      nombreCompleto: `${trabajador.nombres} ${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno}`,
+      edad: calcularEdad(trabajador.nacimiento),
       rut: trabajador.rut ? new Rut(trabajador.rut).getNiceRut(false) : trabajador.rut,
       nacimiento: formatNacimiento(trabajador.nacimiento),
       createdAt: formatDate(trabajador.createdAt),
@@ -76,10 +84,18 @@ export async function createTrabajadoresController(req, res) {
       if (files.antecedentes && files.antecedentes[0]) {
         body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
       }
+      if (body.grupo_id) {
+        body.grupo_id = parseInt(body.grupo_id, 10);
+      }
+      if (body.despedido) {
+        body.despedido = body.despedido === "true" || body.despedido === true;
+      }
 
-    
-    if (body.grupo_id) body.grupo_id = parseInt(body.grupo_id, 10);
-    if (body.despedido) body.despedido = body.despedido === "true" || body.despedido === true;
+    const { error } = createTrabajadorBodyValidation.validate(body);
+
+    if(error) {
+      return handleErrorClient(res, 404, "Error al crear un trabajador", error.message);
+    }
 
     const [created, err] = await createTrabajadoresService(body);
     if (err) return handleErrorServer(res, 500, err);
@@ -87,8 +103,10 @@ export async function createTrabajadoresController(req, res) {
 
     const responseData = {
       ...created,
+      edad: calcularEdad(created.nacimiento),
       rut: created.rut ? new Rut(created.rut).getNiceRut(false) : created.rut,
       nacimiento: formatNacimiento(created.nacimiento),
+      nombreCompleto: `${created.nombres} ${created.apellidoPaterno} ${created.apellidoMaterno}`,
       createdAt: formatDate(created.createdAt), 
       updatedAt: formatDate(created.updatedAt)  
     };

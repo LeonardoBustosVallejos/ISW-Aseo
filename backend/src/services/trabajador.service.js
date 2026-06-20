@@ -255,7 +255,9 @@ export async function recontratarTrabajadorService(id, despedido = false) {
 
 export async function createTrabajadoresService(trabajadoresData) {
     try {
-        const { nombreCompleto,
+        const { nombres,
+            apellidoPaterno,
+            apellidoMaterno,
             nacimiento,
             rut,
             email,
@@ -263,24 +265,25 @@ export async function createTrabajadoresService(trabajadoresData) {
             rol,
             sexo,
             competencias,
+            nombreCompleto,
             despedido,
             foto_url,
             cv_url,
             antecedentes_url } = trabajadoresData;
 
-        let rutConPuntos = rut;
+        let rutSinPuntos = rut;
 
         if(rut) {
             const rutObjt = new Rut(rut);
-            rutConPuntos = rutObjt.getNiceRut();
+            rutSinPuntos = rutObjt.getNiceRut(false);
         }
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
 
         //verificar que el rut no esté ya registrado
-        const existingRut = await TrabajadoresRepository.findOne({ where: { rut: rutConPuntos } })
-        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rutConPuntos } })
+        const existingRut = await TrabajadoresRepository.findOne({ where: { rut: rutSinPuntos } })
+        const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rutSinPuntos } })
         if (existingContacto || existingRut) return [null, "Rut ya registrado previamente"]
 
         //verificar que el correo electrónico no esté registrado
@@ -289,13 +292,16 @@ export async function createTrabajadoresService(trabajadoresData) {
         if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
 
         const newTrabajador = TrabajadoresRepository.create({
-            nombreCompleto,
+            nombres,
+            apellidoPaterno,
+            apellidoMaterno,
             nacimiento,
-            rut: rutConPuntos,
+            rut: rutSinPuntos,
             email,
             rol,
             sexo,
             competencias,
+            nombreCompleto: `${trabajadoresData.nombres} ${trabajadoresData.apellidoPaterno} ${trabajadoresData.apellidoMaterno}`,
             despedido: despedido ?? false,
             foto_url: foto_url ?? null,
             cv_url: cv_url || null,
