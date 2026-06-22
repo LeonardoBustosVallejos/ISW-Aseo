@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
+import { LogOut, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
@@ -49,7 +50,7 @@ const Sidebar = () => {
             title: "Clientes",
             children: [
                 { title: "Lista de Clientes", path: "/clientes" },
-                { title: "Agregar", path: "/cliente/registrar" },
+                { title: "Agregar", path: "/clientes/registrar" },
             ],
 
         },
@@ -68,15 +69,18 @@ const Sidebar = () => {
         }
     };
     return (
-        <div className="sidebar">
-            <div></div>
-            <div style={{ textAlign: "center" }}>
-                escudo ubb
+        <div className={`sidebar ${isOpen ? 'open' : ''}`}>
+            <div className="sidebar-top" onClick={() => setIsOpen(!isOpen)}>
+                {isOpen ?
+                    <PanelLeftClose />
+                    :
+                    <PanelLeftOpen />
+                }
             </div>
-            <div style={{ textAlign: "center" }}>
-                logo ubb
+            <div className={`sidebar-header ${isOpen ? '' : 'oculto'}`}>
+                Sidebar
             </div>
-            <div>
+            <div className={`menudata ${isOpen ? '' : 'oculto'}`}>
                 {menuData.map((item, index) => (
                     <div key={index}>
                         {item.children ? (
@@ -115,12 +119,23 @@ const Sidebar = () => {
                     </div>
                 ))}
             </div>
-            <div>
+            <div className="bottom">
                 {/*
-                <div className="profile">Perfil</div>
-                */}
+                <div className="profile">
+                    {isOpen ?
+                        'Perfil'
+                        :
+                        < UserRound />}
+                </div>
+                    */}
 
-                <div className="logout" onClick={logoutSubmit}>Cerrar Sesión</div>
+                <div className="logout" onClick={logoutSubmit}>
+                    {isOpen ?
+                        'Cerrar Sesión'
+                        :
+                        <LogOut />}
+
+                </div>
             </div>
         </div>
     )
