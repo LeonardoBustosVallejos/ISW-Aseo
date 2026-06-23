@@ -1,6 +1,6 @@
 "use strict";
 import { Router } from "express";
-import { getResumenActivos, crearActivoFijo, devolverActivos, asignarActivos } from "../controllers/activoFijo.controller.js";
+import { getResumenActivos, crearActivoFijo, devolverActivos, asignarActivos, getActivosPorSede } from "../controllers/activoFijo.controller.js";
 import { confirmarRecepcion, getHistorial } from "../controllers/movimiento.controller.js";
 import { authenticateJwt } from "../middlewares/authentication.middleware.js";
 
@@ -12,6 +12,7 @@ router
     .post("/", authenticateJwt, crearActivoFijo)
     .patch("/asignar", authenticateJwt, asignarActivos)
     .patch("/devolver", authenticateJwt, devolverActivos)
+    .get("/sede/:sedeId", authenticateJwt, getActivosPorSede)
     .patch("/confirmar", authenticateJwt, confirmarRecepcion);
     
 

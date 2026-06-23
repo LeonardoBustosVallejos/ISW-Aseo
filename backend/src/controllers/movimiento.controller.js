@@ -24,19 +24,19 @@ export const getHistorial = async (req, res) => {
 
 export const confirmarRecepcion = async (req, res) => {
     try{
-        const {cliente_id, activos_ids, trabajador_id, nombre_trabajador} = req.body;
+        const {cliente_id, sede_id, activos_ids, trabajador_id} = req.body;
 
-        if(!cliente_id || !Array.isArray(activos_ids) || !trabajador_id || !nombre_trabajador){
-            return res.status(501).json({
+        if(!cliente_id || !sede_id || !Array.isArray(activos_ids) || !trabajador_id){
+            return res.status(400).json({
                 estado: "error",
                 mensaje: "Faltan datos"
             });
         }
 
-        const [activos_confirmados, error] = await confirmarRecepcionActivos(cliente_id, activos_ids, trabajador_id, nombre_trabajador);
+        const [activos_confirmados, error] = await confirmarRecepcionActivos(cliente_id, sede_id, activos_ids, trabajador_id);
 
         if(error){
-            return res.status(502).json({
+            return res.status(400).json({
                 estado: "error1",
                 mensaje: error
             });

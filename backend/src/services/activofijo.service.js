@@ -1,6 +1,7 @@
 import { ReturningStatementNotSupportedError } from "typeorm";
 import { AppDataSource } from "../config/configDb.js";
 import ActivoFijo from "../entity/activofijo.entity.js";
+import SedeSchema from "../entity/sede.entity.js";
 import { registrarMovimiento } from "./movimiento.service.js";
 import TrabajadorSchema from "../entity/trabajador.entity.js";
 import ClienteSchema from "../entity/cliente.entity.js";
@@ -45,6 +46,7 @@ export const registrarNuevoActivo = async (datos_activo) => {
             const nuevoActivo = activoFijoRepositorio.create({
                 ...datos_activo,
                 cliente_id: null,
+                sede_id: null,
                 codigo_inventario: codigo_generado
             }) 
 
@@ -74,6 +76,7 @@ export const resumenActivosAdmin = async () => {
             if (!cliente.sede || cliente.sede.length === 0) {
                 return [{
                     id: cliente.rutCliente,
+                    sede_id: null,
                     compania: cliente.nombreCliente || "Sin Nombre",
                     ubicacion: "Sin Dirección",
                     estadoSuministros: ['rojo', 'naranja', 'verde'], 
@@ -82,7 +85,8 @@ export const resumenActivosAdmin = async () => {
             }
             return cliente.sede.map(sede => {
                 return {
-                    id: cliente.rutCliente, 
+                    id: cliente.rutCliente,
+                    sede_id: sede.sede_id, 
                     compania: cliente.nombreCliente || "Sin Nombre",
                     ubicacion: sede.direccion || "Sin Dirección",
                     estadoSuministros: ['rojo', 'naranja', 'verde'], 
@@ -98,24 +102,62 @@ export const resumenActivosAdmin = async () => {
     }
 };
 
-export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_requerida) => {
+export const obtenerActivosPorSede = async (sede_id) => {
+    try {
+        const sedeRepository = AppDataSource.getRepository(SedeSchema);
+        const sedeEncontrada = await sedeRepository.findOne({
+            where: { sede_id: sede_id }
+        });
+
+        if (!sedeEncontrada) {
+            throw new Error("La sede solicitada no existe.");
+        }
+
+        const activoFijoRepository = AppDataSource.getRepository(ActivoFijo);
+        const activos = await activoFijoRepository.find({
+            where: { sede_id: sede_id }
+        });
+        return activos;
+
+    } catch (error) {
+        console.error("Error en obtenerActivosPorSede:", error);
+        throw error;
+    }
+};
+
+export const asignarActivosCliente = async(cliente_id, sede_id, nombre_maquina, cantidad_requerida) => {
     try{
+        const sedeRepository = AppDataSource.getRepository(SedeSchema);
+        const sede = await sedeRepository.findOne({ 
+            where: { 
+                sede_id: sede_id, 
+                cliente: { cliente_id: cliente_id } 
+            } 
+        });
+        
+        if(!sede){
+            return [null, "La sede especificada no existe o no pertenece a este cliente."];
+        }
+
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
         const activos_disponibles = await activoFijoRepositorio
             .createQueryBuilder("activo")
             .where("activo.nombre = :nombre", {nombre: nombre_maquina})
-            .andWhere("activo.cliente_id IS NULL")
+            .andWhere("activo.sede_id IS NULL")
+            .andWhere("activo.cliente_id IS NULL") 
             .limit(cantidad_requerida)
             .getMany();
 
         if(activos_disponibles.length < cantidad_requerida){
-            return[null,`Stock insuficiente en bodega. Hay ${activos_disponibles.length}-${nombre_maquina} en bodega`];
+            return[null,`Stock insuficiente en bodega. Hay ${activos_disponibles.length} ${nombre_maquina} en bodega`];
         }
         
         const activo_actualizados = [];
         const ids_asignados = [];
         for(const activo of activos_disponibles){
-            activo.cliente_id = cliente_id;
+            activo.sede_id = sede_id; 
+            activo.cliente_id = cliente_id; 
+            
             const resultado = await activoFijoRepositorio.save(activo);
             activo_actualizados.push(resultado);
             ids_asignados.push(activo.activo_id);
@@ -123,8 +165,9 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
 
         await registrarMovimiento(
             "ASIGNACION",
-            `Se asignaron ${activos_disponibles.length} ${nombre_maquina}(s) al cliente`,
-            cliente_id,
+            `Se asignaron ${activos_disponibles.length} ${nombre_maquina}(s) a la sede`,
+            cliente_id, 
+            sede_id, 
             ids_asignados
         );
 
@@ -135,23 +178,26 @@ export const asignarActivosCliente = async(cliente_id, nombre_maquina, cantidad_
     }
 };
 
-export const devolverActivosBodega = async(cliente_id, activos_ids) => {
+export const devolverActivosBodega = async(cliente_id, sede_id, activos_ids) => {
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
+        
         const los_activos = await activoFijoRepositorio
             .createQueryBuilder("activo")
             .where("activo.activo_id IN (:...ids)", {ids: activos_ids})
+            .andWhere("activo.sede_id = :sede_id", {sede_id: sede_id})
             .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
             .getMany();
 
         if (los_activos.length !== activos_ids.length){
-            return [null, `Error: no se logro devolver los activos.`];
+            return [null, `Error: no se logro devolver los activos. Verifique que los IDs pertenezcan a la sede y cliente correctos.`];
         }
 
         const activos_devueltos = [];
         const ids_devueltos = [];
         for (const activo of los_activos){
             activo.cliente_id = null;
+            activo.sede_id = null; 
             const resultado = await activoFijoRepositorio.save(activo);
             activos_devueltos.push(resultado);
             ids_devueltos.push(activo.activo_id);
@@ -159,8 +205,9 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
 
         await registrarMovimiento(
             "DEVOLUCION",
-            `Se retiraron ${los_activos.length} activo(s) del cliente y volvieron a bodega`,
+            `Se retiraron ${los_activos.length} activo(s) de la sede y volvieron a bodega`,
             cliente_id,
+            sede_id,
             ids_devueltos
         );
 
@@ -171,26 +218,29 @@ export const devolverActivosBodega = async(cliente_id, activos_ids) => {
     }
 };
 
-export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajador_id) => {
+export const confirmarRecepcionActivos = async(cliente_id, sede_id, activos_ids, trabajador_id) => {
     try{
         const trabajadorRepositorio = AppDataSource.getRepository(TrabajadorSchema)
         const trabajador = await trabajadorRepositorio.findOne({
             where: {id: trabajador_id}
         });
+        
         if(!trabajador){
             return[null,`Error: El trabajador con id ${trabajador_id} no existe en el sistema.`];
         }
-        const nombre_trabajador = trabajador.nombre;
+        const nombre_trabajador = trabajador.nombreCompleto;
 
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
+        
         const activos_enviados = await activoFijoRepositorio
             .createQueryBuilder("activo")
             .where("activo.activo_id IN (:...ids)", {ids: activos_ids})
+            .andWhere("activo.sede_id = :sede_id", {sede_id: sede_id})
             .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
             .getMany();
 
         if(activos_enviados.length !== activos_ids.length){
-            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero se enviaron ${activos_enviados.length} a este cliente.`];
+            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero no coinciden con la sede y cliente indicados.`];
         }
 
         const activos_confirmados = [];
@@ -203,8 +253,10 @@ export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajad
                 "RECEPCION",
                 `${nombre_trabajador} confirmó la recepción de ${activo.nombre} (${activo.codigo_inventario})`,
                 cliente_id,
-                activo.activo_id,
-                trabajador_id
+                sede_id,
+                [activo.activo_id], 
+                trabajador_id,
+                nombre_trabajador
             );
         }
 
@@ -213,4 +265,4 @@ export const confirmarRecepcionActivos = async(cliente_id, activos_ids, trabajad
         console.error("Error al confirmar recepcion: ", error);
         return[null, error.message]
     }
-}
+};
