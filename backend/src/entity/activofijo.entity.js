@@ -31,6 +31,10 @@ const ActivoFijo = new EntitySchema({
             type:"int",
             nullable:true,
         },
+        sede_id: {
+            type: "int",
+            nullable: true,
+        },
         fecha_ingreso:{
             type: "date",
             createDate:true,
@@ -47,7 +51,15 @@ const ActivoFijo = new EntitySchema({
             },
             onDelete: "SET NULL"
         },
-
+        sede: {
+            target: "Sede",
+            type: "many-to-one",
+            joinColumn: {
+                name: "sede_id",
+                referencedColumnName: "sede_id",
+            },
+            onDelete: "SET NULL"
+        },
         trabajador:{
             target: "Trabajador",
             type: "many-to-one",
