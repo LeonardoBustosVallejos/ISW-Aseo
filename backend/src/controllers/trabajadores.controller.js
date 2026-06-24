@@ -14,10 +14,12 @@ import {
   createTrabajadoresService,
   despidoTrabajadorService,
   getGruposService,
+  getGrupoService,
   getTrabajadoresService,
   getTrabajadorService,
   recontratarTrabajadorService,
   updateTrabajadorService,
+  updateGrupoService
 } from "../services/trabajador.service.js";
 import { 
   formatDate,
@@ -202,7 +204,6 @@ export async function despidoTrabajadorController(req, res) {
     const { motivo } = req.body;
     
     const files = req.files || {};
-    //const archivo = req.files.archivo?.[0];
     const archivo = files.archivo?.[0];
     const payload = {
       despedido,
@@ -261,11 +262,49 @@ export async function createGrupoController(req, res) {
   }
 }
 
+export async function updateGrupoController(req, res) {
+  try {
+    const { id } = req.params; 
+    const { nombre, supervisor_id, miembros } = req.body;
+
+    const miembros_ids = Array.isArray(miembros)
+      ? miembros
+      : typeof miembros === "string"
+        ? JSON.parse(miembros)
+        : [];
+
+    const [grupoActualizado, error] = await updateGrupoService(Number(id), {
+      nombre,
+      supervisor_id,
+      miembros_ids,
+    });
+
+    if (error) {
+      return handleErrorClient(res, 400, error);
+    }
+
+    return handleSuccess(res, 200, "Grupo actualizado correctamente", grupoActualizado);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
 export async function getGruposController(req, res) {
   try {
     const [grupos, error] = await getGruposService();
     if (error) return handleErrorClient(res, 404, error);
     return handleSuccess(res, 200, "Grupos encontrados", grupos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+export async function getGrupoController(req, res) {
+  try {
+    const { id } = req.params;
+    const [grupo, error] = await getGrupoService(Number(id));
+    
+    if (error) return handleErrorClient(res, 404, error);
+    return handleSuccess(res, 200, "Grupo encontrado", grupo);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }

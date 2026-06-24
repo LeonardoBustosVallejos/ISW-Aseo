@@ -6,21 +6,28 @@ import {
   createTrabajadoresController,
   despidoTrabajadorController,
   getGruposController,
+  getGrupoController,
   getTrabajadorController,
   getTrabajadoresController,
   recontratarTrabajadorController,
   updateTrabajadorController,
+  updateGrupoController
 } from "../controllers/trabajadores.controller.js";
 
 const router = Router();
 
 router
   .get("/", getTrabajadoresController)
+  
+  .get("/detail/grupos", getGruposController)
+  .get("/detail/grupos/:id", getGrupoController)
+  .patch("/detail/update/grupos/:id", updateGrupoController)
+  .post("/create/grupos", createGrupoController)
+
   .get("/detail/:id", getTrabajadorController)
-  .get("/grupos", getGruposController)
   .patch("/detail/:id", uploadFiles, updateTrabajadorController)
-  .patch("/detail/:id/despedir", uploadFiles, despidoTrabajadorController)
-  .patch("/detail/:id/recontratar", recontratarTrabajadorController)
-  .post("/create/", uploadFiles, createTrabajadoresController)
-  .post("/create/grupos", createGrupoController);
-export default router;
+  .patch("/detail/despedir/:id", uploadFiles, despidoTrabajadorController)
+  .patch("/detail/recontratar/:id", recontratarTrabajadorController)
+  .post("/create/", uploadFiles, createTrabajadoresController);
+
+  export default router;

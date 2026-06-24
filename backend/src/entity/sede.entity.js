@@ -78,6 +78,11 @@ const SedeSchema = new EntitySchema({
             type: "many-to-many",
             joinColumn: { name: "id_contrato_comercial" },
             nullable: false //IMPORTANTE, al regitrar una sede debe existir un contrato al cual sujetarse
+        },
+        grupos: {
+            type: "one-to-many",
+            target: "TrabajadoresGrupos",
+            inverseSide: "sedeAsignada"
         }
     }
 
