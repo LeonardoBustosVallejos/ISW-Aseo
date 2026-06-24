@@ -31,7 +31,7 @@
 }
 
 .document-body {
-    background: var(--ubb-texto);
+    background: var(--ubb-fondo);
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -59,7 +59,7 @@
 
     border: 1px solid #dbe3ea;
     border-radius: 0.75rem;
-    background: var(--ubb-fondo);
+    background: var(--ubb-texto);
     padding: 1rem;
 }
 

@@ -3,7 +3,7 @@ import "@styles/components/ContactosForm.css"
 import Acordeon from "../Acordeon"
 import { useState } from "react"
 
-export default function Contactos({ contactos, setFormData, path, formatRut }) {
+export default function Contactos({ contactos, setFormData, path, formatRut, level = 0 }) {
 
     const [openContacto, setOpenContacto] = useState(0)
 
@@ -125,10 +125,11 @@ export default function Contactos({ contactos, setFormData, path, formatRut }) {
                 <div className="multiple-acordeon">
                     {/* nombre */}
                     <Acordeon title={`${index + 1}. ${contacto.nombreContacto || '**Sin nombre'} ${contacto.contacto_rut || '**Sin Rut'} ${contacto.email || '**Sin email'}`}
+                        level={level}
                         isOpen={openContacto === index}
                         onToggle={() => setOpenContacto(openContacto === index ? null : index)}
                         content={
-                            <div key={index} className="contacto-card">
+                            <div key={index} className="contacto-card interior">
 
                                 <div className="contacto-field">
 

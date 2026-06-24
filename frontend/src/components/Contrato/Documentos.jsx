@@ -6,8 +6,9 @@ import {
     ChevronUp
 } from "lucide-react"
 import "@styles/components/Documentos.css"
+import AddButton from "../misc/add-button"
 
-export default function Documentos({ documentos, setFormData, path, tipo }) {
+export default function Documentos({ documentos, setFormData, path, tipo, }) {
 
     const [openIndex, setOpenIndex] = useState(null)
     // navegar objeto usando path
@@ -120,13 +121,10 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
 
                         <h3 className="document-title">Documentos</h3>
 
-                        <button type="button"
+                        <AddButton
                             onClick={addDocumento}
-                            className="add-button"
-                        >
-                            <Plus size={16} />
-                            Agregar documento
-                        </button>
+                            text={'Agregar Documento'}
+                        />
 
                     </div>
 
@@ -297,15 +295,10 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
                 </div>
 
             </div>
-
-            <button
-                type="button"
+            <AddButton
                 onClick={addDocumento}
-                className="add-button"
-            >
-                <Plus size={18} />
-                Agregar documento
-            </button>
+                text={'Agregar Documento'}
+            />
 
         </div>
     )

@@ -69,41 +69,48 @@
 
 /*CLIENTE*/
 .level-0 .accordion-circle {
-    background: #003366;
-    color: white;
+    background: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
 }
 
+.level-0 h3 {
+    color: var(--ubb-azul-principal);
+
+}
 
 /*FILIAL*/
-.level-0 h3 {
-    color: #003366;
-}
 
 .level-1 .accordion-circle {
-    background: #0055a5;
-    color: white;
+    background: var(--ubb-azul-secundario);
+    color: var(--ubb-texto);
 }
 
 .level-1 h3 {
-    color: #0055a5;
+    color: var(--ubb-azul-secundario);
+
 }
+
 
 /*SEDES*/
 .level-2 .accordion-circle {
-    background: #2d74b8;
-    color: white;
+    background: var(--ubb-azul-hover);
+    color: var(--ubb-texto);
 }
 
 .level-2 h3 {
-    color: #2d74b8;
+    color: var(--ubb-azul-hover);
+
 }
+
 
 /*CONTACTOS*/
 .level-3 .accordion-circle {
-    background: #5f96c9;
-    color: white;
+    background: var(--ubb-azul-terciario);
+    color: var(--ubb-texto);
 }
 
 .level-3 h3 {
-    color: #5f96c9;
+    color: var(--ubb-azul-terciario);
+
+
 }

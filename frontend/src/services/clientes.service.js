@@ -8,6 +8,17 @@ export async function listarClientesTope() {
         return error.response?.data || { message: "Error de conexión" };
     }
 }
+
+export async function getInfoCliente(cliente_id, rutCliente) {
+    try {
+        const response = await axios.get(`/clientes/${rutCliente}/${cliente_id}`)
+
+        return response.data
+    } catch (error) {
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
+
 export async function registerCliente(data) {
     try {
         const formData = new FormData()

@@ -59,7 +59,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
             if (sedes?.length > 0) {
 
                 for (const sede of sedes) {
-                    const sedeFound = await sedeRepository.findOne({ where: sede })
+                    const sedeFound = await sedeRepository.findOne({ where: { sede_id: sede } })
                     if (!sedeFound || sedeFound.length < 1) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
                     sedesEncontradas.push({ sede_id: sedeFound.sede_id })
                 }
@@ -132,7 +132,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
     }
 }
 
-export async function createContratoAnexoService(data, contrato_id, manager = null) {
+export async function createContratoAnexoService(data, contrato_id, manager = null, index = 1) {
     try {
 
         const execute = async (transactionManager) => {
@@ -160,14 +160,14 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
             } = data
 
             // Validaciones básicas
-            if (!numeroAnexo || !fechaInicio || !contrato_id) throw [null, createErrorMessage("anexo", "Datos incompletos")]
+            if (!numeroAnexo || !fechaInicio || !contrato_id) throw [null, createErrorMessage(`Anexo ${index}`, "Datos incompletos")]
 
             // Buscar contrato
             const contrato = await contratoRepository.findOne({
                 where: { id_contrato_comercial: contrato_id }
             })
 
-            if (!contrato) throw [null, createErrorMessage("contrato", "Contrato no encontrado")]
+            if (!contrato) throw [null, createErrorMessage("Contrato", "Contrato no encontrado")]
 
 
             let sedesEncontradas = []
@@ -176,7 +176,7 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                     const sedeFound = await sedeRepository.findOne({
                         where: sede
                     })
-                    if (!sedeFound) throw [null, createErrorMessage("sede", "Sede principal no encontrada para el cliente")]
+                    if (!sedeFound) throw [null, createErrorMessage("Contrato", "Sede no encontrada para el cliente")]
                     sedesEncontradas.push({ sede_id: sedeFound.sede_id })
                 }
             }
@@ -189,19 +189,19 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 }
             })
 
-            if (existe) throw [null, createErrorMessage("anexo", "Número de anexo ya registrado")]
+            if (existe) throw [null, createErrorMessage(`Anexo ${index}`, "Número de anexo ya registrado")]
 
 
             // Validar fechas
-            if (fechaFin && new Date(fechaInicio) >= new Date(fechaFin)) throw [null, createErrorMessage("fecha", "Rango de fechas inválido")]
+            if (fechaFin && new Date(fechaInicio) >= new Date(fechaFin)) throw [null, createErrorMessage(`Anexo ${index}`, "Rango de fechas inválido")]
 
 
             // Validar trabajadores
             if (
                 cantidadMinTrabajadores &&
                 cantidadMaxTrabajadores &&
-                cantidadMinTrabajadores > cantidadMaxTrabajadores
-            ) throw [null, createErrorMessage("trabajadores", "Cantidad mínima no puede ser mayor a la máxima")]
+                (cantidadMaxTrabajadores - cantidadMinTrabajadores < 0)
+            ) throw [null, createErrorMessage(`Anexo ${index}`, "Cantidad mínima no puede ser mayor a la máxima")]
 
 
             // Crear anexo
@@ -220,7 +220,7 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 detalles,
                 tipoAnexo: tipoAnexo || "OTRO",
                 contratoComercial: { id_contrato_comercial: contrato_id },
-                sedes: sedesEncontradas.length > 0 ? sedesEncontradas : null
+                sedes: sedesEncontradas
             })
 
             await anexoRepository.save(anexo)

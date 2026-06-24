@@ -1,10 +1,11 @@
-import { Plus } from "lucide-react";
+import { CirclePlus, Plus } from "lucide-react";
 import Acordeon from "@components/acordeon";
 import SedeRow from "./SedesForm";
 import { useState } from "react";
 import "@styles/registerCliente.css"
+import AddButton from "../misc/add-button";
 
-export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, setFormData, formatRut }) {
+export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, setFormData, formatRut, level = 0 }) {
     const [openContacto, setOpenContacto] = useState(null);
     const [openSedes, setOpenSedes] = useState(null);
 
@@ -75,32 +76,35 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
 
     return (
         <div>
-            <div className="form-grid form-group">
+            <div className="form-card interior">
 
-                <label className="label">
-                    Nombre de Fantasía (Empresa)
-                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                </label>
-                <input type="text" name="nombreCliente" value={data.nombreCliente}
-                    minLength={3}
-                    onChange={(e) => updateField("nombreCliente", e.target.value)}
-                    className='input'
-                    required />
-            </div>
+                <div className="form-grid form-group">
 
-            <div className="form-group">
+                    <label className="label">
+                        Nombre de Fantasía (Empresa)
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                    </label>
+                    <input type="text" name="nombreCliente" value={data.nombreCliente}
+                        minLength={3}
+                        onChange={(e) => updateField("nombreCliente", e.target.value)}
+                        className='input'
+                        required />
+                </div>
 
-                <label className="label">
-                    RUT de Empresa
-                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                </label>
-                <input type="text" name="rutCliente" value={data.rutCliente}
-                    onChange={(e) => updateField("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
-                    className='input'
-                    required />
+                <div className="form-group">
+
+                    <label className="label">
+                        RUT de Empresa
+                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                    </label>
+                    <input type="text" name="rutCliente" value={data.rutCliente}
+                        onChange={(e) => updateField("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
+                        className='input'
+                        required />
+                </div>
             </div>
             <br />
-            <Acordeon title={`Sedes (${sedes.length})`} level={2} isOpen={openSedes === "sedes"}
+            <Acordeon title={`Sedes (${sedes.length})`} level={level + 1} isOpen={openSedes === "sedes"}
                 required={true}
                 onToggle={() => {
                     setOpenSedes(openSedes === "sedes" ? null : "sedes")
@@ -110,27 +114,25 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
                     <div>
                         {sedes.map((sede, index) => (
                             <>
-                                <SedeRow sede={sede}
-                                    key={`${index} de ${data.nombreCliente}`}
-                                    index={index}
-                                    path={[...sedesPath, index]}
-                                    largo={sedes.length}
-                                    setFormData={setFormData}
-                                    formatRut={formatRut}
-                                    removeSede={(i) => removeSede(i)}
-                                />
+                                <div className="form-card interior">
+                                    <SedeRow sede={sede}
+                                        level={level + 1}
+                                        key={`${index} de ${data.nombreCliente}`}
+                                        index={index}
+                                        path={[...sedesPath, index]}
+                                        largo={sedes.length}
+                                        setFormData={setFormData}
+                                        formatRut={formatRut}
+                                        removeSede={(i) => removeSede(i)}
+                                    />
+                                </div>
                                 <br />
                             </>
                         ))}
-                        <button
-                            type="button"
+                        <AddButton
                             onClick={addSede}
-                            className="add-button">
-
-                            <Plus size={16} />
-
-                            Agregar Sede
-                        </button>
+                            text={'Agregar Sede'}
+                        />
                     </div>
                 } />
         </div>

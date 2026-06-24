@@ -1,7 +1,7 @@
 .contrato-card {
     width: 100%;
-    background: var(--ubb-texto);
-    border: 1px solid #e5e7eb;
+    background: var(--ubb-fondo);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
@@ -16,7 +16,7 @@
 }
 
 .contrato-body {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     background: var(--ubb-fondo);
     padding: 1.25rem;
 
@@ -43,9 +43,6 @@
     align-items: end;
 }
 
-.checkbox-row {
-    width: 25%;
-}
 
 .textarea-grid {
     display: grid;

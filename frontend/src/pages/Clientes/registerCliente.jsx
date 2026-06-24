@@ -7,9 +7,10 @@ import DocumentoRow from '@components/Contrato/Documentos';
 import SedeRow from '@components/Clientes/SedesForm';
 import ContratoRow from '@components/Contrato/ContratoComercialForm';
 import AnexoRow from '@components/Contrato/AnexoComercial';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2, TriangleAlert } from 'lucide-react';
 import "@styles/registerCliente.css"
 import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
+import AddButton from '../../components/misc/add-button';
 
 /**
  * 
@@ -20,7 +21,7 @@ const RegisterClienteForm = () => {
     const [openContacto, setOpenContacto] = useState(null);
     const [openSedes, setOpenSedes] = useState(null);
     const [openFilial, setOpenFilial] = useState(null);
-
+    const [aceptado, setAceptado] = useState(false)
     const [errors, setErrors] = useState({});
 
     /**Inicializar las variables/objetos base que son obligatorios para el registro */
@@ -219,6 +220,11 @@ const RegisterClienteForm = () => {
         try {
             e.preventDefault();
 
+            if (!aceptado) {
+                showErrorAlert("Confirmación requerida",
+                    "Debe confirmar que la información es correcta")
+            }
+
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
@@ -228,7 +234,7 @@ const RegisterClienteForm = () => {
             }
         } catch (error) {
             console.error("Error al registrar un usuario: ", error);
-            getSectionFromErrors(error)
+
             showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
         }
     }
@@ -261,99 +267,6 @@ const RegisterClienteForm = () => {
 
 
                             />
-                            {/*
-                            <div className="form-grid form-group">
-
-                                <label className="label">
-                                    Nombre de Fantasía (Empresa)
-                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                                </label>
-                                <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente}
-                                    minLength={3}
-                                    onChange={(e) => handleChange("nombreCliente", e.target.value)}
-                                    className='input'
-                                    required />
-                            </div>
-
-                            <div className="form-group">
-
-                                <label className="label">
-                                    RUT de Empresa
-                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
-                                </label>
-                                <input type="text" name="rutCliente" value={formData.cliente.rutCliente}
-                                    onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} placeholder="12345678-9"
-                                    className='input'
-                                    required />
-                            </div>
-                            <br />
-                             SEDES
-                            <Acordeon title="Sede" isOpen={openSedes === "sedes"}
-                                required={true}
-                                onToggle={() => {
-                                    setOpenSedes(openSedes === "sedes" ? null : "sedes")
-                                    setOpenContacto(null)
-                                }}
-                                content={
-                                    <div>
-                                        {formData.sedes.map((sede, index) => (
-
-                                            <SedeRow sede={sede}
-                                                key={index}
-                                                index={index}
-                                                largo={formData.sedes.length}
-                                                setFormData={setFormData}
-                                                formatRut={formatRut}
-                                                removeSede={(i) => {
-
-                                                    setFormData(prev => {
-                                                        const copia = structuredClone(prev)
-                                                        copia.sedes.splice(i, 1)
-                                                        return copia
-                                                    })
-                                                }}
-                                            />
-                                        ))}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-
-                                                setFormData(prev => ({
-
-                                                    ...prev,
-
-                                                    sedes: [
-
-                                                        ...prev.sedes,
-
-                                                        {
-                                                            nombre_sede: '',
-                                                            direccion: '',
-                                                            personalSolicitado: '',
-                                                            tipoSede: '',
-                                                            contactos: [{
-                                                                nombreContacto: '',
-                                                                contacto_rut: '',
-                                                                email: '',
-                                                                phone: '',
-                                                                tipoContacto: '',
-                                                            }]
-                                                        }
-                                                    ]
-
-                                                }))
-                                            }}
-                                            className="add-button">
-
-                                            <Plus size={16} />
-
-                                            Agregar Sede
-                                        </button>
-                                    </div>
-                                }
-
-                            />
-                              */}
                         </div>
                     } />
 
@@ -372,6 +285,7 @@ const RegisterClienteForm = () => {
                             contrato={formData.contrato}
                             documentos={formData.metadataDocumentos}
                             setFormData={setFormData}
+                            level={0}
                         />
                     }
                 />
@@ -383,7 +297,7 @@ const RegisterClienteForm = () => {
                         setOpenContacto(null)
                     }}
                     content={
-                        <div>
+                        <>
 
                             {formData.anexos.map((anexo, index) => (
 
@@ -409,8 +323,7 @@ const RegisterClienteForm = () => {
                             )
                             )}
                             {/*Botón de agregar anexo */}
-                            <button
-                                type="button"
+                            <AddButton
                                 onClick={() => {
 
                                     setFormData(prev => ({
@@ -449,17 +362,13 @@ const RegisterClienteForm = () => {
                                         ]
                                     }))
                                 }}
-                                className="add-button">
-
-                                <Plus size={16} />
-
-                                Agregar Anexo
-                            </button>
-                        </div>
+                                text={'Agregar Anexo'}
+                            />
+                        </>
                     }
                 />
                 {/*FILIALES */}
-                <Acordeon title={`Filial(es) (${formData.cliente.filiales.length})`} level={1}
+                <Acordeon title={`Filial(es) (${formData.cliente.filiales.length})`} level={0}
                     isOpen={openSection === "filiales"}
                     onToggle={() => {
                         setOpenSection(openSection === "filiales" ? null : "filiales")
@@ -485,7 +394,7 @@ const RegisterClienteForm = () => {
                                             />
                                         }
                                     />
-
+                                    {/*REMOVER FILIAL */}
                                     <button type="button"
                                         onClick={() => removeFilial(index)}
                                         className={`remove-button`}>
@@ -493,26 +402,38 @@ const RegisterClienteForm = () => {
                                     </button>
                                 </div>
                             ))}
-                            <button
-                                type="button"
+                            <AddButton
                                 onClick={addFilial}
-                                className="add-button">
-
-                                <Plus size={16} />
-
-                                Agregar Filial
-                            </button>
+                                text={'Agregar Filial'}
+                            />
                         </div>
                     }
                 />
+
+                <button type='button' className='checkbox-row' onClick={() => {
+                    setAceptado(prev => !prev)
+
+                }} style={{ backgroundColor: 'transparent' }}>
+
+                    <input type="checkbox" name="aceptado"
+                        checked={aceptado}
+                    />
+
+                    <label className='label' style={{ cursor: 'pointer' }}>
+                        Acepto que toda la informacion entregada es correcta
+                        <span className='required' style={{ display: 'flex' }}>*<TriangleAlert /> </span>
+                    </label>
+
+                </button>
+
                 <div>
                     <span className={`error-message`}>
                         {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
                     </span>
                 </div>
                 <hr />
-                <button type="submit">Registrar</button>
-            </form>
+                <button type="submit" className='submit-button' disabled={!aceptado}>Registrar</button>
+            </form >
 
         </div >
     );

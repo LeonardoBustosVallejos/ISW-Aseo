@@ -11,7 +11,7 @@ router
     .use(authenticateJwt)
 router
     .get("/", isAdmin(['Administrador']), getClientes)
-    .get("/:rutCliente/", isAdmin(['Administrador']), getInfoCliente)
+    //.get("/:rutCliente/", isAdmin(['Administrador']), getInfoCliente)
     .get("/:rutCliente/:cliente_id", isAdmin(['Administrador']), getInfoCliente)
     .get("/:rutCliente/sede/", isAdmin(['Administrador']), getInfoSede)
     .get("/:rutCliente/sede/:sede_id", isAdmin(['Administrador']), getInfoSede)

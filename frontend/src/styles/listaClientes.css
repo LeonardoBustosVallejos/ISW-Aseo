@@ -77,8 +77,8 @@
     font-size: 20px;
 }
 
-.fila-cliente strong:hover {
-    color: var(--ubb-azul-secundario);
+.tabla-cliente:hover {
+    background: var(--ubb-fondo);
 
 }
 

@@ -1,5 +1,5 @@
 .card {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 1rem;
     overflow: hidden;
     background: var(--ubb-texto);
@@ -8,7 +8,7 @@
 }
 
 .card-body {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     background: var(--ubb-fondo);
     padding: 1.25rem;
     display: flex;
