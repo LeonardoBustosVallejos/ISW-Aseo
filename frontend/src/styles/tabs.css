@@ -1,0 +1,38 @@
+.tabs-header {
+    display: flex;
+    font-weight: 700;
+    width: 100%;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    gap: 4px;
+
+
+    button {
+        flex: 1;
+        border-radius: 8px;
+        background-color: var(--ubb-azul-principal);
+        color: var(--ubb-texto);
+        cursor: pointer;
+        height: 20%;
+    }
+
+    button:hover {
+        background-color: var(--ubb-azul-hover);
+    }
+
+    button.selected {
+        background-color: var(--ubb-azul-terciario);
+    }
+
+    button.disabled {
+
+        background-color: var(--ubb-azul-principal);
+
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.tabs-content {
+    margin-top: 5px;
+}

@@ -11,6 +11,7 @@ import { Trash2, TriangleAlert } from 'lucide-react';
 import "@styles/registerCliente.css"
 import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
 import AddButton from '../../components/misc/add-button';
+import Header from '../../components/misc/Header';
 
 /**
  * 
@@ -241,10 +242,7 @@ const RegisterClienteForm = () => {
 
     return (
         <div className="form-container">
-            <div className='form-header'>
-                <h1 className="form-title">Registro de Cliente y Supervisor</h1>
-            </div>
-
+            <Header title={'Registro de Cliente y Supervisor'} />
 
             <form onSubmit={handleSubmit} className="form-card form-content">
 
@@ -409,7 +407,6 @@ const RegisterClienteForm = () => {
                         </div>
                     }
                 />
-
                 <button type='button' className='checkbox-row' onClick={() => {
                     setAceptado(prev => !prev)
 

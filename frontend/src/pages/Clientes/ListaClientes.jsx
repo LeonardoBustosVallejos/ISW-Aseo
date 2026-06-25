@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { listarClientesTope } from "../../services/clientes.service"
 import "../../styles/listaClientes.css"
 import { Link } from "react-router-dom"
+import { Header } from "../../components/misc/Header"
 const ListaClientes = () => {
     const [lista, setLista] = useState([])
     const [busqueda, setBusqueda] = useState("");
@@ -61,12 +62,9 @@ const ListaClientes = () => {
 
     return (
         <div className="gestion-clientes">
-            <div className="gestion-header">
-                <h1 className="form-title">Lista de Empresas Representantes Legales</h1>
-
+            <Header title={'Lista de Empresas Representantes Legales'}>
                 <Link to="/clientes/registrar" className="btn-nuevo-cliente">+ Nuevo Cliente</Link>
-
-            </div>
+            </Header>
             <div className="filtros-clientes">
 
                 <input
@@ -168,14 +166,17 @@ const ListaClientes = () => {
                                 </div>
                             </div>
 
-                            <div>
+                            <div >
                                 <div>
 
                                     <strong>Contacto</strong>
                                 </div>
-                                <p>{cliente.nombreContacto}</p>
-                                <p>{cliente.email}</p>
-                                <p>{cliente.phone}</p>
+                                <div >
+
+                                    <div className="texto">{cliente.nombreContacto}</div>
+                                    <div className="texto">{cliente.email}</div>
+                                    <div className="texto">{cliente.phone}</div>
+                                </div>
                             </div>
 
                         </div >

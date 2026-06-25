@@ -7,13 +7,14 @@
     --ubb-fondo: #f4f6f9;
     --ubb-texto: #ffffff;
     --border: #e5e7eb;
-    --sidebar-width: 250px;
+    --sidebar-width: 25%;
     --sidebar-width-close: 60px;
 }
 
 
 .layout {
     display: flex;
+    padding: 0 30px 30px 30px;
     grid-template-columns: var(--sidebar-width) 1fr;
     height: 100vh;
 }

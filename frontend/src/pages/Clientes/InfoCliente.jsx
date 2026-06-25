@@ -7,6 +7,9 @@ import '../../styles/infoCliente.css'
 import { Archive, Briefcase, Building2, FileText, MapPin, Info } from "lucide-react";
 import { formatDateTime } from "../../helpers/formatDate";
 import Error404 from "../Error404.jsx";
+import { Tab, Tabs } from "../../components/Tabs.jsx";
+import TabFiliales from "./Tabs/TabFiliales.jsx";
+import Header from "../../components/misc/Header.jsx";
 
 export default function InfoCliente() {
     const [error, setError] = useState(null)
@@ -66,6 +69,21 @@ export default function InfoCliente() {
 
     return (
         <div className="info-cliente">
+            <Header title={dataGeneral.cliente.nombreCliente} subtitle={
+                <>
+                    <strong>{'RUT: '}</strong>
+                    {dataGeneral.cliente.rutCliente}
+                    <strong>{' | '}</strong>
+                    <strong>{'TIPO: '}</strong>
+                    {dataGeneral.cliente.tipoCliente}
+                </>}>
+
+                <div className={`estado ${dataGeneral.estado === "ESPERA" ? "amarillo" :
+                    dataGeneral.estado === "VIGENTE" ? "verde" : "rojo"}`}>
+                    {dataGeneral.estado}
+                </div>
+            </Header>
+            {/*
             <div className='info-header'>
                 <div>
 
@@ -73,16 +91,10 @@ export default function InfoCliente() {
                         {dataGeneral.cliente.nombreCliente}
                     </h1>
                     <h1 className="sub-tittle">
-                        <strong>
-                            {'RUT: '}
-                        </strong>
+                        <strong>{'RUT: '}</strong>
                         {dataGeneral.cliente.rutCliente}
-                        <strong>
-                            {' | '}
-                        </strong>
-                        <strong>
-
-                            {'TIPO: '}
+                        <strong>{' | '}</strong>
+                        <strong>{'TIPO: '}
                         </strong>
                         {dataGeneral.cliente.tipoCliente}
                     </h1>
@@ -92,6 +104,7 @@ export default function InfoCliente() {
                     {dataGeneral.estado}
                 </div>
             </div>
+            */}
             <div className="contadores">
                 <div className="contador">
                     <div className="contador-simbol filiales">
@@ -102,9 +115,7 @@ export default function InfoCliente() {
                         <div>
                             Filiales
                         </div>
-                        <strong>
-                            {dataGeneral.filiales.length}
-                        </strong>
+                        <strong>{dataGeneral.filiales.length}</strong>
                     </div>
                 </div>
 
@@ -116,9 +127,7 @@ export default function InfoCliente() {
                         <div>
                             Sedes
                         </div>
-                        <strong>
-                            {dataGeneral.sedes.length}
-                        </strong>
+                        <strong>{dataGeneral.sedes.length}</strong>
                     </div>
                 </div>
                 <div className="contador">
@@ -129,9 +138,7 @@ export default function InfoCliente() {
                         <div>
                             Contratos
                         </div>
-                        <strong>
-                            {dataGeneral.contratos.length}
-                        </strong>
+                        <strong>{dataGeneral.contratos.length}</strong>
                     </div>
 
                 </div>
@@ -144,9 +151,7 @@ export default function InfoCliente() {
                         <div>
                             Anexos
                         </div>
-                        <strong>
-                            {dataGeneral.anexos.length}
-                        </strong>
+                        <strong>{dataGeneral.anexos.length}</strong>
                     </div>
                 </div>
 
@@ -158,9 +163,7 @@ export default function InfoCliente() {
                         <div>
                             Documentos
                         </div>
-                        <strong>
-                            {dataGeneral.documentos.length}
-                        </strong>
+                        <strong>{dataGeneral.documentos.length}</strong>
                     </div>
                 </div>
 
@@ -176,14 +179,16 @@ export default function InfoCliente() {
                     }}
                 />
             </div>
-            <TabView>
 
-                <TabPanel header={"Resumen"}>
+            <Tabs>
+                <Tab titulo={'Resumen'}>
                     <div className="info-grid">
 
 
                         <div className="info-card">
+                            <div className="card-tittle">
 
+                            </div>
                             <div className="info-label">
                                 <strong>{'Nombre: '}</strong>
                                 {dataGeneral.cliente.nombreCliente}
@@ -226,16 +231,12 @@ export default function InfoCliente() {
                             <div className="data-line" />
                             <div className="info-label">
                                 <strong>{'Total dde Anexos: '}</strong>
-                                <strong>
-                                    {dataGeneral.anexos.length}
-                                </strong>
+                                <strong>{dataGeneral.anexos.length}</strong>
                             </div>
                             <div className="data-line" />
                             <div className="info-label">
                                 <strong>{'Total de Documentos: '}</strong>
-                                <strong>
-                                    {dataGeneral.documentos.length}
-                                </strong>
+                                <strong>{dataGeneral.documentos.length}</strong>
                             </div>
                             <div className="data-line" />
                             <div className="info-label">
@@ -245,31 +246,26 @@ export default function InfoCliente() {
                             <div className="data-line" />
                         </div>
                     </div>
-                </TabPanel>
+                </Tab>
+                <Tab titulo={'Filiales'} disabled={dataGeneral.filiales.length < 1}>
 
-                <TabPanel header="Filiales" disabled={dataGeneral.filiales.length === 0}>
+                </Tab>
+                <Tab titulo={'Sedes'}>
+                    {'dsf'}
+                </Tab>
+                <Tab titulo={'Contactos'}>
 
+                </Tab>
+                <Tab titulo={'Contratos'}>
 
-                </TabPanel>
+                </Tab>
+                <Tab titulo={'Anexos'}>
 
-                <TabPanel header="Sedes">
+                </Tab>
+                <Tab titulo={'Documentos'}>
 
-                </TabPanel>
-                <TabPanel header="Contactos">
-
-                </TabPanel>
-
-                <TabPanel header="Contratos">
-
-                </TabPanel>
-                <TabPanel header="Anexos">
-                    ...
-                </TabPanel>
-                <TabPanel header="Documentos">
-                    ...
-                </TabPanel>
-
-            </TabView>
+                </Tab>
+            </Tabs>
         </div >
     )
 }
