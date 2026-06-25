@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getInfoCliente } from "../../services/clientes.service";
-import { TabPanel, TabView } from "primereact/tabview";
-import { Card } from "primereact/card";
 import '../../styles/infoCliente.css'
 import { Archive, Briefcase, Building2, FileText, MapPin, Info } from "lucide-react";
 import { formatDateTime } from "../../helpers/formatDate";
 import Error404 from "../Error404.jsx";
 import { Tab, Tabs } from "../../components/Tabs.jsx";
-import TabFiliales from "./Tabs/TabFiliales.jsx";
 import Header from "../../components/misc/Header.jsx";
 
 export default function InfoCliente() {
