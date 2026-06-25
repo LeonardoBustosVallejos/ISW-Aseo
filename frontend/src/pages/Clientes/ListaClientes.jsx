@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { listarClientesTope } from "../../services/clientes.service"
 import "../../styles/listaClientes.css"
 import { Link } from "react-router-dom"
-import { Header } from "../../components/misc/Header"
+import Header from "../../components/misc/Header"
 const ListaClientes = () => {
     const [lista, setLista] = useState([])
     const [busqueda, setBusqueda] = useState("");

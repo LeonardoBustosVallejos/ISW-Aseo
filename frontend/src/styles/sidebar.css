@@ -14,7 +14,16 @@
     font-family: Arial, sans-serif;
 
     .sidebar-top {
-        align-self: center;
+        position: fixed;
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 30px;
+        margin-left: calc(var(--sidebar-width-close)/2);
+
+        .top-button {
+            width: var(--sidebar-width-close);
+        }
     }
 
 
@@ -32,34 +41,46 @@
     }
 }
 
+.sidebar-top {
+    margin-top: 15px;
+}
+
 .sidebar.open {
     transition: 0.3s;
     width: var(--sidebar-width);
 
     .sidebar-top {
-        align-self: flex-end;
+        margin-left: 0px;
+        display: flex;
+        flex-direction: row;
+        align-self: center;
+
+        width: calc(var(--sidebar-width));
+        margin-top: 15px;
+        position: fixed;
+        gap: 2px;
+        padding: 5px;
+
+        .top-button {
+            flex: 1;
+        }
     }
 
 }
 
-.sidebar-top {
-    position: fixed;
-    margin-right: 5px;
-    margin-top: 5px;
-    margin-left: 5px;
-    width: 48px;
+.top-button {
+    display: flex;
     height: 48px;
-
     background-color: var(--ubb-azul-secundario);
     border-radius: 10%;
-
     padding: 12px;
 
-    text-align: center;
+    flex-direction: column;
+    align-items: center;
 }
 
 
-.sidebar-top:hover {
+.top-button:hover {
     cursor: pointer;
     background: var(--ubb-azul-hover);
 }
@@ -95,7 +116,7 @@
 }
 
 .submenu-item {
-    display: block;
+    display: flex;
     padding: 10px 30px;
     text-decoration: none;
     color: var(--ubb-texto);
@@ -105,6 +126,11 @@
 
 .submenu-item:hover {
     background: var(--ubb-azul-hover);
+}
+
+.label-item {
+    display: flex;
+    gap: 2px;
 }
 
 .active {
