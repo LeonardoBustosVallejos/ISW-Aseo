@@ -1,5 +1,5 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega } from "../services/activofijo.service.js";
+import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega, obtenerActivosPorSede } from "../services/activofijo.service.js";
 import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
 import { AppDataSource } from "../config/configDb.js";
 import UserSchema from "../entity/user.entity.js";
@@ -29,6 +29,39 @@ export const getResumenActivos = async (req, res) => {
         return res.status(500).json({ status: "Error", message: "Error interno del servidor", error: error.message });
     }
 };
+
+export const getActivosPorSede = async (req, res) => {
+    try {
+        const sede_id = req.params.sedeId;
+        const user_id = req.user.id;
+
+        const userRepository = AppDataSource.getRepository(UserSchema);
+        const usuarioCompleto = await userRepository.findOne({
+            where: { id: user_id },
+            relations: ["rol"]
+        });
+
+        if (!usuarioCompleto) {
+            return res.status(404).json({ status: "Error", message: "Usuario no encontrado", data: [] });
+        }
+
+        const rol_id = usuarioCompleto.rol?.id || usuarioCompleto.rol?.rol_id;
+
+        if (rol_id !== 1) {
+            return res.status(403).json({ status: "Error", message: "No tienes permisos para ver estos detalles", data: [] });
+        }
+        if (!sede_id || sede_id === "undefined" || isNaN(parseInt(sede_id))) {
+            return res.status(400).json({ status: "Error", message: "El ID de la sede no es válido." });
+        }
+        const activosDeLaSede = await obtenerActivosPorSede(sede_id);
+
+        return handleSuccess(res, 200, "Detalles de la sede obtenidos correctamente", activosDeLaSede);
+    } catch (error) {
+        console.error("Error en getActivosPorSede controller:", error);
+        return res.status(500).json({ status: "Error", message: "Error interno del servidor", error: error.message });
+    }
+};
+
 export const crearActivoFijo = async (req, res) => {
     try{
         const datos_ingresados = req.body;
@@ -54,8 +87,8 @@ export const asignarActivos = async (req, res) => {
             return handleErrorClient(res, 400, "Parametros de asignacion invalidos", mensajes);
         }
 
-        const{cliente_id, nombre_maquina, cantidad} = value;
-        const [activos_asignados, error_servicio] = await asignarActivosCliente(cliente_id, nombre_maquina, cantidad);
+        const{cliente_id, sede_id, nombre_maquina, cantidad} = value;
+        const [activos_asignados, error_servicio] = await asignarActivosCliente(cliente_id, sede_id, nombre_maquina, cantidad);
         if(error_servicio){
             return handleErrorClient(res, 400, "Error al asignar activo", error_servicio);
         }
@@ -74,8 +107,8 @@ export const devolverActivos = async (req, res) => {
             return handleErrorClient(res, 400, "Parametros de devolucion invalidos", mensajes);
         }
 
-        const{cliente_id, activos_ids} = value;
-        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, activos_ids);
+        const{cliente_id, sede_id, activos_ids} = value;
+        const [activos_devueltos, error_servicio] = await devolverActivosBodega(cliente_id, sede_id, activos_ids);
         if(error_servicio){
             return handleErrorClient(res, 400, "Error al devolver a bodega", error_servicio);
         }
