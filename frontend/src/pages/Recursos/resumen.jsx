@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import useActivos from '@hooks/activos/useActivos';
+import { useNavigate } from 'react-router-dom';
 import '@styles/resumen.css';
 
 const IconoCirculo = ({color}) => <svg width="22" height="22"><circle cx="11" cy="11" r="9" fill={color} stroke="#001F3F" strokeWidth="1" /></svg>;
@@ -7,7 +8,12 @@ const IconoTriangulo = ({color}) => <svg width="24" height="22"><polygon points=
 
 const ResumenRecursos = () => {
     const { resumen, loading, error } = useActivos();
+    const navigate = useNavigate();
     const [busqueda, setBusqueda] = useState("");
+
+    const irDetalles = (fila) => {
+        navigate(`/recursos/detalles/${fila.sede_id}`, { state: { datosSucursal: fila } });
+    };
 
     const datosReales = Array.isArray(resumen) ? resumen : [];
     const datosFiltrados = datosReales.filter(fila => {
@@ -18,63 +24,66 @@ const ResumenRecursos = () => {
         return nombreCompania.includes(terminoBusqueda) || idCliente.includes(terminoBusqueda);
     });
 
-    const filasVacias = Math.max(0, 8 - datosFiltrados.length);
-
-    if (loading) return <div className="resumen-container"><h2 style={{color: "#002b5e"}}>Cargando clientes...</h2></div>;
-    if (error) return <div className="resumen-container"><h2 style={{color: "red"}}>Error: {error}</h2></div>;
+    if (loading) return <div className="gestion-clientes"><h2 style={{color: "#003366"}}>Cargando recursos...</h2></div>;
+    if (error) return <div className="gestion-clientes"><h2 style={{color: "red"}}>Error: {error}</h2></div>;
 
     return (
-        <main>
-            <h2 className="resumen-title">Resumen de Recursos</h2>
-            <div className="search-box">
-                <input 
-                    type="text" 
-                    className="search-input"
-                    placeholder="Ingrese Compañía a buscar..." 
+        <div className="gestion-clientes">
+            <div className="gestion-header">
+                <h1>Resumen de Recursos</h1>
+            </div>
+
+            <div className="filtros-clientes">
+                <input
+                    type="text"
+                    placeholder="Ingrese Compañía a buscar..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                 />
-                <button className="search-btn">Buscar</button>
             </div>
 
-            <div className="table-container">
-                <table className="resumen-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: "5%"}}>N</th>
-                            <th style={{width: "15%"}}>RUT</th>
-                            <th style={{width: "30%"}}>Compañías</th>
-                            <th style={{width: "20%"}}>Estado Suministros</th>
-                            <th style={{width: "30%"}}>Ubicación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {datosFiltrados.map((fila, index) => (
-                            <tr key={`${fila.id}-${index}`}>
-                                <td><strong>{index + 1}</strong></td>
-                                <td className="td-id">{fila.id}</td>
-                                <td>{fila.compania}</td>
-                                <td>
-                                    <div className="icon-container">
-                                        {fila.estadoSuministros?.includes('rojo') && <IconoCirculo color="#e63946"/>}
-                                        {fila.estadoSuministros?.includes('naranja') && <IconoCirculo color="#f4a261"/>}
-                                        {fila.estadoSuministros?.includes('verde') && <IconoCirculo color="#2a9d8f"/>}
-                                        {fila.alerta && <IconoTriangulo color="#e63946" />}
-                                    </div>
-                                </td>
-                                <td>{fila.ubicacion}</td>
-                            </tr>
-                        ))}
-                        {Array.from({length: filasVacias}).map((_, i) => (
-                            <tr key={`vacia-${i}`}>
-                                <td style={{padding: "24px"}} />
-                                <td /><td /><td /><td />
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className="tabla-clientes">
+                {datosFiltrados.map((fila, index) => (
+                    <div 
+                        className="tabla-cliente fila-recurso" 
+                        key={`${fila.id}-${index}`}
+                        onClick={() => irDetalles(fila)}
+                    >
+                        <div>{index + 1}</div>
+
+                        <div>
+                            <div>
+                                <strong>{fila.compania}</strong>
+                            </div>
+                            <div>
+                                {fila.id}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div><strong>Ubicación</strong></div>
+                            <p>{fila.ubicacion}</p>
+                        </div>
+
+                        <div>
+                            <div><strong>Estado Suministros</strong></div>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                                {fila.estadoSuministros?.includes('rojo') && <IconoCirculo color="#e63946"/>}
+                                {fila.estadoSuministros?.includes('naranja') && <IconoCirculo color="#f4a261"/>}
+                                {fila.estadoSuministros?.includes('verde') && <IconoCirculo color="#2a9d8f"/>}
+                                {fila.alerta && <IconoTriangulo color="#e63946" />}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {datosFiltrados.length === 0 && (
+                    <div className="tabla-cliente">
+                        <p style={{ textAlign: "center", color: "#666" }}>No se encontraron compañías con esa búsqueda.</p>
+                    </div>
+                )}
             </div>
-        </main>
+        </div>
     );
 };
 

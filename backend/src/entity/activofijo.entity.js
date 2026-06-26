@@ -35,6 +35,11 @@ const ActivoFijo = new EntitySchema({
             type: "int",
             nullable: true,
         },
+        recepcion_confirmada: {
+            type: "boolean",
+            default: false,
+            nullable: false
+        },
         fecha_ingreso:{
             type: "date",
             createDate:true,

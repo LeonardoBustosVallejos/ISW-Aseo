@@ -8,7 +8,7 @@ const router = Router();
 
 router
     .get("/resumen", authenticateJwt, getResumenActivos)
-    .get("/cliente/:cliente_id/historial", authenticateJwt, getHistorial)
+    .get("/sede/:sede_id/historial", authenticateJwt, getHistorial)
     .post("/", authenticateJwt, crearActivoFijo)
     .patch("/asignar", authenticateJwt, asignarActivos)
     .patch("/devolver", authenticateJwt, devolverActivos)

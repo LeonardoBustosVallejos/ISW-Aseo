@@ -9,6 +9,7 @@ import ResumenRecursos from "@pages/Recursos/resumen.jsx";
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
+import DetallesCliente from "@components/detalles.jsx";
 
 
 export default function App() {
@@ -21,8 +22,8 @@ export default function App() {
                 <Route path="/" element={<Root />}>
                 <Route path="home" element={<Root />} />
                 <Route path="recursos/resumen" element={<ResumenRecursos />} />
-                {/*<Route path="recursos/detalles" element={<Detalles />} />
-                <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
+                <Route path="recursos/detalles/:sede_id" element={<DetallesCliente />} />
+                {/*<Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                 <Route path="bodega" element={<Bodega />} />
                 <Route path="cliente"  >
                 <Route path="registrar" element={<RegisterClienteForm />} />
