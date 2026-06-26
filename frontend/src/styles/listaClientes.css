@@ -1,21 +1,6 @@
-.gestion-clientes {
-    padding: 30px;
-}
-
-.gestion-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-}
-
-.gestion-header h1 {
-    color: #003366;
-}
-
 .gestion-header button {
-    background: #003366;
-    color: white;
+    background: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
     border: none;
     padding: 10px 18px;
     border-radius: 8px;
@@ -23,8 +8,8 @@
 }
 
 .btn-nuevo-cliente {
-    background: #003366;
-    color: white;
+    background: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
 
     padding: 10px 18px;
 
@@ -50,31 +35,42 @@
 }
 
 .tabla-cliente {
-    background: white;
+    background: var(--ubb-texto);
     border-radius: 18px;
     padding: 25px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .fila-cliente {
     display: grid;
-    grid-template-columns: 60px 2fr 2fr 2fr 2fr;
+    grid-template-columns: 30px 20% 2fr 20% 20%;
     gap: 30px;
 
     align-items: start;
 }
 
+.texto {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 .fila-cliente strong {
     display: block;
-    color: #003366;
+    color: var(--ubb-azul-principal);
     margin-bottom: 12px;
     font-size: 20px;
+}
+
+.tabla-cliente:hover {
+    background: var(--ubb-fondo);
+
 }
 
 .estado {
     display: inline-block;
     margin-top: 5%;
-    color: white;
+    color: var(--ubb-texto);
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
@@ -92,7 +88,7 @@
 
 .progress-fill {
     height: 100%;
-    background: #003366;
+    background: var(--ubb-azul-principal);
 }
 
 .verde {
@@ -137,5 +133,5 @@
 .filtros-clientes input:focus,
 .filtros-clientes select:focus {
     outline: none;
-    border-color: #003366;
+    border-color: var(--ubb-azul-principal);
 }

@@ -318,7 +318,6 @@ export async function getAsignadosService(query, estado = null, manager = null) 
     const asignados = await AsignadoRepository.find({ where });
 
     if (!asignados || asignados.length === 0) {
-      if (manager) throw [null, "No hay trabajadores asignados"]
       return [null, "No hay trabajadores asignados"]
     };
 

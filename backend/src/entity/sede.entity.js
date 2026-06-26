@@ -65,7 +65,8 @@ const SedeSchema = new EntitySchema({
             type: "many-to-one",
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
-            onDelete: "CASCADE" //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
+            nullable: false,
+            onDelete: "CASCADE", //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
         },
         //una sede puede tener varias personas de contactos
         contactos: {
@@ -76,8 +77,12 @@ const SedeSchema = new EntitySchema({
         contrato: {
             target: "ContratoComercial",
             type: "many-to-many",
-            joinColumn: { name: "id_contrato_comercial" },
-            nullable: false //IMPORTANTE, al regitrar una sede debe existir un contrato al cual sujetarse
+            inverseSide: "sedes"
+        },
+        anexo: {
+            target: "ContratoAnexo",
+            type: "many-to-many",
+            inverseSide: "sedes"
         }
     }
 

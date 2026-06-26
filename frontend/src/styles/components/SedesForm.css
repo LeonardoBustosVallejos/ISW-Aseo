@@ -1,15 +1,15 @@
 .card {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 1rem;
     overflow: hidden;
-    background: white;
+    background: var(--ubb-texto);
     box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
     width: 100%;
 }
 
 .card-body {
-    border-top: 1px solid #e5e7eb;
-    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    background: var(--ubb-fondo);
     padding: 1.25rem;
     display: flex;
     flex-direction: column;

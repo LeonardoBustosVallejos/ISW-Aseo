@@ -82,7 +82,7 @@ const ClienteSchema = new EntitySchema({
             target: "Cliente",
             joinColumn: { name: "cliente_padre_id" },
             nullable: true,
-            onDelete: "CASCADE"
+            onDelete: "CASCADE",
         },
         filiales: {
             type: "one-to-many",

@@ -3,19 +3,31 @@ import Joi from "joi";
 
 export const domainEmailValidator = (value, helper) => {
   //si es @gmail.com pasa sin problemas
-  if (!value.endsWith("@gmail.com")) {
+  const email = value.toLowerCase();
 
-    //si no termina con gmail.com ver si es .cl o .com
-    if (!(value.endsWith(".cl") || !value.endsWith(".com"))) {
-      return helper.message("El correo electrónico debe terminar en .cl o .com");
-    }
-    //si tiene .cl o .com ver si es gmail
-    if (value.endsWith("@gmail.cl")) {
-      return helper.message("El correo electrónico @gmail no puede terminar en .cl.");
-    }
-    //se sale del if sabiendo que no es gmail, 
-    // queda para correos de empresas, institucionales y otros correos como hotmail o yahoo
+  if (email.endsWith("@gmail.com")) {
+    return value;
   }
+
+  //invalidar gmail.cl
+  if (email.endsWith("@gmail.cl")) {
+    return helper.message(
+      "El correo electrónico @gmail no puede terminar en .cl"
+    );
+  }
+
+
+
+  //si no termina con gmail.com ver si es .cl o .com
+  const esCl = email.endsWith(".cl");
+  const esCom = email.endsWith(".com");
+
+  if (!esCl && !esCom) {
+    return helper.message(
+      "El correo electrónico debe terminar en .cl o .com"
+    );
+  }
+
   return value;
 };
 

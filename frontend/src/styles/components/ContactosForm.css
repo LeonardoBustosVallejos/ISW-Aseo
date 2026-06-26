@@ -17,15 +17,25 @@
 
 .contacto-card {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(11, 1fr);
     gap: 1rem;
 
     padding: 1rem;
 
-    background: white;
 
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
+    width: 100%;
+    background: var(--ubb-texto);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+
+
+
+}
+
+.contacto-card.interior {
+    background: var(--ubb-fondo);
 }
 
 .contacto-field {
@@ -34,12 +44,6 @@
     gap: 0.35rem;
 }
 
-.contacto-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    align-self: auto;
-}
 
 /* Desktop */
 
@@ -63,9 +67,6 @@
     grid-column: span 2;
 }
 
-.contacto-actions {
-    grid-column: span 1;
-}
 
 /* Responsive */
 

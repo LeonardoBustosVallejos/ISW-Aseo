@@ -2,6 +2,8 @@ import { Outlet } from 'react-router-dom';
 import { AuthProvider } from '@context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import "../styles/root.css"
+import { useState } from 'react';
+import BackButton from '../components/misc/BackButton';
 function Root() {
     return (
         <AuthProvider>
@@ -11,10 +13,12 @@ function Root() {
 }
 
 function PageRoot() {
+    const [isOpen, setIsOpen] = useState(true)
     return (
         <div className='layout'>
-            <Sidebar />
-            <div className='content'>
+            <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+            <div className={`content ${isOpen ? 'open' : ''}`}>
+                <BackButton />
                 <Outlet />
             </div>
             <main />

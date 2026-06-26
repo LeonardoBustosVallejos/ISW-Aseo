@@ -102,6 +102,11 @@ const contratoComercialSchema = new EntitySchema({
         },
     ],
     relations: {
+        anexos: {
+            type: 'one-to-many',
+            target: 'ContratoAnexo',
+            inverseSide: 'contratoComercial'
+        },
         documentos: {
             type: "one-to-many",
             target: "DocumentoContrato",
@@ -112,12 +117,14 @@ const contratoComercialSchema = new EntitySchema({
             type: "many-to-one",
             joinColumn: { name: "cliente_id" },
             nullable: false, //el contrato si o si debe ser dirigido a alguien
-            onDelete: "CASCADE"
+            onDelete: "CASCADE",
         },
         sedes: {
             target: "Sede",
             type: "many-to-many",
-            inverseSide: "contrato" //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
+            joinTable: { name: "rel_contrato_sede" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
+            nullable: false,
+            onDelete: "CASCADE",
         }
     }
 });

@@ -11,8 +11,10 @@ router
     .use(authenticateJwt)
 router
     .get("/", isAdmin(['Administrador']), getClientes)
-    .get("/:rutCliente", isAdmin(['Administrador']), getInfoCliente)
-    .get("/:rutCliente/:sede_id", isAdmin(['Administrador']), getInfoSede)
+    //.get("/:rutCliente/", isAdmin(['Administrador']), getInfoCliente)
+    .get("/:rutCliente/:cliente_id", isAdmin(['Administrador']), getInfoCliente)
+    .get("/:rutCliente/sede/", isAdmin(['Administrador']), getInfoSede)
+    .get("/:rutCliente/sede/:sede_id", isAdmin(['Administrador']), getInfoSede)
 
     .post("/register", isAdmin(['Administrador']), registerCliente)
     .post("/register-gerarquico", isAdmin(["Administrador"]), uploadContratoComercialService.fields([{ name: "anexo_pdf", maxCount: 9 }, { name: "contrato_pdf", maxCount: 10 }]), registrarClienteYArchivo)

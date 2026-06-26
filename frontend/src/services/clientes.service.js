@@ -8,6 +8,17 @@ export async function listarClientesTope() {
         return error.response?.data || { message: "Error de conexión" };
     }
 }
+
+export async function getInfoCliente(cliente_id, rutCliente) {
+    try {
+        const response = await axios.get(`/clientes/${rutCliente}/${cliente_id}`)
+
+        return response.data
+    } catch (error) {
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
+
 export async function registerCliente(data) {
     try {
         const formData = new FormData()
@@ -27,9 +38,18 @@ export async function registerCliente(data) {
             JSON.stringify(data.contrato)
         )
 
+        const anexosLimpios = data.anexos.map(anexo => ({
+            ...anexo,
+            documentos: (anexo.documentos || []).map(doc => ({
+                nombrePersonalizado: doc.nombrePersonalizado,
+                tipoDocumento: doc.tipoDocumento,
+                fileKey: doc.fileKey
+            }))
+        }))
+
         formData.append(
             "anexos",
-            JSON.stringify(data.anexos)
+            JSON.stringify(anexosLimpios)
         )
 
         formData.append(
@@ -68,9 +88,6 @@ export async function registerCliente(data) {
                 }
             })
         })
-        for (const pair of formData.entries()) {
-            console.log(pair[0], pair[1])
-        }
 
         const response = await axios.post(
             "clientes/register-gerarquico",

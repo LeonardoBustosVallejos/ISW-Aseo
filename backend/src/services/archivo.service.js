@@ -47,6 +47,7 @@ export async function createMultipleDocumentosService(documentos, relaciones, ma
             const { id_contrato_comercial, contrato_laboral_id, anexo_id } = relaciones
 
             //asegurar que el documento pertenezca a un contrato o anexo
+
             if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato", "Debe proporcionar un contrato válido")]
 
             //NUNCA puede pertenecer a un contrato Y anexo a la vez, esto incluye a los tipos de contrato 
@@ -69,9 +70,8 @@ export async function createMultipleDocumentosService(documentos, relaciones, ma
                             nombrePersonalizado: documento.nombrePersonalizado,
                             tipoDocumento: documento.tipoDocumento,
                             id_contrato_comercial,
-                            contrato_laboral_id,
-                            anexo_id
                         },
+                        { contrato_laboral_id, anexo_id, id_contrato_comercial },
                         transactionManager
                     )
 
@@ -104,7 +104,7 @@ export async function createMultipleDocumentosService(documentos, relaciones, ma
  * @param {*} manager 
  * @returns 
  */
-export async function createDocumentoService(data, manager = null) {
+export async function createDocumentoService(data, IDs, manager = null) {
     try {
 
         const execute = async (transactionManager) => {
@@ -113,15 +113,19 @@ export async function createDocumentoService(data, manager = null) {
                 file,
                 nombrePersonalizado,
                 tipoDocumento,
+
+            } = data
+            const {
                 id_contrato_comercial,
                 contrato_laboral_id,
                 anexo_id
-            } = data
+            } = IDs
 
             if (!file) throw [null, createErrorMessage("archivo", "Debe proporcionar un archivo")]
 
             //asegurar que el documento pertenezca a un contrato o anexo
             if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato", "Debe proporcionar un contrato válido")]
+
 
             //NUNCA puede pertenecer a un contrato Y anexo a la vez, esto incluye a los tipos de contrato 
             const relaciones = [
@@ -156,6 +160,7 @@ export async function createDocumentoService(data, manager = null) {
             if (anexo_id) {
                 anexo = await anexoRepository.findOne({ where: { id_anexo: anexo_id } })
             }
+            if (!contratoComercial && !contratoLaboral && !anexo) throw [null, createErrorMessage("documento", "No existe informacion para el archivo")]
 
             const documento = documentoRepository.create({
                 nombreOriginal: file.originalname,
@@ -164,13 +169,15 @@ export async function createDocumentoService(data, manager = null) {
                 mimeType: file.mimetype,
                 extension: path.extname(file.originalname),
                 peso: file.size,
-                tipoDocumento,
-                contratoComercial,
-                contratoLaboral,
-                anexo
+                tipoDocumento: tipoDocumento,
+                contratoComercial: { id_contrato_comercial: id_contrato_comercial || null },
+                contratoLaboral: { id_contrato_laboral: contrato_laboral_id || null },
+                anexo: { id_anexo: anexo_id || null }
             })
 
+
             await documentoRepository.save(documento)
+
 
             return [documento, null]
         }
