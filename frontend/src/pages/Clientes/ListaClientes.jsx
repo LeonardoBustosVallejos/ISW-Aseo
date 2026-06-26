@@ -62,7 +62,7 @@ const ListaClientes = () => {
 
     return (
         <div className="gestion-clientes">
-            <Header title={'Lista de Empresas Representantes Legales'}>
+            <Header title={'Lista de Empresas Representantes Y Filiales'}>
                 <Link to="/clientes/registrar" className="btn-nuevo-cliente">+ Nuevo Cliente</Link>
             </Header>
             <div className="filtros-clientes">
@@ -133,6 +133,11 @@ const ListaClientes = () => {
                                 </div>
                                 <div>
                                     {cliente.rutCliente}
+                                </div>
+                                <div>
+
+                                    {cliente.tipoCliente}
+
                                 </div>
                                 <div className={`estado ${cliente.contrato === "ESPERA" ? "amarillo" :
                                     cliente.contrato === "VIGENTE" ? "verde" : "rojo"}`}>

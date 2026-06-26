@@ -703,7 +703,6 @@ export async function listarClientesService(manager = null) {
         const lista = await clienteRepository.find({
             relations: ["sede", "sede.contactos", "contrato"],
             where: {
-                tipoCliente: "EMPRESA",
                 sede: {
                     tipoSede: "PRINCIPAL",
                     contactos: { tipoContacto: "PRINCIPAL" }
@@ -731,6 +730,7 @@ export async function listarClientesService(manager = null) {
                 cliente_id: cliente.cliente_id,
                 nombreCliente: cliente.nombreCliente,
                 rutCliente: cliente.rutCliente,
+                tipoCliente: cliente.tipoCliente,
                 contrato: estadoActual,
                 direccionPrincipal: cliente.sede[0].direccion,
                 nombreContacto: cliente.sede[0].contactos[0].nombreContacto,

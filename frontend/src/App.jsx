@@ -10,6 +10,7 @@ import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
 import InfoCliente from "./pages/Clientes/InfoCliente";
+import Home from "./pages/Home";
 
 
 export default function App() {
@@ -20,7 +21,7 @@ export default function App() {
                 <Route path="/" element={<LoginForm />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/" element={<Root />}>
-                    <Route path="home" element={<Root />} />
+                    <Route path="home" element={<Home />} />
                     <Route path="recursos/resumen" element={<ResumenRecursos />} />
                     {/*<Route path="recursos/detalles" element={<Detalles />} />
                 <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}

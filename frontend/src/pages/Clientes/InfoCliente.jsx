@@ -256,7 +256,7 @@ export default function InfoCliente() {
                 <Tab titulo={'Contratos'}>
 
                 </Tab>
-                <Tab titulo={'Anexos'}>
+                <Tab titulo={'Anexos'} disabled={dataGeneral.anexos.length < 1}>
 
                 </Tab>
                 <Tab titulo={'Documentos'}>
