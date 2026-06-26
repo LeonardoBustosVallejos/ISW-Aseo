@@ -198,6 +198,7 @@ export const devolverActivosBodega = async(cliente_id, sede_id, activos_ids) => 
         for (const activo of los_activos){
             activo.cliente_id = null;
             activo.sede_id = null; 
+            activo.recepcion_confirmada = false;
             const resultado = await activoFijoRepositorio.save(activo);
             activos_devueltos.push(resultado);
             ids_devueltos.push(activo.activo_id);
@@ -237,15 +238,16 @@ export const confirmarRecepcionActivos = async(cliente_id, sede_id, activos_ids,
             .where("activo.activo_id IN (:...ids)", {ids: activos_ids})
             .andWhere("activo.sede_id = :sede_id", {sede_id: sede_id})
             .andWhere("activo.cliente_id = :cliente_id", {cliente_id: cliente_id})
+            .andWhere("activo.recepcion_confirmada = :confirmado", {confirmado: false})
             .getMany();
 
         if(activos_enviados.length !== activos_ids.length){
-            return[null,`Error: Se intento confirmar ${activos_ids.length} activos, pero no coinciden con la sede y cliente indicados.`];
+            return[null,`Error: Algunos activos no coinciden con la sede, o ya fueron confirmados anteriormente.`];
         }
 
         const activos_confirmados = [];
         for(const activo of activos_enviados){
-            activo.trabajador_id = trabajador_id;
+            activo.recepcion_confirmada = true;
             const resultado = await activoFijoRepositorio.save(activo);
             activos_confirmados.push(resultado);
 
