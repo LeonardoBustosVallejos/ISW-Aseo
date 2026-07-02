@@ -9,3 +9,24 @@ export async function getSolicitudes() {
     return [];
   }
 }
+
+export async function getSolicitudById(id) {
+  try {
+    const solicitudes = await getSolicitudes();
+
+    if (!Array.isArray(solicitudes)) {
+      return { success: false, message: 'No se pudieron cargar las solicitudes' };
+    }
+
+    const solicitud = solicitudes.find((item) => String(item.id_solicitud) === String(id));
+
+    if (!solicitud) {
+      return { success: false, message: 'Solicitud no encontrada' };
+    }
+
+    return { success: true, data: solicitud };
+  } catch (error) {
+    console.error('Error fetching solicitud', error);
+    return { success: false, message: error.message || 'Error al cargar la solicitud' };
+  }
+}
