@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/clientes.service';
 import Acordeon from '@components/acordeon';
-import DocumentoRow from '../../components/Contrato/Documentos';
-import SedeRow from '../../components/SedesForm';
-import ContratoRow from '../../components/Contrato/ContratoComercialForm';
-import AnexoRow from '../../components/Contrato/AnexoComercial';
-import { Plus } from 'lucide-react';
-
+import DocumentoRow from '@components/Contrato/Documentos';
+import SedeRow from '@components/Clientes/SedesForm';
+import ContratoRow from '@components/Contrato/ContratoComercialForm';
+import AnexoRow from '@components/Contrato/AnexoComercial';
+import { Trash2, TriangleAlert } from 'lucide-react';
+import "@styles/registerCliente.css"
+import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
+import AddButton from '../../components/misc/add-button';
+import Header from '../../components/misc/Header';
 
 /**
  * 
@@ -17,6 +20,9 @@ import { Plus } from 'lucide-react';
 const RegisterClienteForm = () => {
     const [openSection, setOpenSection] = useState('cliente');
     const [openContacto, setOpenContacto] = useState(null);
+    const [openSedes, setOpenSedes] = useState(null);
+    const [openFilial, setOpenFilial] = useState(null);
+    const [aceptado, setAceptado] = useState(false)
     const [errors, setErrors] = useState({});
 
     /**Inicializar las variables/objetos base que son obligatorios para el registro */
@@ -31,13 +37,13 @@ const RegisterClienteForm = () => {
                 nombre_sede: '',
                 direccion: '',
                 personalSolicitado: '',
-                tipoSede: '',
+                tipoSede: 'PRINCIPAL',
                 contactos: [{
                     nombreContacto: '',
                     contacto_rut: '',
                     email: '',
                     phone: '',
-                    tipoContacto: '',
+                    tipoContacto: 'PRINCIPAL',
                 }]
             }
         ],
@@ -57,7 +63,7 @@ const RegisterClienteForm = () => {
         metadataDocumentos: [
             {
                 nombrePersonalizado: '',
-                tipoDocumento: '',
+                tipoDocumento: 'CONTRATO',
                 fileKey: "contrato_pdf",
                 file: null
             }
@@ -67,6 +73,8 @@ const RegisterClienteForm = () => {
         ]
 
     });
+
+
 
 
     const getSectionFromErrors = (errors) => {
@@ -108,9 +116,12 @@ const RegisterClienteForm = () => {
         if (section === "cliente") {
             setOpenSection("cliente");
         }
-
+        if (section === "sedes") {
+            setOpenSedes("sedes");
+        }
         if (section === "contacto") {
-            setOpenSection("cliente");   // 👈 contacto está dentro de cliente
+            setOpenSection("cliente");   //contacto está dentro de cliente
+            setOpenSedes("sedes");
             setOpenContacto("contacto");
         }
 
@@ -126,6 +137,53 @@ const RegisterClienteForm = () => {
         }));
     };
 
+    const addFilial = () => {
+        setFormData(prev => ({
+            ...prev,
+            cliente: {
+                ...prev.cliente,
+                filiales: [
+                    ...prev.cliente.filiales,
+                    {
+                        nombreCliente: "",
+                        rutCliente: "",
+                        sedes: [
+                            {
+                                nombre_sede: "",
+                                direccion: "",
+                                personalSolicitado: "",
+                                tipoSede: "PRINCIPAL",
+                                contactos: [
+                                    {
+                                        nombreContacto: "",
+                                        contacto_rut: "",
+                                        email: "",
+                                        phone: "",
+                                        tipoContacto: "PRINCIPAL"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }));
+    };
+    const removeFilial = (index) => {
+
+        setFormData(prev => {
+
+            const copia = structuredClone(prev);
+
+            copia.cliente.filiales.splice(index, 1);
+
+            return copia;
+        });
+
+        if (openFilial === `${index + 1}`) {
+            setOpenFilial(null);
+        }
+    };
 
     const formatRut = (value) => {
 
@@ -157,23 +215,17 @@ const RegisterClienteForm = () => {
 
         return `${body}-${dv}`
     }
-    const handleChange = (field, value) => {
 
-
-        setFormData((prev) => ({
-            ...prev,
-            cliente: {
-                ...prev.cliente,
-
-                [field]: value
-
-            }
-        }));
-    };
 
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();
+
+            if (!aceptado) {
+                showErrorAlert("Confirmación requerida",
+                    "Debe confirmar que la información es correcta")
+            }
+
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
@@ -183,228 +235,203 @@ const RegisterClienteForm = () => {
             }
         } catch (error) {
             console.error("Error al registrar un usuario: ", error);
+
             showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
         }
     }
 
     return (
-        <div className="container" style={{ height: "auto", minHeight: "100%", padding: "0 0" }}>
-            <div className='form'>
-                <h1>Registro de Cliente y Supervisor</h1>
-                <form onSubmit={handleSubmit}>
+        <div className="form-container">
+            <Header title={'Registro de Cliente y Supervisor'} />
 
-                    {/* SECCIÓN CLIENTE */}
-                    <Acordeon title={"Datos del Cliente"} isOpen={openSection === "cliente"}
-                        required={true}
-                        onToggle={() => {
-                            setOpenSection(openSection === "cliente" ? null : "cliente")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div >
+            <form onSubmit={handleSubmit} className="form-card form-content">
 
-                                <div className="container_inputs">
-                                    <label className="label">
-                                        Nombre Empresa (Nombre de Fantasía)
-                                        <span className="text-red-500 ml-1">*</span>
-                                    </label>
-                                    <input type="text" name="nombreCliente" value={formData.cliente.nombreCliente}
-                                        minLength={3}
-                                        onChange={(e) => handleChange("nombreCliente", e.target.value)} className="input" required />
-                                </div>
-
-                                <div className="container_inputs">
-                                    <label className="label">
-                                        RUT de Empresa
-                                        <span className="text-red-500 ml-1">*</span>
-                                    </label>
-                                    <input type="text" name="rutCliente" value={formData.cliente.rutCliente}
-                                        onChange={(e) => handleChange("rutCliente", formatRut(e.target.value))} className="input" placeholder="12345678-9" required />
-                                </div>
-
-
-                            </div>
-                        } />
-
-                    {/* SEDES */}
-                    <Acordeon title="Sede" isOpen={openSection === "sedes"}
-                        required={true}
-                        onToggle={() => {
-                            setOpenSection(openSection === "sedes" ? null : "sedes")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div>
-                                {formData.sedes.map((sede, index) => (
-
-                                    <SedeRow sede={sede}
-                                        key={index}
-                                        index={index}
-                                        largo={formData.sedes.length}
-                                        setFormData={setFormData}
-                                        formatRut={formatRut}
-                                        removeSede={(i) => {
-
-                                            setFormData(prev => {
-                                                const copia = structuredClone(prev)
-                                                copia.sedes.splice(i, 1)
-                                                return copia
-                                            })
-                                        }}
-                                    />
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => {
-
-                                        console.log(formData.sedes);
-                                        setFormData(prev => ({
-
-                                            ...prev,
-
-                                            sedes: [
-
-                                                ...prev.sedes,
-
-                                                {
-                                                    nombre_sede: '',
-                                                    direccion: '',
-                                                    personalSolicitado: '',
-                                                    tipoSede: '',
-                                                    contactos: [{
-                                                        nombreContacto: '',
-                                                        contacto_rut: '',
-                                                        email: '',
-                                                        phone: '',
-                                                        tipoContacto: '',
-                                                    }]
-                                                }
-                                            ]
-
-                                        }))
-                                    }}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-
-                                    <Plus size={16} />
-
-                                    Agregar Sede
-                                </button>
-                            </div>
-                        }
-
-                    />
-                    {/*CONTRATO */}
-                    <Acordeon title="Contrato"
-                        isOpen={openSection === "contrato"}
-                        onToggle={() => {
-                            setOpenSection(openSection === "contrato" ? null : "contrato")
-                            setOpenContacto(null)
-                        }}
-                        required={true}
-
-                        content={
-
-                            <ContratoRow
-                                contrato={formData.contrato}
-                                documentos={formData.metadataDocumentos}
+                {/* SECCIÓN CLIENTE */}
+                <Acordeon title={"Datos del Cliente"} level={0} isOpen={openSection === "cliente"}
+                    required={true}
+                    onToggle={() => {
+                        setOpenSection(openSection === "cliente" ? null : "cliente")
+                        setOpenContacto(null)
+                    }}
+                    content={
+                        <div className="">
+                            <DataClienteOFilial
+                                data={formData.cliente}
+                                sedes={formData.sedes}
+                                dataPath={["cliente"]}
+                                sedesPath={["sedes"]}
                                 setFormData={setFormData}
+                                formatRut={formatRut}
+
+
                             />
-                        }
-                    />
-                    {/*ANEXOS */}
-                    <Acordeon title="Anexo(s)"
-                        isOpen={openSection === "anexo"}
-                        onToggle={() => {
-                            setOpenSection(openSection === "anexo" ? null : "anexo")
-                            setOpenContacto(null)
-                        }}
-                        content={
-                            <div>
+                        </div>
+                    } />
 
-                                {formData.anexos.map((anexo, index) => (
+                {/*CONTRATO */}
+                <Acordeon title="Contrato" level={0}
+                    isOpen={openSection === "contrato"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "contrato" ? null : "contrato")
+                        setOpenContacto(null)
+                    }}
+                    required={true}
 
-                                    <AnexoRow anexo={anexo}
-                                        key={index}
-                                        index={index}
-                                        setFormData={setFormData}
-                                        contrato={formData.contrato}
-                                        removeAnexo={(i) => {
+                    content={
 
-                                            setFormData(prev => {
+                        <ContratoRow
+                            contrato={formData.contrato}
+                            documentos={formData.metadataDocumentos}
+                            setFormData={setFormData}
+                            level={0}
+                        />
+                    }
+                />
+                {/*ANEXOS */}
+                <Acordeon title={`Anexo(s) (${formData.anexos.length})`} level={0}
+                    isOpen={openSection === "anexo"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "anexo" ? null : "anexo")
+                        setOpenContacto(null)
+                    }}
+                    content={
+                        <>
 
-                                                const copia =
-                                                    structuredClone(prev)
+                            {formData.anexos.map((anexo, index) => (
 
-                                                copia.anexos.splice(i, 1)
+                                <AnexoRow anexo={anexo}
+                                    key={index}
+                                    index={index}
+                                    setFormData={setFormData}
+                                    contrato={formData.contrato}
+                                    removeAnexo={(i) => {
 
-                                                return copia
-                                            })
-                                        }}
-                                    />
+                                        setFormData(prev => {
 
-                                )
-                                )}
-                                {/*Botón de agregar anexo */}
-                                <button
-                                    type="button"
-                                    onClick={() => {
+                                            const copia =
+                                                structuredClone(prev)
 
-                                        setFormData(prev => ({
+                                            copia.anexos.splice(i, 1)
 
-                                            ...prev,
-
-                                            anexos: [
-
-                                                ...prev.anexos,
-
-                                                {
-                                                    datos: {
-                                                        numeroAnexo: "",
-                                                        fechaInicio: formData.contrato.fechaInicio,
-                                                        fechaFin: formData.contrato.fechaFinOriginal,
-                                                        montoNuevo: formData.contrato.monto,
-                                                        cantidadMinTrabajadores: formData.contrato.cantidadMinTrabajadores,
-                                                        cantidadMaxTrabajadores: formData.contrato.cantidadMaxTrabajadores,
-                                                        tipoJornada: formData.contrato.tipoJornada,
-                                                        tipoAnexo: '',
-                                                        detalles: '',
-                                                        observacionesOperativas: '',
-                                                        requiereGuardias: formData.contrato.requiereGuardias,
-                                                        tamanoInstalacion: formData.contrato.tamanoInstalacion
-                                                    },
-
-                                                    documentos: [
-                                                        {
-                                                            nombrePersonalizado: '',
-                                                            tipoDocumento: '',
-                                                            fileKey: "anexo_pdf",
-                                                            file: null
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }))
+                                            return copia
+                                        })
                                     }}
-                                    className="bg-sky-900 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                />
 
-                                    <Plus size={16} />
+                            )
+                            )}
+                            {/*Botón de agregar anexo */}
+                            <AddButton
+                                onClick={() => {
 
-                                    Agregar Anexo
-                                </button>
-                            </div>
-                        }
+                                    setFormData(prev => ({
+
+                                        ...prev,
+
+                                        anexos: [
+
+                                            ...prev.anexos,
+
+                                            {
+                                                datos: {
+                                                    numeroAnexo: "",
+                                                    fechaInicio: formData.contrato.fechaInicio,
+                                                    fechaFin: formData.contrato.fechaFinOriginal,
+                                                    montoNuevo: formData.contrato.monto,
+                                                    cantidadMinTrabajadores: formData.contrato.cantidadMinTrabajadores,
+                                                    cantidadMaxTrabajadores: formData.contrato.cantidadMaxTrabajadores,
+                                                    tipoJornada: formData.contrato.tipoJornada,
+                                                    tipoAnexo: '',
+                                                    detalles: '',
+                                                    observacionesOperativas: '',
+                                                    requiereGuardias: formData.contrato.requiereGuardias,
+                                                    tamanoInstalacion: formData.contrato.tamanoInstalacion
+                                                },
+
+                                                documentos: [
+                                                    {
+                                                        nombrePersonalizado: '',
+                                                        tipoDocumento: 'ANEXO',
+                                                        fileKey: "anexo_pdf",
+                                                        file: null
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }))
+                                }}
+                                text={'Agregar Anexo'}
+                            />
+                        </>
+                    }
+                />
+                {/*FILIALES */}
+                <Acordeon title={`Filial(es) (${formData.cliente.filiales.length})`} level={0}
+                    isOpen={openSection === "filiales"}
+                    onToggle={() => {
+                        setOpenSection(openSection === "filiales" ? null : "filiales")
+                        setOpenFilial(null)
+                    }}
+                    content={
+                        <div >
+                            {formData.cliente.filiales.map((filial, index) => (
+                                <div className='multiple-acordeon'>
+
+                                    <Acordeon title={`${index + 1}. ${filial?.nombreCliente || "Sin nombre"}`} level={1}
+                                        isOpen={openFilial === `${index + 1}`}
+                                        onToggle={() => setOpenFilial(openFilial === `${index + 1}` ? null : `${index + 1}`)}
+                                        content={
+
+                                            <DataClienteOFilial
+                                                data={filial}
+                                                sedes={filial.sedes}
+                                                dataPath={["cliente", "filiales", index]}
+                                                sedesPath={["cliente", "filiales", index, "sedes"]}
+                                                setFormData={setFormData}
+                                                formatRut={formatRut}
+                                            />
+                                        }
+                                    />
+                                    {/*REMOVER FILIAL */}
+                                    <button type="button"
+                                        onClick={() => removeFilial(index)}
+                                        className={`remove-button`}>
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            ))}
+                            <AddButton
+                                onClick={addFilial}
+                                text={'Agregar Filial'}
+                            />
+                        </div>
+                    }
+                />
+                <button type='button' className='checkbox-row' onClick={() => {
+                    setAceptado(prev => !prev)
+
+                }} style={{ backgroundColor: 'transparent' }}>
+
+                    <input type="checkbox" name="aceptado"
+                        checked={aceptado}
                     />
-                    <hr />
 
-                    <div>
-                        <span className={`error-message`}>
-                            {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
-                        </span>
-                    </div>
-                    <hr />
-                    <button type="submit">Registrar</button>
-                </form>
-            </div >
+                    <label className='label' style={{ cursor: 'pointer' }}>
+                        Acepto que toda la informacion entregada es correcta
+                        <span className='required' style={{ display: 'flex' }}>*<TriangleAlert /> </span>
+                    </label>
+
+                </button>
+
+                <div>
+                    <span className={`error-message`}>
+                        {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
+                    </span>
+                </div>
+                <hr />
+                <button type="submit" className='submit-button' disabled={!aceptado}>Registrar</button>
+            </form >
+
         </div >
     );
 };

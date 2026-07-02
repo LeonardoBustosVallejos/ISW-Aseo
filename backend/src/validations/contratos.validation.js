@@ -69,12 +69,11 @@ export const contratoAnexoValidation = Joi.object({
 
     montoNuevo: Joi.number()
         .positive()
-        .allow(null),
+        .required(),
 
-    cantidadMaxTrabajadores: Joi.number()
-        .integer()
-        .min(1)
-        .allow(null),
+    jornada: Joi.string()
+        .valid("COMPLETA", "PARCIAL")
+        .default("COMPLETA"),
 
     tipoJornada: Joi.string()
         .valid(
@@ -83,18 +82,32 @@ export const contratoAnexoValidation = Joi.object({
             "MIXTA",
             "TURNOS"
         )
-        .allow(null),
+        .default("DIURNA"),
 
+    cantidadMinTrabajadores: Joi.number()
+        .integer()
+        .min(1)
+        .required(),
+
+    cantidadMaxTrabajadores: Joi.number()
+        .integer()
+        .min(Joi.ref("cantidadMinTrabajadores"))
+        .required(),
+
+    tamanoInstalacion: Joi.string()
+        .valid(
+            "PEQUENA",
+            "MEDIANA",
+            "GRANDE",
+            "INDUSTRIAL"
+        ),
     tipoAnexo: Joi.string()
         .valid(
-            "RENOVACION",
-            "AUMENTO_PERSONAL",
-            "REDUCCION_PERSONAL",
-            "CAMBIO_MONTO",
-            "SERVICIO_ADICIONAL",
-            "OTRO"
+            "RENOVACION", "AUMENTO_PERSONAL", "REDUCCION_PERSONAL", "CAMBIO_MONTO", "SERVICIO_ADICIONAL", "OTRO"
         )
-        .default("OTRO"),
+    ,
+    requiereGuardias: Joi.boolean()
+        .default(false),
 
     detalles: Joi.string()
         .allow("", null),

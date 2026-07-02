@@ -1,0 +1,15 @@
+.backButton {
+    display: flex;
+    background-color: var(--ubb-azul-principal);
+    font-weight: 700;
+    padding: 4px;
+    color: var(--ubb-texto);
+    border-radius: 8px;
+    height: 48px;
+    align-items: center;
+}
+
+.backButton:hover {
+    background-color: var(--ubb-azul-hover);
+    cursor: pointer;
+}

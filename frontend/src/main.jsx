@@ -4,6 +4,9 @@ import { RouterProvider } from "react-router-dom";
 import Login from '@pages/Login';
 import '@styles/styles.css';
 import { ModalProvider } from './context/ModalContext';
+import "primereact/resources/themes/lara-light-blue/theme.css";
+import "primereact/resources/primereact.min.css";
+import "primeicons/primeicons.css";
 import App from './app';
 
 

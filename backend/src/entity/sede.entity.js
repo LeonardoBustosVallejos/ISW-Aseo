@@ -65,7 +65,8 @@ const SedeSchema = new EntitySchema({
             type: "many-to-one",
             target: "Cliente",
             joinColumn: { name: "cliente_id" },
-            onDelete: "CASCADE" //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
+            nullable: false,
+            onDelete: "CASCADE", //Si se elimina el cliente con el que está relacionado, también se eliminará la dirección
         },
         //una sede puede tener varias personas de contactos
         contactos: {
@@ -83,6 +84,11 @@ const SedeSchema = new EntitySchema({
             type: "one-to-many",
             target: "TrabajadoresGrupos",
             inverseSide: "sedeAsignada"
+        },
+        anexo: {
+            target: "ContratoAnexo",
+            type: "many-to-many",
+            inverseSide: "sedes"
         }
     }
 

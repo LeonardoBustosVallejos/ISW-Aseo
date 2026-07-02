@@ -27,6 +27,10 @@ const Movimiento = new EntitySchema({
             type: "simple-array",
             nullable: true
         },
+        sede_id: {
+            type: "int",
+            nullable: true,
+        },
         trabajador_id:{
             type: "int",
             nullable: true
@@ -40,6 +44,16 @@ const Movimiento = new EntitySchema({
             joinColumn:{
                 name: "cliente_id",
                 referencedColumnName: "cliente_id",
+            },
+            onDelete: "SET NULL"
+        },
+        
+        sede: {
+            target: "Sede",
+            type: "many-to-one",
+            joinColumn: {
+                name: "sede_id",
+                referencedColumnName: "sede_id",
             },
             onDelete: "SET NULL"
         },

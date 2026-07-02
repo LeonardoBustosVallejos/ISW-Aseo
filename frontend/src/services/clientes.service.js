@@ -8,12 +8,91 @@ export async function listarClientesTope() {
         return error.response?.data || { message: "Error de conexión" };
     }
 }
+
+export async function getInfoCliente(cliente_id, rutCliente) {
+    try {
+        const response = await axios.get(`/clientes/${rutCliente}/${cliente_id}`)
+
+        return response.data
+    } catch (error) {
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
+
 export async function registerCliente(data) {
     try {
-        console.log(data);
+        const formData = new FormData()
 
+        formData.append(
+            "cliente",
+            JSON.stringify(data.cliente)
+        )
 
-        const response = await axios.post('clientes/register-gerarquico', data)
+        formData.append(
+            "sedes",
+            JSON.stringify(data.sedes)
+        )
+
+        formData.append(
+            "contrato",
+            JSON.stringify(data.contrato)
+        )
+
+        const anexosLimpios = data.anexos.map(anexo => ({
+            ...anexo,
+            documentos: (anexo.documentos || []).map(doc => ({
+                nombrePersonalizado: doc.nombrePersonalizado,
+                tipoDocumento: doc.tipoDocumento,
+                fileKey: doc.fileKey
+            }))
+        }))
+
+        formData.append(
+            "anexos",
+            JSON.stringify(anexosLimpios)
+        )
+
+        formData.append(
+            "metadataDocumentosContrato",
+            JSON.stringify(
+                data.metadataDocumentos
+                    .map(doc => ({
+                        nombrePersonalizado: doc.nombrePersonalizado,
+                        tipoDocumento: doc.tipoDocumento,
+                        fileKey: doc.fileKey
+                    }))
+            )
+        )
+
+        data.metadataDocumentos.forEach(doc => {
+
+            if (doc.file) {
+
+                formData.append(
+                    doc.fileKey,
+                    doc.file
+                )
+
+            }
+        })
+        data.anexos.forEach(anexo => {
+
+            anexo.documentos.forEach(doc => {
+
+                if (doc.file) {
+
+                    formData.append(
+                        doc.fileKey,
+                        doc.file
+                    )
+                }
+            })
+        })
+
+        const response = await axios.post(
+            "clientes/register-gerarquico",
+            formData
+        )
         return response.data
     } catch (error) {
         console.error("Error 400 - Detalle del Backend:", error.response?.data);

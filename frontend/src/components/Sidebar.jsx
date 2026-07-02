@@ -2,54 +2,60 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
+import { BookUser, CircleChevronDown, FileUser, House, Info, LogOut, Network, NotebookPen, PanelLeftClose, PanelLeftOpen, ShelvingUnit, TableProperties, Trash2, UserRound, UserRoundCheck, UserRoundPlus, UsersRound, Warehouse } from "lucide-react";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
 
     let rolUsuario = null;
-    try{
-        const usuarioGuardado = sessionStorage.getItem("usuario"); 
-            console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
-        if(usuarioGuardado && usuarioGuardado !== "undefined"){
+    try {
+        const usuarioGuardado = sessionStorage.getItem("usuario");
+        console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
+        if (usuarioGuardado && usuarioGuardado !== "undefined") {
             const usuarioLogueado = JSON.parse(usuarioGuardado);
             rolUsuario = usuarioLogueado.rol.id;
-        }        
+        }
         console.log("¡Por fin encontramos el rol! Es:", rolUsuario);
-        
-    }catch(error){
+
+    } catch (error) {
         console.error("Error al intentar leer el perfil del usuario:", error);
     }
     const menuData = [
         {
+            symbol: <Warehouse />,
             title: "Bodega",
             path: "/bodega",
         },
         {
+            symbol: <NotebookPen />,
             title: "Solicitudes",
             path: "/solicitudes",
         },
         {
+            symbol: <ShelvingUnit />,
             title: "Recursos",
-            children:[
-                ...(rolUsuario == 1 ? [{title: "Resumen", path: "/recursos/resumen"}] : []),
-                { title: "Detalles", path: "/recursos/detalles" },
+            children: [
+                ...(rolUsuario == 1 ? [{ symbol: <TableProperties />, title: "Resumen", path: "/recursos/resumen" }] : []),
+                { symbol: <Info />, title: "Detalles", path: "/recursos/detalles" },
             ],
         },
         {
+            symbol: <BookUser />,
             title: "Trabajadores",
             children: [
-                { title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
-                { title: "Asignar Trabajador", path: "/trabajadores/asignar" },
-                { title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
+                { symbol: <UserRoundPlus />, title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
+                { symbol: <UserRoundCheck />, title: "Asignar Trabajador", path: "/trabajadores/asignar" },
+                { symbol: <Trash2 />, title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
             ],
         },
         {
+            symbol: <Network />,
             title: "Clientes",
             children: [
-                { title: "Lista de Clientes", path: "/clientes" },
-                { title: "Agregar", path: "/cliente/registrar" },
+                { symbol: <UsersRound />, title: "Lista de Clientes", path: "/clientes" },
+                { symbol: <UserRoundPlus />, title: "Agregar", path: "/clientes/registrar" },
             ],
 
         },
@@ -68,15 +74,27 @@ const Sidebar = () => {
         }
     };
     return (
-        <div className="sidebar">
-            <div></div>
-            <div style={{ textAlign: "center" }}>
-                escudo ubb
+        <div className={`sidebar ${isOpen ? 'open' : ''}`}>
+            <div className={`sidebar-top `}>
+
+                <button type="button" className={`top-button`} onClick={() => navigate('/home')}>
+                    <House />
+                </button>
+                <button type="button" className={`top-button`} onClick={() => setIsOpen(!isOpen)}>
+                    {isOpen ?
+                        <PanelLeftClose />
+                        :
+                        <PanelLeftOpen />
+                    }
+                </button>
             </div>
-            <div style={{ textAlign: "center" }}>
-                logo ubb
+            <div className={`sidebar-header `}>
+
+                <div className={`${isOpen ? '' : 'oculto'}`}>
+                    Sidebar
+                </div>
             </div>
-            <div>
+            <div className={`menudata `}>
                 {menuData.map((item, index) => (
                     <div key={index}>
                         {item.children ? (
@@ -85,9 +103,17 @@ const Sidebar = () => {
                                     className="menu-item"
                                     onClick={() => toggleMenu(index)}
                                 >
-                                    <span>{item.title}</span>
+                                    <div style={{ display: 'flex' }}>
+
+                                        <span>
+
+                                            {item.symbol}
+                                        </span>
+                                        <span className={`${isOpen ? '' : 'oculto'}`}>
+                                            {item.title}</span>
+                                    </div>
                                     <span className={`arrow accordion-icon ${openMenu === index ? "open" : ""}`}>
-                                        ▼
+                                        <CircleChevronDown />
                                     </span>
                                 </div>
 
@@ -99,7 +125,10 @@ const Sidebar = () => {
                                             to={child.path}
                                             className={`submenu-item ${location.pathname === child.path ? "active" : ""}`}
                                         >
-                                            {child.title}
+                                            {child.symbol && <span>{child.symbol}</span>}
+                                            <span className={`${isOpen ? '' : 'oculto'}`}>
+                                                {child.title}
+                                            </span>
                                         </Link>
                                     ))}
                                 </div>
@@ -109,16 +138,33 @@ const Sidebar = () => {
                                 to={item.path}
                                 className={`menu-item ${location.pathname === item.path ? "active" : ""}`}
                             >
-                                {item.title}
+                                <div className="label-item">
+
+                                    <div>{item.symbol}</div>
+                                    <div className={`${isOpen ? '' : 'oculto'}`}>{item.title}</div>
+                                </div>
                             </Link>
                         )}
                     </div>
                 ))}
             </div>
-            <div>
-                <div className="profile">Perfil</div>
+            <div className="bottom">
+                {/*
+                <div className="profile">
+                    {isOpen ?
+                        'Perfil'
+                        :
+                        < UserRound />}
+                </div>
+                    */}
 
-                <div className="logout" onClick={logoutSubmit}>Cerrar Sesión</div>
+                <div className="logout" onClick={logoutSubmit}>
+                    {isOpen ?
+                        'Cerrar Sesión'
+                        :
+                        <LogOut />}
+
+                </div>
             </div>
         </div>
     )

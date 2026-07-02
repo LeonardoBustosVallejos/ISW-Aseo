@@ -1,0 +1,79 @@
+.contrato-card {
+    width: 100%;
+    background: var(--ubb-fondo);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+.contrato-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr) auto;
+    gap: 1rem;
+    align-items: end;
+    padding: 1.25rem;
+}
+
+.contrato-body {
+    border-top: 1px solid var(--border);
+    background: var(--ubb-fondo);
+    padding: 1.25rem;
+
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.contrato-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.contrato-field {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.contrato-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: end;
+}
+
+
+.textarea-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.textarea-large {
+    min-height: 9rem;
+    resize: vertical;
+}
+
+
+@media (max-width: 1400px) {
+
+    .contrato-header {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+}
+
+@media (max-width: 900px) {
+
+    .contrato-header,
+    .contrato-grid,
+    .textarea-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contrato-actions {
+        justify-content: flex-start;
+    }
+
+}

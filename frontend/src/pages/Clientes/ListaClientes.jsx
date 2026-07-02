@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { listarClientesTope } from "../../services/clientes.service"
 import "../../styles/listaClientes.css"
 import { Link } from "react-router-dom"
+import Header from "../../components/misc/Header"
 const ListaClientes = () => {
     const [lista, setLista] = useState([])
     const [busqueda, setBusqueda] = useState("");
@@ -50,6 +51,10 @@ const ListaClientes = () => {
                 case "asignados-desc":
                     return b.asignados - a.asignados;
 
+                case "req-asc":
+                    return a.solicitados - b.solicitados
+                case "req-desc":
+                    return b.solicitados - a.solicitados
                 default:
                     return 0;
             }
@@ -57,12 +62,9 @@ const ListaClientes = () => {
 
     return (
         <div className="gestion-clientes">
-            <div className="gestion-header">
-                <h1>Gestión de Clientes</h1>
-
-                <Link to="/cliente/registrar" className="btn-nuevo-cliente">+ Nuevo Cliente</Link>
-
-            </div>
+            <Header title={'Lista de Empresas Representantes Y Filiales'}>
+                <Link to="/clientes/registrar" className="btn-nuevo-cliente">+ Nuevo Cliente</Link>
+            </Header>
             <div className="filtros-clientes">
 
                 <input
@@ -79,7 +81,8 @@ const ListaClientes = () => {
                     <option value="">Todos los estados</option>
                     <option value="ESPERA">Espera</option>
                     <option value="VIGENTE">Vigente</option>
-                    <option value="FINALIZADO">Finalizado</option>
+                    <option value="SUSPENDIDO">Suspendido</option>
+                    <option value="TERMINADO">Terminado</option>
                 </select>
 
                 <select
@@ -94,6 +97,13 @@ const ListaClientes = () => {
 
                     <option value="nombre-desc">
                         Nombre ↓
+                    </option>
+                    <option value="req-asc">
+                        Requeridos ↑
+                    </option>
+
+                    <option value="req-desc">
+                        Requeridos ↓
                     </option>
 
                     <option value="asignados-asc">
@@ -110,60 +120,72 @@ const ListaClientes = () => {
 
                 {clientesFiltrados.map((cliente, index) => (
 
-                    <div className="tabla-cliente fila-cliente" key={index}>
+                    <Link to={`/cliente/rut/${cliente.rutCliente}/id/${cliente.cliente_id}`}>
+                        <div className="tabla-cliente fila-cliente" key={index}>
 
-                        <div>{index + 1}</div>
-
-                        <div>
                             <div>
-                                <strong>{cliente.nombreCliente}</strong>
+                                <strong>{index + 1}</strong>
                             </div>
+
                             <div>
-                                {cliente.rutCliente}
-                            </div>
-                            <div className={`estado ${cliente.contrato === "ESPERA" ? "amarillo" :
-                                cliente.contrato === "VIGENTE" ? "verde" : "rojo"}`}>
-                                {cliente.contrato}
-                            </div>
-                        </div>
-                        <div>
-                            <div><strong > Dirección</strong></div>
-                            <p>{cliente.direccionPrincipal}</p>
-                        </div>
+                                <div>
+                                    <strong>{cliente.nombreCliente}</strong>
+                                </div>
+                                <div>
+                                    {cliente.rutCliente}
+                                </div>
+                                <div>
 
-                        <div>
-                            <div><strong>Personal</strong></div>
-                            <div>
-                                <p>Personal Requerido: {cliente.solicitados}</p>
+                                    {cliente.tipoCliente}
 
-                                <p>Personal Asignado: {cliente.asignados}</p>
-
-
-                                <div className="progress-bar">
-                                    <div
-                                        className="progress-fill"
-                                        style={{
-                                            width: `${cliente.solicitados > 0
-                                                ? (cliente.asignados / cliente.solicitados) * 100
-                                                : 0
-                                                }%`
-                                        }}
-                                    />
+                                </div>
+                                <div className={`estado ${cliente.contrato === "ESPERA" ? "amarillo" :
+                                    cliente.contrato === "VIGENTE" ? "verde" : "rojo"}`}>
+                                    {cliente.contrato}
                                 </div>
                             </div>
-                        </div>
-
-                        <div>
                             <div>
-
-                                <strong>Contacto</strong>
+                                <div><strong >Dirección Principal</strong></div>
+                                <p>{cliente.direccionPrincipal}</p>
                             </div>
-                            <p>{cliente.nombreContacto}</p>
-                            <p>{cliente.email}</p>
-                            <p>{cliente.phone}</p>
-                        </div>
 
-                    </div >
+                            <div>
+                                <div><strong>Personal</strong></div>
+                                <div>
+                                    <p>Personal Requerido: {cliente.solicitados}</p>
+
+                                    <p>Personal Asignado: {cliente.asignados}</p>
+
+
+                                    <div className="progress-bar">
+                                        <div
+                                            className="progress-fill"
+                                            style={{
+                                                width: `${cliente.solicitados > 0
+                                                    ? (cliente.asignados / cliente.solicitados) * 100
+                                                    : 0
+                                                    }%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div >
+                                <div>
+
+                                    <strong>Contacto</strong>
+                                </div>
+                                <div >
+
+                                    <div className="texto">{cliente.nombreContacto}</div>
+                                    <div className="texto">{cliente.email}</div>
+                                    <div className="texto">{cliente.phone}</div>
+                                </div>
+                            </div>
+
+                        </div >
+                    </Link>
 
                 ))}
             </div>

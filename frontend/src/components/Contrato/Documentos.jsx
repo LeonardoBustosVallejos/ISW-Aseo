@@ -5,8 +5,10 @@ import {
     ChevronDown,
     ChevronUp
 } from "lucide-react"
+import "@styles/components/Documentos.css"
+import AddButton from "../misc/add-button"
 
-export default function Documentos({ documentos, setFormData, path, tipo }) {
+export default function Documentos({ documentos, setFormData, path, tipo, }) {
 
     const [openIndex, setOpenIndex] = useState(null)
     // navegar objeto usando path
@@ -79,28 +81,9 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
         })
     }
 
-    // agregar archivo
-    const addArchivo = () => {
-
-        setFormData(prev => {
-
-            const copia = structuredClone(prev)
-
-            const ref = getReference(copia)
-
-            ref.push({
-                nombrePersonalizado: "",
-                tipoDocumento: "",
-                file: null
-            })
-
-            return copia
-        })
-    }
 
     // actualizar archivo
     const updateArchivo = (fileIndex, field, value) => {
-        console.log(field, value);
 
         setFormData(prev => {
 
@@ -131,168 +114,192 @@ export default function Documentos({ documentos, setFormData, path, tipo }) {
 
     return (
 
-        <div className="space-y-4">
-            {/**
-             * Recorrer el array de documentos 
-             */}
+        <div className="adjuntar-documentos">
+            <div className="document-card">
+                <div className="document-body">
+                    <div className="document-header">
 
+                        <h3 className="document-title">Documentos</h3>
 
-            <div className="border rounded-2xl overflow-hidden bg-white shadow-sm">
+                        <AddButton
+                            onClick={addDocumento}
+                            text={'Agregar Documento'}
+                        />
 
-                <div className="border-t bg-slate-50 p-4 space-y-6">
+                    </div>
 
-                    {/* DOCUMENTOS */}
+                    {documentos.map((archivo, fileIndex) => (
 
-                    <div className="space-y-4">
+                        <div key={fileIndex} className="document-row">
 
-                        <div className="flex justify-between items-center">
+                            {/* ARCHIVO */}
 
-                            <h3 className="font-semibold text-lg label">Documentos</h3>
+                            <div className="form-group">
+
+                                <label className="label">
+                                    Archivo
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
+
+                                <input
+                                    type="file"
+                                    required
+                                    id={`file-${fileIndex}-${tipo}`}
+                                    accept=".pdf"
+                                    onChange={(e) => {
+
+                                        const file = e.target.files[0]
+
+                                        updateArchivo(
+                                            fileIndex,
+                                            "file",
+                                            file
+                                        )
+
+                                        if (
+                                            nombreIgual[fileIndex]
+                                            && file
+                                        ) {
+                                            updateArchivo(
+                                                fileIndex,
+                                                "nombrePersonalizado",
+                                                file.name
+                                            )
+                                        }
+                                    }}
+                                    hidden
+                                />
+
+                                <label htmlFor={`file-${fileIndex}-${tipo}`} className="input file-selector">
+                                    {archivo?.file?.name ? archivo.file.name : "Seleccionar archivo"}
+                                </label>
+
+                            </div>
+
+                            {/* NOMBRE */}
+
+                            <div className="form-group">
+
+                                <div className="label-row">
+
+                                    <label className="label">
+                                        Nombre
+                                        <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                    </label>
+
+                                    <div className="checkbox-container">
+
+                                        <input
+                                            type="checkbox"
+                                            id={`name-${fileIndex}-${tipo}`}
+                                            checked={
+                                                nombreIgual[fileIndex] || false
+                                            }
+                                            onChange={(e) => {
+
+                                                const checked = e.target.checked
+
+                                                setNombreIgual(prev => ({ ...prev, [fileIndex]: checked }))
+
+                                                if (checked && archivo.file) {
+                                                    updateArchivo(
+                                                        fileIndex,
+                                                        "nombrePersonalizado",
+                                                        archivo.file.name
+                                                    )
+                                                }
+                                            }}
+                                        />
+
+                                        <label htmlFor={`name-${fileIndex}-${tipo}`}
+                                            className="checkbox-label">
+                                            ¿Mismo del archivo?
+                                        </label>
+
+                                    </div>
+
+                                </div>
+
+                                <input
+                                    type="text"
+                                    required
+                                    value={
+                                        archivo.nombrePersonalizado
+                                    }
+                                    disabled={
+                                        nombreIgual[fileIndex]
+                                    }
+                                    onChange={(e) =>
+                                        updateArchivo(
+                                            fileIndex,
+                                            "nombrePersonalizado",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="input"
+                                />
+
+                            </div>
+
+                            {/* TIPO */}
+
+                            <div className="form-group">
+
+                                <label className="label">
+                                    Tipo
+                                    <span style={{ color: "red", marginLeft: "4px" }}>*</span>
+                                </label>
+
+                                <select
+                                    required
+                                    value={archivo.tipoDocumento}
+                                    onChange={(e) =>
+                                        updateArchivo(
+                                            fileIndex,
+                                            "tipoDocumento",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="input"
+                                >
+
+                                    {tiposDocumento[tipo]?.map(opcion => (
+
+                                        <option
+                                            key={opcion}
+                                            value={opcion}
+                                        >
+                                            {opcion}
+                                        </option>
+
+                                    ))}
+
+                                </select>
+
+                            </div>
+
+                            {/* ELIMINAR */}
 
                             <button type="button"
-                                onClick={() => addArchivo()}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                onClick={() => removeArchivo(fileIndex)}
+                                className={`remove-button ${documentos.length === 1 ? "oculto" : ""}`}>
 
-                                <Plus size={16} />
-                                Agregar archivo
+                                <Trash2 size={16} />
+
                             </button>
 
                         </div>
 
-                        {documentos.map((archivo, fileIndex) => (
-
-                            <div key={fileIndex} className="grid grid-cols-12 gap-3 items-end border rounded-xl bg-white p-4 ">
-                                {/* file */}
-
-                                <div className="col-span-4 flex flex-col">
-
-                                    <label className="label">
-                                        Archivo
-                                        <span className="text-red-500 ml-1">*</span>
-                                    </label>
-
-                                    <input type="file" required
-                                        id={`file-${fileIndex}-${tipo}`}
-                                        accept=".pdf"
-                                        onChange={(e) => {
-                                            const file = e.target.files[0]
-
-                                            updateArchivo(fileIndex, "file", file)
-
-
-                                            if (nombreIgual[fileIndex] && archivo.file) {
-                                                updateArchivo(fileIndex, "nombrePersonalizado", file.name)
-                                            }
-
-
-                                        }}
-                                        className="hidden input" />
-                                    <label htmlFor={`file-${fileIndex}-${tipo}`}
-                                        className="input truncate"
-                                    >
-                                        {archivo?.file?.name ? archivo.file.name : "Seleccionar Archivo"}
-                                    </label>
-                                </div>
-                                <div className="col-span-4 flex flex-col">
-                                    <div className="flex flex-row gap-3">
-                                        <label className="label">
-                                            Nombre
-                                            <span className="text-red-500 ml-1">*</span>
-                                        </label>
-                                        <div>
-                                            <input type="checkbox" id={`name-${fileIndex}-${tipo}`}
-                                                checked={nombreIgual[fileIndex] || false}
-                                                onChange={(e) => {
-                                                    const checked = e.target.checked
-
-                                                    setNombreIgual(prev => ({
-                                                        ...prev, [fileIndex]: checked
-                                                    }))
-
-                                                    if (checked && archivo.file) {
-                                                        updateArchivo(
-                                                            fileIndex,
-                                                            "nombrePersonalizado",
-                                                            archivo.file.name
-                                                        )
-                                                    }
-                                                }}
-                                            />
-                                            <label htmlFor={`name-${fileIndex}-${tipo}`}>¿Mismo del archivo?</label>
-                                        </div>
-                                    </div>
-                                    <input type="text" required
-                                        value={archivo.nombrePersonalizado}
-                                        disabled={nombreIgual[fileIndex]}
-                                        onChange={(e) => updateArchivo(fileIndex, "nombrePersonalizado", e.target.value)}
-                                        className="input " />
-                                </div>
-
-                                <div className="col-span-3 flex flex-col">
-
-                                    <label className="label">
-                                        Tipo
-                                        <span className="text-red-500 ml-1">*</span>
-                                    </label>
-
-                                    <select
-                                        required
-                                        value={archivo.tipoDocumento}
-                                        onChange={(e) => updateArchivo(fileIndex, "tipoDocumento", e.target.value)}
-                                        className="input"
-                                    >
-
-                                        {tiposDocumento[tipo]?.map(opcion => (
-
-                                            <option
-                                                key={opcion}
-                                                value={opcion}
-                                            >
-                                                {opcion}
-                                            </option>
-
-                                        ))}
-
-                                    </select>
-
-                                </div>
-
-
-
-                                {/* eliminar */}
-
-                                <div className={`col-span-1 flex justify-end `}>
-
-                                    <button type="button"
-                                        onClick={() => removeArchivo(fileIndex)}
-                                        className={`bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg ${documentos.length === 1 ? "hidden" : ""}`}>
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-
-                    </div>
+                    ))}
 
                 </div>
 
-
-
             </div>
+            <AddButton
+                onClick={addDocumento}
+                text={'Agregar Documento'}
+            />
 
-
-            {/* agregar contrato */}
-            {
-                <button
-                    type="button"
-                    onClick={addDocumento}
-                    className=" bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl flex items-center gap-2"
-                >
-
-                    <Plus size={18} />
-                    Agregar documento
-                </button>
-            }
         </div>
     )
 }

@@ -67,14 +67,14 @@ const DocumentoContratoSchema = new EntitySchema({
             type: "many-to-one",
             joinColumn: { name: "id_contrato_comercial" },
             nullable: true,
-            onDelete: "CASCADE"
+            onDelete: "CASCADE",
         },
         contratoLaboral: {
             target: "ContratoLaboral",
             type: "many-to-one",
             joinColumn: { name: "contrato_laboral_id" },
             nullable: true,
-            onDelete: "CASCADE"
+            onDelete: "CASCADE",
         },
         anexo: {
             target: "ContratoAnexo",

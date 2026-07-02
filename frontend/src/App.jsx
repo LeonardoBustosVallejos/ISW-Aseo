@@ -9,6 +9,11 @@ import ResumenRecursos from "@pages/Recursos/resumen.jsx";
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
+import DetallesCliente from "@components/detalles.jsx";
+import InfoCliente from "./pages/Clientes/InfoCliente";
+import Home from "./pages/Home";
+import ItemInfo from '@pages/ItemInfo';
+import SolicitudInfo from '@pages/SolicitudInfo';
 
 
 export default function App() {
@@ -19,22 +24,35 @@ export default function App() {
                 <Route path="/" element={<LoginForm />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/" element={<Root />}>
-                <Route path="home" element={<Root />} />
-                <Route path="recursos/resumen" element={<ResumenRecursos />} />
-                {/*<Route path="recursos/detalles" element={<Detalles />} />
-                <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
-                <Route path="bodega" element={<Bodega />} />
-                <Route path="cliente"  >
-                <Route path="registrar" element={<RegisterClienteForm />} />
-                
-            </Route>
-            <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
-            <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
-            <Route path="clientes" element={<ListaClientes />} />
-            </Route>
+                    <Route path="home" element={<Home />} />
+                    <Route path="recursos/resumen" element={<ResumenRecursos />} />
+                    <Route path="recursos/detalles/:sede_id" element={<DetallesCliente />} />
+                {/* <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
+                    <Route path="bodega" element={<Bodega />} />
+                    <Route path="item/:id" element={<ItemInfo />} />
+                    <Route path="solicitud/:id" element={<SolicitudInfo />} />
+
+                    <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
+                    <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
 
 
-            <Route path="*" element={<Error404 />} />
+
+                    <Route path="clientes"  >
+                        <Route path="" element={<ListaClientes />} />
+                        <Route path="registrar" element={<RegisterClienteForm />} />
+
+                    </Route>
+                    <Route path={`cliente/rut/:rutCliente/id/:cliente_id`} element={<InfoCliente />}>
+
+                    </Route>
+
+
+
+                    <Route path="*" element={<Error404 />} />
+                </Route>
+
+
+                <Route path="*" element={<Error404 />} />
             </Routes>
 
         </Router>

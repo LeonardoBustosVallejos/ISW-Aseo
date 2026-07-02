@@ -10,10 +10,12 @@ import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupe
 import Sede from "../entity/sede.entity.js";
 import { getRolByNameService } from "./rol.service.js";
 import { getORTrabajadorService } from "./trabajador.service.js";
-import { createContratoAnexoService, createContratoComercialService } from "./contrato.service.js";
+import { createContratoAnexoService, createContratoComercialService, getAnexoComercialService, getContratoComercialService } from "./contrato.service.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
 import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
 import { calcularPersonalTotal, obtenerLimitePersonalContrato } from "../helpers/personal.helper.js";
+import contratoComercialSchema from "../entity/contratos/contratoComercial.entity.js";
+import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
 /**
  * get...s() lista de todos
  * get...By(params) estricta para un único elemento con findOne AND
@@ -384,6 +386,33 @@ export async function getSedesService(manager = null) {
     }
 }
 
+export async function listarSedesService(cliente_id = null, manager = null) {
+    try {
+        const sedeRepository =// manager ? manager.getRepository(Sede) : 
+            AppDataSource.getRepository(Sede);
+
+        const clienteRepository = // manager ? manager.getRepository(Cliente) : 
+            AppDataSource.getRepository(Cliente);
+
+        let clienteFound = null, errorCliente = null
+
+        const sedes = await sedeRepository.find({
+            relations: ["cliente", "cliente.contrato"],
+        })
+
+
+    } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener sedes", error[1]);
+            return error
+        }
+        console.error("Error al obtener sede:", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
 /**
  * Busqueda estricta AND, comparaciones exactas enlazada con cliente y contactos
  * @param {} query 
@@ -477,12 +506,11 @@ export async function findSedesByService(query, manager = null) {
     }
 }
 
-async function createSede(sede, cliente_id, contrato, manager) {
+async function createSede(sede, cliente_id, manager = null) {
     try {
         const sedeRepository = manager.getRepository(Sede)
 
         const { nombre_sede, direccion, personalSolicitado, rutSecundario } = sede
-        const { id_contrato_comercial } = contrato
         //verificar que el cliente exista
         const [cliente, err] = await getClienteByService({ cliente_id: cliente_id }, manager)
         if (err) {
@@ -515,7 +543,6 @@ async function createSede(sede, cliente_id, contrato, manager) {
             personalSolicitado: personalSolicitado,
             rutSecundario: cleanRut(rutSecundario) || null,
             cliente: cliente_id,
-            contrato: id_contrato_comercial
         });
 
         const sedeCreada = await sedeRepository.save(nuevaSede);
@@ -676,7 +703,6 @@ export async function listarClientesService(manager = null) {
         const lista = await clienteRepository.find({
             relations: ["sede", "sede.contactos", "contrato"],
             where: {
-                tipoCliente: "EMPRESA",
                 sede: {
                     tipoSede: "PRINCIPAL",
                     contactos: { tipoContacto: "PRINCIPAL" }
@@ -691,12 +717,21 @@ export async function listarClientesService(manager = null) {
 
         for (const cliente of lista) {
             const { solicitados, asignados } = await getTotalesCliente(cliente.cliente_id, manager)
+            let estadoActual = 'TERMINADO'
+            if (cliente.contrato.some(contrato => contrato.estado === 'VIGENTE')) {
+                estadoActual = 'VIGENTE'
+            } else if (cliente.contrato.some(contrato => contrato.estado === 'SUSPENDIDO')) {
+                estadoActual = 'SUSPENDIDO'
+            } else if (cliente.contrato.some(contrato => contrato.estado === 'ESPERA')) {
+                estadoActual = 'ESPERA'
+            }
 
             clientesConTotales.push({
                 cliente_id: cliente.cliente_id,
                 nombreCliente: cliente.nombreCliente,
                 rutCliente: cliente.rutCliente,
-                contrato: cliente.contrato.estado ? cliente.contrato.estado : "ESPERA",
+                tipoCliente: cliente.tipoCliente,
+                contrato: estadoActual,
                 direccionPrincipal: cliente.sede[0].direccion,
                 nombreContacto: cliente.sede[0].contactos[0].nombreContacto,
                 email: cliente.sede[0].contactos[0].email,
@@ -1041,7 +1076,13 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
         return [clienteCreado, null];
 
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error("Error al registrar un cliente", error[1]);
+            if (manager) throw error
+            return error
+        }
         console.error("Error al registrar un cliente", error);
+        if (manager) throw error
         return [null, "Error interno del servidor"]
     }
 }
@@ -1050,29 +1091,101 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
 //funciones para obtener la informacion relevante de la entidad
 export async function getInfoSedeService(cliente, sede_id = null, manager = null) {
     try {
-        const sedeRepository = manager ? manager.getRepository(Sede) :
+        const sedeRepository = //manager ? manager.getRepository(Sede) :
             AppDataSource.getRepository(Sede)
 
         const { rutCliente, cliente_id } = cliente
 
         const where = {}
-        if (rutCliente) where.cliente = { rutCliente }
         if (cliente_id) where.cliente = { cliente_id }
+        if (rutCliente) where.cliente = { rutCliente }
         if (sede_id) where.sede_id = sede_id
 
         //1. Obter la sede por su ID y a quien pertenece
-        const sede = await sedeRepository.find({
-            relations: ["contactos"],
+        const sedes = await sedeRepository.find({
+            relations: ["contactos", "cliente",],
             where
         })
+        if (!sedes || sedes.length === 0) return [null, createErrorMessage("sede", "Sede no encontrada")]
 
-        const [historial, error] = await getAsignadosService({ rutCliente, cliente_id, sede_id }, null, manager)
-        if (error) {
-            if (manager) throw [null, error]
-            return [null, error]
+        let datosSede = []
+        for (const sede of sedes) {
+            const sedeData = { ...sede }
+            const [historial, errorHistorial] = await getAsignadosService({ rutCliente, cliente_id: sede.cliente.cliente_id, sede_id }, null, manager)
+            if (errorHistorial && errorHistorial !== "No hay trabajadores asignados") {
+                return [null, errorHistorial]
+            }
+            sedeData.historial = historial || errorHistorial
+
+            const [contratos, errContrato] = await getContratoComercialService(null, { cliente_id: sede.cliente.cliente_id, sede_id: sede.sede_id }, manager)
+            if (errContrato && errContrato !== "Contrato no encontrado") return [null, errContrato]
+            sedeData.contratos = contratos || errContrato
+
+            const [anexos, errAnexos] = await getAnexoComercialService(null, sede_id || sede.sede_id, manager)
+            if (errAnexos && errAnexos !== "Anexos no encontrados") return [null, errAnexos]
+            sedeData.anexos = anexos || errAnexos
+
+            datosSede.push(sedeData)
         }
 
-        return [{ sede, historial }]
+        return [datosSede, null]
+    } catch (error) {
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            console.error("Error al obtener sedes", error[1]);
+            return error
+        }
+        console.error("Error al obtener sedes:", error);
+        if (manager) throw error
+        return [null, "Error interno del servidor"]
+    }
+}
+
+export async function getInfoClientesService(cliente_id, rutCliente, manager = null) {
+    try {
+        const clienteRepository = manager ? manager.getRepository(Cliente) :
+            AppDataSource.getRepository(Cliente)
+
+        const { rutCliente, cliente_id } = cliente
+        if (!rutCliente) return [null, createErrorMessage("rutCliente", "Debe entregar el rut del cliente para obtener su información")]
+        const where = {}
+
+        where.rutCliente = rutCliente
+        if (cliente_id) where.cliente_id = cliente_id
+
+        //1. obtener al/los cliente(s) buscado(s)
+        const listaClientes = await clienteRepository.find({
+            where,
+            relations: ["contrato", 'contrato.anexos']
+        })
+        if (!listaClientes) {
+            if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
+            return [null, createErrorMessage("cliente", "No encontrado")];
+        }
+        const listaCompleta = []
+        for (const cliente of listaClientes) {
+            const data = {}
+            data.cliente = cliente
+            const { personalSolicitado, personalAsignado } = await getTotalesCliente(cliente.cliente_id, manager)
+
+            //2. Obtener las sedes
+            const sedeRepository = manager ? manager.getRepository(Sede) :
+                AppDataSource.getRepository(Sede)
+
+
+            const [sedes, errSedes] = await getInfoSedeService({ cliente_id: cliente.cliente_id }, null, manager)
+            data.sedes = sedes
+
+            //3. Obtener las filiales
+            const filiales = await clienteRepository.find({
+                where: { clientePadre: { rutCliente: rutCliente }, },
+            })
+            data.filiales = filiales
+            listaCompleta.push(data)
+        }
+
+        return [listaCompleta, null]
+
     } catch (error) {
         if (Array.isArray(error)) {
             if (manager) throw error
@@ -1085,33 +1198,88 @@ export async function getInfoSedeService(cliente, sede_id = null, manager = null
     }
 }
 
-export async function getInfoClienteService(rutCliente, manager = null) {
+export async function getInfoClienteService(cliente, manager = null) {
     try {
         const clienteRepository = manager ? manager.getRepository(Cliente) :
             AppDataSource.getRepository(Cliente)
 
-        //1. obtener al cliente buscado
-        const clientePrincipal = await clienteRepository.findOne({
-            where: { rutCliente: rutCliente },
-            relations: ["contrato"]
+        const { rutCliente, cliente_id } = cliente
+        if (!rutCliente) return [null, createErrorMessage("rutCliente", "Debe entregar el rut del cliente para obtener su información")]
+        const where = {}
+
+        where.rutCliente = rutCliente
+        where.cliente_id = cliente_id
+
+        //1. obtener al/los cliente(s) buscado(s)
+        const clienteFound = await clienteRepository.findOne({
+            where,
+            relations: ["contrato", 'contrato.anexos', 'contrato.documentos', 'contrato.anexos.documentos']
         })
-        if (!clientePrincipal) {
+        if (!clienteFound) {
             if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
             return [null, createErrorMessage("cliente", "No encontrado")];
         }
-        const [personalSolicitado, personalAsignado] = await getTotalesCliente(clientePrincipal.cliente_id, manager)
+        const data = {
+            contratos: clienteFound.contrato,
+            anexos: [],
+            documentos: [],
+            contactos: []
+        }
 
+        data.cliente = clienteFound
+        const { solicitados, asignados } = await getTotalesCliente(clienteFound.cliente_id, manager)
+
+        data.solicitados = solicitados
+        data.asignados = asignados
+
+        //2. Obtener las sedes
         const sedeRepository = manager ? manager.getRepository(Sede) :
             AppDataSource.getRepository(Sede)
 
-        //2. Obtener las filiales
+        const [sedes, errSedes] = await getInfoSedeService({ cliente_id: clienteFound.cliente_id }, null, manager)
+        data.sedes = sedes
+
+        for (const sede of sedes) {
+            for (const contacto of sede.contactos) {
+                data.contactos.push(contacto)
+            }
+        }
+
+        //3. Obtener las filiales
         const filiales = await clienteRepository.find({
+            relations: ['sede'],
             where: { clientePadre: { rutCliente: rutCliente }, },
         })
-        //3. Obtener las sedes
-        const [sedes, errSedes] = await getInfoSedeService({ cliente_id: clientePrincipal.cliente_id }, null, manager)
+        data.filiales = filiales
 
-        return [{ clientePrincipal, sedes, filiales }, null]
+        let estadoActual = 'TERMINADO'
+        if (clienteFound.contrato.some(contrato => contrato.estado === 'VIGENTE')) {
+            estadoActual = 'VIGENTE'
+        } else if (clienteFound.contrato.some(contrato => contrato.estado === 'SUSPENDIDO')) {
+            estadoActual = 'SUSPENDIDO'
+        } else if (clienteFound.contrato.some(contrato => contrato.estado === 'ESPERA')) {
+            estadoActual = 'ESPERA'
+        }
+        for (const contrato of clienteFound.contrato) {
+
+            for (const documento of contrato.documentos) {
+                data.documentos.push(documento)
+            }
+
+            for (const anexo of contrato.anexos) {
+                data.anexos.push(anexo)
+
+                for (const documento of anexo.documentos) {
+                    data.documentos.push(documento)
+                }
+            }
+
+        }
+        data.estado = estadoActual
+        console.log(data);
+
+
+        return [data, null]
 
     } catch (error) {
         if (Array.isArray(error)) {
@@ -1320,14 +1488,23 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
 
             const [clientePadre, errorPadre] = await createCliente(cliente, null, transactionManager)
             if (errorPadre) throw [null, errorPadre]
+            console.log('=>Cliente creado');
 
-            const [contratoCreado, errContrato] = await createContratoComercialService(contrato, clientePadre.cliente_id, transactionManager)
-            if (errContrato) throw [null, errContrato]
-
-            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, contratoCreado.id_contrato_comercial, transactionManager)
+            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
             if (errSedes) throw [null, errSedes]
+            console.log("=>Sedes Creadas");
 
+            const sedes_ids = []
+            for (const sede of sedesCreadas) {
+                const { sede_id, ...sedeSeparada } = sede
+                sedes_ids.push(sede_id)
+            }
+
+            const [contratoCreado, errContrato] = await createContratoComercialService({ ...contrato, sedes: sedes_ids }, clientePadre.cliente_id, transactionManager)
+            if (errContrato) throw [null, errContrato]
+            console.log("=>Contrato Creado");
             let documentosContratoCreados = []
+
 
             if (Array.isArray(documentosContrato) && documentosContrato.length > 0) {
 
@@ -1335,14 +1512,18 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                 if (errDocs) throw [null, errDocs]
 
                 documentosContratoCreados = docsContrato
+                console.log("=>Documentos del contrato Creados");
             }
+
+
 
             const anexosCreados = []
 
             if (Array.isArray(anexos) && anexos.length > 0) {
+                let index = 1
                 for (const anexoData of anexos) {
 
-                    const [anexoCreado, errAnexo] = await createContratoAnexoService(anexoData.datos, contratoCreado.id_contrato_comercial, transactionManager)
+                    const [anexoCreado, errAnexo] = await createContratoAnexoService(anexoData.datos, contratoCreado.id_contrato_comercial, transactionManager, index)
 
                     if (errAnexo) throw [null, errAnexo]
 
@@ -1355,7 +1536,9 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                     }
 
                     anexosCreados.push({ ...anexoCreado, documentos: documentosAnexo })
+                    index++
                 }
+                console.log("=>Anexos Creados");
             }
 
             let filialesCreadas = []
@@ -1365,6 +1548,7 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                     if (errCliente) throw [null, errCliente]
                     filialesCreadas.push(clienteJerarquico)
                 }
+                console.log("=>Filiales Creadas");
             }
 
             return [{
@@ -1410,7 +1594,7 @@ export async function registerClienteJerarquicoService(cliente, sedes, contrato_
             const [clientePadre, errorPadre] = await createCliente(cliente, clientePadre_id, transactionManager)
             if (errorPadre) throw [null, errorPadre]
 
-            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, contrato_id, transactionManager)
+            const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
             if (errSedes) throw [null, errSedes]
 
 
@@ -1447,7 +1631,7 @@ export async function registerClienteJerarquicoService(cliente, sedes, contrato_
         return [null, "Error interno del servidor"]
     }
 }
-export async function registerSedesJerarquicoService(sedes, cliente_id, contrato_id, manager = null) {
+export async function registerSedesJerarquicoService(sedes, cliente_id, manager = null) {
     try {
         const execute = async (transactionManager) => {
             const sedesCreadas = []
@@ -1462,8 +1646,8 @@ export async function registerSedesJerarquicoService(sedes, cliente_id, contrato
                 const [sedeCreada, errorSedes] = await createSede(
                     { nombre_sede, direccion, personalSolicitado, },
                     cliente_id,
-                    { id_contrato_comercial: contrato_id },
-                    transactionManager)
+                    transactionManager
+                )
                 if (errorSedes) throw [null, errorSedes]
 
                 //constante que almacenará la una sede y la lista de contactos y supervisores
