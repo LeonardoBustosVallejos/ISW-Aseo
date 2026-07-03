@@ -64,6 +64,15 @@
 
 }
 
+@media (max-width: 1100px) {
+
+    .contrato-header,
+    .contrato-grid,
+    .textarea-grid {
+        grid-template-columns: repeat(2, 2fr);
+    }
+}
+
 @media (max-width: 900px) {
 
     .contrato-header,

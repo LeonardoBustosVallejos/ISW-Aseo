@@ -1,13 +1,12 @@
-import { CirclePlus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-
-export default function AddButton({ text, onClick }) {
+export default function EditButton({ text = null, onClick }) {
     return (
         <button
             type="button"
             onClick={onClick}
             className="action-button">
-            <CirclePlus size={18} />
+            <Pencil size={18} />
             {text}
         </button>
     )

@@ -8,7 +8,7 @@ export const createSimpleMessage = (message) => ({
 })
 
 export function cleanRut(rut) {
-    if (!rut)
+    if (!rut || rut === 'Sin rut')
         return "";
     const limpio = rut
         .replace(/\./g, "")                 //quitar puntos

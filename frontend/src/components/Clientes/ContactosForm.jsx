@@ -1,10 +1,10 @@
 import { Plus, Trash2 } from "lucide-react"
 import "@styles/components/ContactosForm.css"
 import Acordeon from "../Acordeon"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { formatRut } from "../../helpers/formatRut"
 
-export default function Contactos({ contactos, setFormData, path, formatRut, level = 0 }) {
-
+export default function Contactos({ contactos, onChange, level = 0, addContact = 'old', isRegister = true, isUpdate = false }) {
     const [openContacto, setOpenContacto] = useState(0)
 
     const getReference = (obj) => {
@@ -17,42 +17,43 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
         return ref
     }
     const formatPhone = (value) => {
+
+
         // si borran todo
-        if (!value.startsWith("+56")) {
-            value = "+56"
-        }
+
 
         // mantener solo numeros después de +56
         let numbers = value
             .replace("+56", "")
             .replace(/\D/g, "")
             .slice(0, 9)
-
+        if (!numbers || value === '') {
+            return ''
+        }
         return `+56${numbers}`
     }
+
+
 
     // agregar
 
     const addContacto = () => {
 
-        setFormData(prev => {
+        onChange(prev => ([
 
-            const copia = structuredClone(prev)
+            ...prev,
 
-            const ref = getReference(copia)
-
-            ref.push({
+            {
 
                 nombreContacto: "",
                 contacto_rut: "",
                 email: "",
-                tipoContacto: "",
-                phone: ""
+                phone: "",
+                tipoContacto: ""
 
-            })
+            }
 
-            return copia
-        })
+        ]));
     }
 
     // actualizar
@@ -63,32 +64,28 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
         value
     ) => {
 
-        setFormData(prev => {
+        onChange(prev =>
 
-            const copia = structuredClone(prev)
+            prev.map((contacto, i) =>
+                i === index ?
+                    { ...contacto, [field]: value } : contacto
+            )
 
-            const ref = getReference(copia)
-
-            ref[index][field] = value
-
-            return copia
-        })
+        );
     }
 
     // eliminar
 
     const removeContacto = (index) => {
 
-        setFormData(prev => {
+        onChange(prev =>
 
-            const copia = structuredClone(prev)
+            prev.filter((_, i) =>
 
-            const ref = getReference(copia)
+                i !== index
 
-            ref.splice(index, 1)
-
-            return copia
-        })
+            )
+        );
     }
 
     return (
@@ -106,7 +103,7 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
                 <button
                     type="button"
                     onClick={addContacto}
-                    className="add-button"
+                    className={`action-button ${addContact ? '' : 'oculto'}`}
                 >
 
                     <Plus size={16} />
@@ -224,6 +221,7 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
                                         value={contacto.tipoContacto}
                                         onChange={(e) => updateContacto(index, "tipoContacto", e.target.value)}
                                         className="input"
+                                        disabled={contactos.length === 1}
                                     >
                                         <option value="">Seleccionar</option>
                                         <option value="PRINCIPAL">PRINCIPAL</option>
@@ -240,10 +238,10 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
                     {/* eliminar */}
 
                     <button
-                        disabled={contactos.length <= 1}
+                        disabled={(contactos.length < 2 && isRegister) || isUpdate}
                         type="button"
                         onClick={() => removeContacto(index)}
-                        className={`remove-button ${contactos.length <= 1 ? "oculto" : ""}`}
+                        className={`remove-button ${((contactos.length < 2 && isRegister) || isUpdate) ? "oculto" : ""}`}
                     >
                         <Trash2 size={16} />
                     </button>
@@ -255,3 +253,4 @@ export default function Contactos({ contactos, setFormData, path, formatRut, lev
         </div >
     )
 }
+

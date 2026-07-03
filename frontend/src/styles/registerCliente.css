@@ -25,7 +25,7 @@
 .multiple-acordeon {
     display: flex;
     align-self: center;
-    align-items: center;
+    width: 100%;
     gap: 0.5%;
 }
 
@@ -84,7 +84,7 @@
     border-radius: 8px;
 }
 
-.add-button {
+.action-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -102,7 +102,7 @@
     transition: background-color .2s ease;
 }
 
-.add-button:hover {
+.action-button:hover {
     background-color: #004a99;
 }
 
@@ -172,7 +172,12 @@
     padding: 1.25rem;
 }
 
-.submit-button:disabled {
+
+:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.oculto {
+    display: none;
 }

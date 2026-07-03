@@ -1,11 +1,12 @@
 import { CirclePlus, Plus } from "lucide-react";
 import Acordeon from "@components/acordeon";
-import SedeRow from "./SedesForm";
+import { SedeRow, SedesArray } from "./SedesForm";
 import { useState } from "react";
 import "@styles/registerCliente.css"
 import AddButton from "../misc/add-button";
+import { formatRut } from "../../helpers/formatRut";
 
-export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, setFormData, formatRut, level = 0 }) {
+export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, setFormData, level = 0 }) {
     const [openContacto, setOpenContacto] = useState(null);
     const [openSedes, setOpenSedes] = useState(null);
 
@@ -74,6 +75,21 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
         });
     };
 
+    function getReference(obj, path) {
+        return path.reduce((ref, key) => ref[key], obj);
+    }
+    const updateSede = (index, updater) => {
+        setFormData(prev => {
+            const copia = structuredClone(prev);
+
+            const sedesRef = getReference(copia, sedesPath);
+
+            sedesRef[index] = updater(sedesRef[index]);
+
+            return copia;
+        });
+    };
+
     return (
         <div>
             <div className="form-card interior">
@@ -111,29 +127,13 @@ export default function DataClienteOFilial({ data, sedes, dataPath, sedesPath, s
                     setOpenContacto(null)
                 }}
                 content={
-                    <div>
-                        {sedes.map((sede, index) => (
-                            <>
-                                <div className="form-card interior">
-                                    <SedeRow sede={sede}
-                                        level={level + 1}
-                                        key={`${index} de ${data.nombreCliente}`}
-                                        index={index}
-                                        path={[...sedesPath, index]}
-                                        largo={sedes.length}
-                                        setFormData={setFormData}
-                                        formatRut={formatRut}
-                                        removeSede={(i) => removeSede(i)}
-                                    />
-                                </div>
-                                <br />
-                            </>
-                        ))}
-                        <AddButton
-                            onClick={addSede}
-                            text={'Agregar Sede'}
-                        />
-                    </div>
+                    <SedesArray
+                        sedes={sedes}
+                        level={level}
+                        setFormData={setFormData}
+                        isRegister sedesPath={sedesPath}
+                    />
+
                 } />
         </div>
     );

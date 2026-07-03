@@ -6,6 +6,7 @@ import { documentoValidation } from "./documentos.validation.js";
 
 
 export const contactoValidation = Joi.object({
+    contacto_id: Joi.number(),
     nombreContacto: Joi.string()
         .min(10)
         .max(50)
@@ -21,16 +22,16 @@ export const contactoValidation = Joi.object({
         }),
     contacto_rut: Joi.string()
         .min(9)
-        .max(10)
-        .required()
-        .pattern(/^(\d{7,8}-[\dkK])$/)
+        .max(12)
+        .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/)
+        .default(null)
         .messages({
             "string.empty": "El rut no puede estar vacío.",
             "string.base": "El rut debe ser de tipo string.",
             "string.min": "El rut debe tener como mínimo 9 caracteres.",
-            "string.max": "El rut debe tener como máximo 10 caracteres.",
-            "string.pattern.base": "Formato rut inválido, debe ser xxxxxxxx-x.",
-        }),
+            "string.max": "El rut debe tener como máximo 12 caracteres.",
+            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+        }).required(),
     email: Joi.string()
         .min(10)
         .max(35)
@@ -64,7 +65,7 @@ export const contactoValidation = Joi.object({
             "any.only":
                 "El tipo de contacto es inválido."
         }),
-})
+}).unknown(true)
 export const sedeValidation = Joi.object({
     nombre_sede: Joi.string()
         .min(3)
@@ -76,8 +77,9 @@ export const sedeValidation = Joi.object({
         }),
     rutSecundario: Joi.string()
         .min(9)
-        .max(10)
-        .pattern(/^(\d{7,8}-[\dkK])$/)
+        .max(12)
+        .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/)
+
         .default(null)
         .messages({
             "string.empty": "El rut no puede estar vacío.",
@@ -183,8 +185,9 @@ export const clienteValidation = Joi.object({
         }),
     rutCliente: Joi.string()
         .min(9)
-        .max(10)
-        .pattern(/^(\d{7,8}-[\dkK])$/)
+        .max(12)
+        .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/)
+
         .messages({
             "string.empty": "El rut no puede estar vacío.",
             "string.base": "El rut debe ser de tipo string.",
@@ -231,8 +234,10 @@ export const sedeJerarquicoValidation = Joi.object({
         }),
     rutSecundario: Joi.string()
         .min(9)
-        .max(10)
-        .pattern(/^(\d{7,8}-[\dkK])$/)
+        .max(12)
+        .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/, 'Sin rut')
+
+        .allow('Sin rut')
         .default(null)
         .messages({
             "string.empty": "El rut no puede estar vacío.",
@@ -269,7 +274,7 @@ export const sedeJerarquicoValidation = Joi.object({
             "PRINCIPAL",
             "SUCURSAL",
             "SECUNDARIA"
-        )
+        ).required()
         .default("SUCURSAL"),
 })
 

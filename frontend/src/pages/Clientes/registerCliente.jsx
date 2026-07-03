@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/clientes.service';
 import Acordeon from '@components/acordeon';
-import DocumentoRow from '@components/Contrato/Documentos';
-import SedeRow from '@components/Clientes/SedesForm';
 import ContratoRow from '@components/Contrato/ContratoComercialForm';
 import AnexoRow from '@components/Contrato/AnexoComercial';
 import { Trash2, TriangleAlert } from 'lucide-react';
@@ -12,6 +10,8 @@ import "@styles/registerCliente.css"
 import DataClienteOFilial from '../../components/Clientes/DataClienteOFilialForm';
 import AddButton from '../../components/misc/add-button';
 import Header from '../../components/misc/Header';
+import { Modal } from '../../components/Modal';
+import { AnexosArray } from '../../components/Contrato/AnexoComercial';
 
 /**
  * 
@@ -22,8 +22,10 @@ const RegisterClienteForm = () => {
     const [openContacto, setOpenContacto] = useState(null);
     const [openSedes, setOpenSedes] = useState(null);
     const [openFilial, setOpenFilial] = useState(null);
-    const [aceptado, setAceptado] = useState(false)
-    const [errors, setErrors] = useState({});
+    const [errorsObject, setErrorsObject] = useState({});
+    const [errorMessage, setErrorMessage] = useState('')
+    const [modalOpen, setModalOpen] = useState(false)
+    const [pendingSubmit, setPendingSubmit] = useState(false);
 
     /**Inicializar las variables/objetos base que son obligatorios para el registro */
     const [formData, setFormData] = useState({
@@ -37,6 +39,7 @@ const RegisterClienteForm = () => {
                 nombre_sede: '',
                 direccion: '',
                 personalSolicitado: '',
+                rutSecundario: '',
                 tipoSede: 'PRINCIPAL',
                 contactos: [{
                     nombreContacto: '',
@@ -68,39 +71,37 @@ const RegisterClienteForm = () => {
                 file: null
             }
         ],
-        anexos: [
-
-        ]
+        anexos: []
 
     });
 
 
 
 
-    const getSectionFromErrors = (errors) => {
+    const getSectionFromErrors = (errorsObject) => {
         if (
-            errors.nombreCliente ||
-            errors.rutCliente ||
-            errors.direccion ||
-            errors.personalSolicitado
+            errorsObject.nombreCliente ||
+            errorsObject.rutCliente ||
+            errorsObject.direccion ||
+            errorsObject.personalSolicitado
         ) {
             return "cliente";
         }
 
         if (
-            errors.nombreContacto ||
-            errors.contacto_rut ||
-            errors.email ||
-            errors.phone
+            errorsObject.nombreContacto ||
+            errorsObject.contacto_rut ||
+            errorsObject.email ||
+            errorsObject.phone
         ) {
             return "contacto";
         }
 
         if (
-            errors.nombreCompleto ||
-            errors.rut ||
-            errors.email ||
-            errors.password
+            errorsObject.nombreCompleto ||
+            errorsObject.rut ||
+            errorsObject.email ||
+            errorsObject.password
         ) {
             return "supervisor";
         }
@@ -109,9 +110,9 @@ const RegisterClienteForm = () => {
     };
 
     useEffect(() => {
-        if (Object.keys(errors).length === 0) return;
+        if (Object.keys(errorsObject).length === 0) return;
 
-        const section = getSectionFromErrors(errors);
+        const section = getSectionFromErrors(errorsObject);
 
         if (section === "cliente") {
             setOpenSection("cliente");
@@ -131,7 +132,7 @@ const RegisterClienteForm = () => {
     }, [formData]);
 
     const setFieldError = (field, message) => {
-        setErrors(prev => ({
+        setErrorsObject(prev => ({
             ...prev,
             [field]: message
         }));
@@ -146,7 +147,7 @@ const RegisterClienteForm = () => {
                     ...prev.cliente.filiales,
                     {
                         nombreCliente: "",
-                        rutCliente: "",
+                        rutCliente: formData.cliente.rutCliente,
                         sedes: [
                             {
                                 nombre_sede: "",
@@ -185,53 +186,21 @@ const RegisterClienteForm = () => {
         }
     };
 
-    const formatRut = (value) => {
 
-        // dejar solo numeros y k
-        let clean = value
-            .replace(/[^0-9kK]/g, "")
-            .toUpperCase()
-
-        // si hay varias K, dejar solo una
-        const hasK = clean.includes("K")
-
-        // quitar todas las K
-        clean = clean.replace(/K/g, "")
-
-        // si habia K agregarla al final
-        if (hasK) {
-            clean += "K"
-        }
-
-        // máximo largo rut chileno
-        clean = clean.slice(0, 9)
-
-        // si está vacío
-        if (clean.length === 0) return ""
-
-        // separar cuerpo y dv
-        const body = clean.slice(0, -1)
-        const dv = clean.slice(-1)
-
-        return `${body}-${dv}`
-    }
 
 
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();
 
-            if (!aceptado) {
-                showErrorAlert("Confirmación requerida",
-                    "Debe confirmar que la información es correcta")
-            }
+            setModalOpen(false)
 
             const response = await registerCliente(formData);
             if (response.status === 'Success') {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
                 setTimeout(3000)
             } else if (response.status === 'Client error') {
-                setErrors(response.details);
+                handleErrors(response.details);
             }
         } catch (error) {
             console.error("Error al registrar un usuario: ", error);
@@ -239,12 +208,24 @@ const RegisterClienteForm = () => {
             showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
         }
     }
+    const handleOpenModal = (e) => {
+        e.preventDefault(); // evita que el formulario se envíe
 
+        setPendingSubmit(true)
+        setModalOpen(true)
+    };
+    const handleErrors = (e) => {
+        if (e.dataInfo) {
+            setErrorsObject(e)
+        } else {
+            setErrorMessage(e)
+        }
+    }
     return (
         <div className="form-container">
-            <Header title={'Registro de Cliente y Supervisor'} />
+            <Header title={'Registro de Cliente'} />
 
-            <form onSubmit={handleSubmit} className="form-card form-content">
+            <form onSubmit={handleOpenModal} className="form-card form-content">
 
                 {/* SECCIÓN CLIENTE */}
                 <Acordeon title={"Datos del Cliente"} level={0} isOpen={openSection === "cliente"}
@@ -261,7 +242,6 @@ const RegisterClienteForm = () => {
                                 dataPath={["cliente"]}
                                 sedesPath={["sedes"]}
                                 setFormData={setFormData}
-                                formatRut={formatRut}
 
 
                             />
@@ -295,74 +275,20 @@ const RegisterClienteForm = () => {
                         setOpenContacto(null)
                     }}
                     content={
-                        <>
+                        <AnexosArray
+                            anexos={formData.anexos}
+                            setFormData={(updater) => {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    anexos: updater(prev.anexos)
+                                }));
+                            }}
+                            contrato={formData.contrato}
+                            anexosPath={["anexos"]}
+                            isRegister
+                        />
 
-                            {formData.anexos.map((anexo, index) => (
 
-                                <AnexoRow anexo={anexo}
-                                    key={index}
-                                    index={index}
-                                    setFormData={setFormData}
-                                    contrato={formData.contrato}
-                                    removeAnexo={(i) => {
-
-                                        setFormData(prev => {
-
-                                            const copia =
-                                                structuredClone(prev)
-
-                                            copia.anexos.splice(i, 1)
-
-                                            return copia
-                                        })
-                                    }}
-                                />
-
-                            )
-                            )}
-                            {/*Botón de agregar anexo */}
-                            <AddButton
-                                onClick={() => {
-
-                                    setFormData(prev => ({
-
-                                        ...prev,
-
-                                        anexos: [
-
-                                            ...prev.anexos,
-
-                                            {
-                                                datos: {
-                                                    numeroAnexo: "",
-                                                    fechaInicio: formData.contrato.fechaInicio,
-                                                    fechaFin: formData.contrato.fechaFinOriginal,
-                                                    montoNuevo: formData.contrato.monto,
-                                                    cantidadMinTrabajadores: formData.contrato.cantidadMinTrabajadores,
-                                                    cantidadMaxTrabajadores: formData.contrato.cantidadMaxTrabajadores,
-                                                    tipoJornada: formData.contrato.tipoJornada,
-                                                    tipoAnexo: '',
-                                                    detalles: '',
-                                                    observacionesOperativas: '',
-                                                    requiereGuardias: formData.contrato.requiereGuardias,
-                                                    tamanoInstalacion: formData.contrato.tamanoInstalacion
-                                                },
-
-                                                documentos: [
-                                                    {
-                                                        nombrePersonalizado: '',
-                                                        tipoDocumento: 'ANEXO',
-                                                        fileKey: "anexo_pdf",
-                                                        file: null
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }))
-                                }}
-                                text={'Agregar Anexo'}
-                            />
-                        </>
                     }
                 />
                 {/*FILIALES */}
@@ -388,7 +314,6 @@ const RegisterClienteForm = () => {
                                                 dataPath={["cliente", "filiales", index]}
                                                 sedesPath={["cliente", "filiales", index, "sedes"]}
                                                 setFormData={setFormData}
-                                                formatRut={formatRut}
                                             />
                                         }
                                     />
@@ -407,29 +332,42 @@ const RegisterClienteForm = () => {
                         </div>
                     }
                 />
-                <button type='button' className='checkbox-row' onClick={() => {
-                    setAceptado(prev => !prev)
+                {/*
 
-                }} style={{ backgroundColor: 'transparent' }}>
+                    <button type='button' className='checkbox-row' onClick={() => {
+                        setAceptado(prev => !prev)
+                        
+                    }} style={{ backgroundColor: 'transparent' }}>
 
                     <input type="checkbox" name="aceptado"
                         checked={aceptado}
-                    />
+                        />
 
                     <label className='label' style={{ cursor: 'pointer' }}>
                         Acepto que toda la informacion entregada es correcta
                         <span className='required' style={{ display: 'flex' }}>*<TriangleAlert /> </span>
                     </label>
 
-                </button>
+            </button>
+                */}
 
                 <div>
                     <span className={`error-message`}>
-                        {errors.dataInfo ? `Error: ${errors.dataInfo}. ${errors.message}` : ''}
+                        {errorsObject.dataInfo ? `Error: ${errorsObject.dataInfo}. ${errorsObject.message}` : errorMessage}
                     </span>
                 </div>
                 <hr />
-                <button type="submit" className='submit-button' disabled={!aceptado}>Registrar</button>
+                <button type="button" className='submit-button' onClick={() => setModalOpen(true)}>Registrar</button>
+
+                <Modal open={modalOpen}
+                    title={'AVISO'}
+                    onClose={() => setModalOpen(false)}
+                    isForm={true}
+                    onAcept={handleSubmit}
+
+                >
+                    ¿Acepta que toda la informacion entregada es correcta?
+                </Modal>
             </form >
 
         </div >

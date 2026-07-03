@@ -12,7 +12,8 @@ export async function getClientes(req, res) {
             ? handleSuccess(res, 204)
             : handleSuccess(res, 200, "Clientes encontrados", clientes);
     } catch (error) {
-        handleErrorServer(res, 500, error.message)
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -26,7 +27,8 @@ export async function deleteCliente(req, res) {
         handleSuccess(res, 200, "Cliente eliminado correctamente", data);
 
     } catch (error) {
-        handleErrorServer(res, 500, error.message)
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -42,7 +44,8 @@ export async function createSede(req, res) {
 
         return handleSuccess(res, 201, "Sede registrada con éxito", data)
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -57,7 +60,8 @@ export async function getContactos(req, res) {
             ? handleSuccess(res, 204)
             : handleSuccess(res, 200, "Contactos encontrados", contactos);
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 export async function getInfoSede(req, res) {
@@ -69,7 +73,8 @@ export async function getInfoSede(req, res) {
 
         handleSuccess(res, 200, "Sede encontrada", data);
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -82,7 +87,8 @@ export async function getInfoCliente(req, res) {
 
         handleSuccess(res, 200, "Cliente encontrado", data);
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -103,7 +109,8 @@ export async function registerCliente(req, res) {
         return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
 
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -117,7 +124,8 @@ export async function registrarClienteJerarquico(req, res) {
 
         return handleSuccess(res, 201, "Cliente padre y filial registrados con éxito", data);
     } catch (error) {
-        handleErrorServer(res, 500, error.message);
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
     }
 }
 
@@ -138,10 +146,7 @@ export async function registrarClienteYArchivo(req, res) {
 
             metadataDocumentosContrato: typeof metadataDocumentosContrato === "string" ? JSON.parse(metadataDocumentosContrato) : metadataDocumentosContrato || []
         }
-        const { error } = registerClienteJerarquicoYArchivoValidation.validate(bodyParsed, {
-
-            abortEarly: false
-        })
+        const { error } = registerClienteJerarquicoYArchivoValidation.validate(bodyParsed)
 
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message)
 
