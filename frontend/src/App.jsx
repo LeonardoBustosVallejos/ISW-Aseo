@@ -12,6 +12,8 @@ import ListaClientes from "@pages/Clientes/ListaClientes";
 import DetallesCliente from "@components/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
 import Home from "./pages/Home";
+import ItemInfo from '@pages/ItemInfo';
+import SolicitudInfo from '@pages/SolicitudInfo';
 
 
 export default function App() {
@@ -27,6 +29,8 @@ export default function App() {
                     <Route path="recursos/detalles/:sede_id" element={<DetallesCliente />} />
                 {/* <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                     <Route path="bodega" element={<Bodega />} />
+                    <Route path="item/:id" element={<ItemInfo />} />
+                    <Route path="solicitud/:id" element={<SolicitudInfo />} />
 
                     <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
                     <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
