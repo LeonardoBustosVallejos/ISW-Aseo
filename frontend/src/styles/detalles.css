@@ -1,0 +1,140 @@
+.detalles-container {
+    padding: 20px;
+    background-color: #f4f7f6;
+    min-height: 100vh;
+    color: #001F3F;
+}
+
+.btn-volver {
+    background-color: #001F3F;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.btn-volver:hover {
+    background-color: #003366;
+}
+
+.cliente-header-bar {
+    display: flex;
+    gap: 20px;
+    background-color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    border-left: 5px solid #001F3F;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.detalles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.info-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.info-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    color: #001F3F;
+}
+
+.activos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.activo-item {
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.activo-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.activo-item p {
+    margin: 3px 0;
+    font-size: 0.9rem;
+}
+
+.lista-sencilla {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lista-sencilla li {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+}
+
+.lista-sencilla li:last-child {
+    border-bottom: none;
+}
+
+.fecha-etiqueta {
+    color: #666;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.historial-scroll-container {
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.historial-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+.historial-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+    border-radius: 4px;
+}
+.historial-scroll-container::-webkit-scrollbar-thumb {
+    background: #ccc; 
+    border-radius: 4px;
+}
+.historial-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #888; 
+}
+
+.badge-ultimo {
+    background-color: #e63946;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}

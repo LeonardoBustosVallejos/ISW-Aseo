@@ -22,16 +22,16 @@ export const registrarMovimiento = async(tipo_movimiento, descripcion, cliente_i
     }
 };
 
-export const obtenetHistorialCliente = async(sede_id) =>{
-    try{
+export const obtenerHistorialSede = async (sede_id) => {
+    try {
         const movimiento_repositorio = AppDataSource.getRepository(Movimiento);
         const historial = await movimiento_repositorio.find({
-            where: {sede_id: sede_id},
-            order: {fecha: "DESC"}
+            where: { sede_id: sede_id },
+            order: { fecha: "DESC" }
         });
         return [historial, null];
-    }catch(error){
-        console.error("Error de Base Datos en Movimiento:", error);
-        throw new Error("No se pudo obtener el historial");
+    } catch (error) {
+        console.error("Error de Base Datos al leer historial:", error); 
+        return [null, "No se pudo obtener el historial de movimientos de esta sede"];
     }
 };

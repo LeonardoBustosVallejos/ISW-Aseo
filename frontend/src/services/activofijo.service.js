@@ -8,3 +8,22 @@ export const getResumen = async(cliente_id) => {
         return error.response.data;
     }
 }
+
+export const getDetalles = async(sede_id) => {
+    try{
+        const response = await axios.get(`/activos/sede/${sede_id}`);
+        return response.data.data || response.data;
+    }catch(error){
+        return error.response.data;
+    }
+}
+
+export const getHistorialSede = async(sede_id) => {
+    try {
+        const response = await axios.get(`/activos/sede/${sede_id}/historial`);
+        return response.data.data || response.data;
+    } catch(error) {
+        console.error("Error obteniendo historial:", error);
+        return []; 
+    }
+}
