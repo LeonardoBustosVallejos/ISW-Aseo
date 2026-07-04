@@ -4,7 +4,7 @@ import Acordeon from "../Acordeon"
 import { useEffect, useState } from "react"
 import { formatRut } from "../../helpers/formatRut"
 
-export default function Contactos({ contactos, onChange, level = 0, addContact = 'old', isRegister = true, isUpdate = false }) {
+export default function Contactos({ contactos, onChange, level = 0, addContact = 'old', isRegister = true, isUpdate = false, isAparte = false }) {
     const [openContacto, setOpenContacto] = useState(0)
 
     const getReference = (obj) => {
@@ -158,6 +158,7 @@ export default function Contactos({ contactos, onChange, level = 0, addContact =
                                         value={contacto.contacto_rut}
                                         onChange={(e) => updateContacto(index, "contacto_rut", formatRut(e.target.value))}
                                         className="input" required
+                                        disabled={isUpdate}
                                     />
 
                                 </div>
@@ -221,7 +222,7 @@ export default function Contactos({ contactos, onChange, level = 0, addContact =
                                         value={contacto.tipoContacto}
                                         onChange={(e) => updateContacto(index, "tipoContacto", e.target.value)}
                                         className="input"
-                                        disabled={contactos.length === 1}
+                                        disabled={contactos.length === 1 && !isAparte}
                                     >
                                         <option value="">Seleccionar</option>
                                         <option value="PRINCIPAL">PRINCIPAL</option>

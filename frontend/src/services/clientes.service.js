@@ -102,13 +102,33 @@ export async function registerCliente(data) {
 
 export async function updateSede(sede_id, data) {
     try {
-
-        console.log(data);
         const { rutSecundario, nombre_sede, direccion, personalSolicitado, tipoSede, contactos } = data
         const body = { rutSecundario, nombre_sede, direccion, personalSolicitado, tipoSede, contactos }
         const response = await axios.patch(`/clientes/update/sede/${sede_id}`, body)
 
         return response.data
+    } catch (error) {
+        console.error("Error 400 - Detalle del Backend:", error.response?.data);
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
+
+export async function updateContactos(data) {
+    try {
+        const response = await axios.patch('/clientes/update/contactos', data)
+
+        return response.data
+    } catch (error) {
+        console.error("Error 400 - Detalle del Backend:", error.response?.data);
+        return error.response?.data || { message: "Error de conexión" };
+    }
+}
+export async function createContactos(data, sede_id) {
+    try {
+        const response = await axios.post(`/clientes/register/contactos/${sede_id}`, data)
+
+        return response.data
+
     } catch (error) {
         console.error("Error 400 - Detalle del Backend:", error.response?.data);
         return error.response?.data || { message: "Error de conexión" };

@@ -16,7 +16,8 @@
         height: 20%;
     }
 
-    button:hover {
+    button:hover,
+    button:focus {
         background-color: var(--ubb-azul-hover);
     }
 

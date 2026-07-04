@@ -14,6 +14,7 @@
     padding: .65rem .9rem;
 
     border: 1px solid #d9d9d9;
+    background-color: var(--ubb-fondo);
     border-radius: 8px;
 
     outline: none;
@@ -184,7 +185,7 @@ tbody td {
 
 }
 
-.pagination button:hover {
+.pagination button .pagination button {
 
     background: var(--ubb-azul-hover);
 
@@ -196,6 +197,20 @@ tbody td {
 
     color: white;
 
+}
+
+.table-actions {
+    display: flex;
+    height: 48px;
+    gap: 2px;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+
+    button {
+        width: 48px;
+        height: 48px;
+    }
 }
 
 
@@ -210,6 +225,7 @@ tbody td {
     border-color: var(--ubb-azul-principal);
 }
 
-.pages:hover {
+.pages:hover,
+.pages:focus {
     background-color: var(--ubb-fondo);
 }

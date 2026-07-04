@@ -12,6 +12,7 @@ import AddButton from '../../components/misc/add-button';
 import Header from '../../components/misc/Header';
 import { Modal } from '../../components/Modal';
 import { AnexosArray } from '../../components/Contrato/AnexoComercial';
+import { useErrors } from '../../hooks/errors';
 
 /**
  * 
@@ -22,10 +23,11 @@ const RegisterClienteForm = () => {
     const [openContacto, setOpenContacto] = useState(null);
     const [openSedes, setOpenSedes] = useState(null);
     const [openFilial, setOpenFilial] = useState(null);
-    const [errorsObject, setErrorsObject] = useState({});
-    const [errorMessage, setErrorMessage] = useState('')
+
     const [modalOpen, setModalOpen] = useState(false)
     const [pendingSubmit, setPendingSubmit] = useState(false);
+
+    const { errorsObject, setErrors, displayError, cleanObject } = useErrors()
 
     /**Inicializar las variables/objetos base que son obligatorios para el registro */
     const [formData, setFormData] = useState({
@@ -200,7 +202,7 @@ const RegisterClienteForm = () => {
                 showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
                 setTimeout(3000)
             } else if (response.status === 'Client error') {
-                handleErrors(response.details);
+                setErrors(response)
             }
         } catch (error) {
             console.error("Error al registrar un usuario: ", error);
@@ -214,16 +216,11 @@ const RegisterClienteForm = () => {
         setPendingSubmit(true)
         setModalOpen(true)
     };
-    const handleErrors = (e) => {
-        if (e.dataInfo) {
-            setErrorsObject(e)
-        } else {
-            setErrorMessage(e)
-        }
-    }
     return (
         <div className="form-container">
-            <Header title={'Registro de Cliente'} />
+            <Header title={'Registro de Cliente'} >
+                <button type="button" className='submit-button' onClick={() => setModalOpen(true)}>Registrar</button>
+            </Header>
 
             <form onSubmit={handleOpenModal} className="form-card form-content">
 
@@ -353,7 +350,7 @@ const RegisterClienteForm = () => {
 
                 <div>
                     <span className={`error-message`}>
-                        {errorsObject.dataInfo ? `Error: ${errorsObject.dataInfo}. ${errorsObject.message}` : errorMessage}
+                        {displayError}
                     </span>
                 </div>
                 <hr />
@@ -366,7 +363,14 @@ const RegisterClienteForm = () => {
                     onAcept={handleSubmit}
 
                 >
-                    ¿Acepta que toda la informacion entregada es correcta?
+                    <br />
+                    <br />
+                    <strong>
+
+                        ¿Acepta que toda la informacion entregada es correcta?
+                    </strong>
+                    <br />
+                    <br />
                 </Modal>
             </form >
 

@@ -8,10 +8,10 @@ import {
 import "@styles/components/Documentos.css"
 import AddButton from "../misc/add-button"
 
-export default function Documentos({ documentos, setFormData, tipo, }) {
+export default function Documentos({ documentos, setDocumentos, tipo, }) {
 
     const [openIndex, setOpenIndex] = useState(null)
-    // navegar objeto usando path
+
     const [nombreIgual, setNombreIgual] = useState({})
 
     const tiposDocumento = {
@@ -32,39 +32,36 @@ export default function Documentos({ documentos, setFormData, tipo, }) {
 
     // agregar contrato/anexo
     const addDocumento = () => {
-        setFormData(prev => ({
+        setDocumentos(prev => [
             ...prev,
-            documentos: [
-                ...prev.documentos,
-                {
-                    nombrePersonalizado: '',
-                    tipoDocumento: '',
-                    fileKey: 'anexo_pdf',
-                    file: null
-                }
-            ]
-        }));
-    }
+            {
+                nombrePersonalizado: "",
+                tipoDocumento: "",
+                fileKey: "anexo_pdf",
+                file: null
+            }
+        ]);
+    };
 
     // eliminar contrato/anexo
 
 
     // actualizar archivo
-    const updateArchivo = (fileIndex, field, value) => {
-        setFormData(prev => {
+    const updateArchivo = (index, field, value) => {
+        setDocumentos(prev => {
             const copia = structuredClone(prev);
 
-            copia.documentos[fileIndex][field] = value;
+            copia[index][field] = value;
 
             return copia;
         });
     };
     // eliminar archivo
-    const removeArchivo = (fileIndex) => {
-        setFormData(prev => {
-            const copia = structuredClone(prev);
+    const removeArchivo = (index) => {
+        setDocumentos(prev => {
+            const copia = [...prev];
 
-            copia.documentos.splice(fileIndex, 1);
+            copia.splice(index, 1);
 
             return copia;
         });

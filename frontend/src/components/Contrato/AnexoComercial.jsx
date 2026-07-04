@@ -305,7 +305,15 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
                             content={
                                 <Documentos
                                     documentos={anexo.documentos}
-                                    setFormData={setFormData}
+                                    setDocumentos={(updater) =>
+                                        setFormData(prev => {
+                                            const copia = structuredClone(prev);
+
+                                            copia.documentos = updater(copia.documentos);
+
+                                            return copia;
+                                        })
+                                    }
                                     tipo="ANEXO"
                                 />
 

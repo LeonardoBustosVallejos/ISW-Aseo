@@ -1,7 +1,87 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getClientesService, getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService } from "../services/cliente.service.js";
-import { createSedeValidation, registerClienteJerarquicoValidation, registerClienteJerarquicoYArchivoValidation, registerClienteValidation } from "../validations/cliente.validation.js";
+import { getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService, updateSedeService, uptadeContactosArrayService, registerContactoJerarquicoService } from "../services/cliente.service.js";
+import { contactosArrayValidation, createSedeValidation, registerClienteJerarquicoValidation, registerClienteJerarquicoYArchivoValidation, registerClienteValidation, sedeJerarquicoValidation } from "../validations/cliente.validation.js";
 import fs from "fs";
+
+export async function registerContactos(req, res) {
+    try {
+        const { error } = await contactosArrayValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const { sede_id } = req.params
+        console.log(sede_id);
+
+        const [data, err] = await registerContactoJerarquicoService(req.body, sede_id, null)
+
+        if (err) return handleErrorClient(res, 400, err)
+
+        handleSuccess(res, 201, 'Contactos creados ', data)
+    } catch (error) {
+        if (Array.isArray(error)) {
+            console.error(error[1])
+            return handleErrorClient(res, 400, error[1])
+        }
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
+    }
+}
+
+
+
+export async function updateContactos(req, res) {
+    try {
+
+        const { error } = await contactosArrayValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const [data, err] = await uptadeContactosArrayService(req.body, null)
+        if (err) return handleErrorClient(res, 400, err)
+
+        handleSuccess(res, 202, 'Contacto(s) actualizados ', data)
+
+    } catch (error) {
+        if (Array.isArray(error)) {
+            console.error(error[1])
+            return handleErrorClient(res, 400, error[1])
+        }
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
+    }
+}
+
+export async function updateSede(req, res) {
+    try {
+        const { error } = sedeJerarquicoValidation.validate(req.body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const sede = req.body
+        const { sede_id } = req.params
+
+        const [data, err] = await updateSedeService(sede_id, sede, null)
+
+        if (err) {
+            console.log(err);
+
+            return handleErrorClient(res, 400, err)
+        }
+
+
+        handleSuccess(res, 200, data)
+
+    } catch (error) {
+        if (Array.isArray(error)) {
+            console.error(error[1])
+            return handleErrorClient(res, 400, error[1])
+        }
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
+    }
+}
+
+
+
+
+
 export async function getClientes(req, res) {
     try {
         const [clientes, err] = await listarClientesService()

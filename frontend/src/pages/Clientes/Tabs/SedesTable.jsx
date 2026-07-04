@@ -4,14 +4,16 @@ import { Table } from "../../../components/Tabla2";
 import AddButton from "../../../components/misc/add-button";
 import { Modal } from "../../../components/Modal";
 import { SedeRow, SedesArray } from "../../../components/Clientes/SedesForm";
-import { ContactRound, Pencil, UserRoundPen, UserRoundPlus } from "lucide-react";
+import { ContactRound, Pencil, Trash2, UserRoundPen, UserRoundPlus } from "lucide-react";
 import EditButton from "../../../components/misc/edit-button";
 import ContactosTable from "./ContactosTable";
 import Contactos from "../../../components/Clientes/ContactosForm";
 import Acordeon from "../../../components/Acordeon";
 import Header from "../../../components/misc/Header";
 import AnexoRow, { AnexosArray } from "../../../components/Contrato/AnexoComercial";
-import { updateSede } from "../../../services/clientes.service";
+import { createContactos, updateContactos, updateSede } from "../../../services/clientes.service";
+import { useErrors } from "../../../hooks/errors";
+import { formatDate, formatDateTime } from "../../../helpers/formatDate";
 export default function SedesTable({ sedes }) {
 
     const [open, setOpen] = useState('')
@@ -55,7 +57,7 @@ export default function SedesTable({ sedes }) {
             }
         ]
     }])
-
+    const [selectedId, setSelectedId] = useState(0)
     const [selected, setSelected] = useState({
         nombre_sede: '',
         direccion: '',
@@ -73,34 +75,25 @@ export default function SedesTable({ sedes }) {
     const [newContacts, setNewContacts] = useState(selected.contactos);
 
     const [pendingSubmit, setPendingSubmit] = useState(false);
-    const [errorsObject, setErrorsObject] = useState({});
-    const [errorMessage, setErrorMessage] = useState('')
+
     const [modalOpen, setModalOpen] = useState(false)
-
-
-    const handleSubmit = async () => {
-        try {
-            console.log(existingContacts, newContacts);
-
-        } catch (error) {
-            console.log(error);
-
-        }
-    }
+    const { errorsObject, setErrors, cleanObject, displayError } = useErrors()
 
     const handleUpdateSede = async () => {
         try {
 
-            setModalOpen(false)
-
             const response = await updateSede(selected.sede_id, selected)
-            console.log(response);
 
             if (response.status === 'Success') {
-                showSuccessAlert('Actualizado!', 'Datos actualizados ccon éxito')
+                showSuccessAlert('Actualizado!', 'Datos actualizados con éxito.\nRecargue la página para ver los cambios')
+                setTimeout(3000)
             } else if (response.status === 'Client error') {
-                handleErrors(response.details);
+
+                setErrors(response);
             }
+
+
+
 
 
         } catch (error) {
@@ -109,15 +102,42 @@ export default function SedesTable({ sedes }) {
             showErrorAlert('Cancelado', 'Ocurrió un error al Actualizar.');
         }
     }
-    const handleUpdateContacto = async () => {
+    const handleUpdateContact = async () => {
         try {
-            console.log(existingContacts);
+            const response = await updateContactos(existingContacts)
 
+            if (response.status === 'Success') {
+                showSuccessAlert('Actualizado!', 'Datos actualizados con éxito. \nRecargue la página para ver los cambios')
+                setTimeout(3000)
+            } else if (response.status === 'Client error') {
+
+                setErrors(response);
+            }
+
+
+        } catch (error) {
+            console.error("Error al actualizar contactos: ", error);
+
+            showErrorAlert('Cancelado', 'Ocurrió un error al Actualizar.');
+
+        }
+    }
+    const handleCreateContact = async () => {
+        try {
+
+            const response = await createContactos(newContacts, selectedId)
+
+            if (response.status === 'Success') {
+                showSuccessAlert('Actualizado!', 'Datos actualizados con éxito. \nRecargue la página para ver los cambios')
+                setTimeout(3000)
+            } else if (response.status === 'Client error') {
+
+                setErrors(response);
+            }
         } catch (error) {
             console.error("Error al actualizar una sed: ", error);
 
             showErrorAlert('Cancelado', 'Ocurrió un error al Actualizar.');
-
         }
     }
 
@@ -127,31 +147,24 @@ export default function SedesTable({ sedes }) {
         setPendingSubmit(true)
         setModalOpen(true)
     };
-    const handleCloseModal = (e) => {
+    const closeConfirmModal = (e) => {
         e.preventDefault()
-
         setPendingSubmit(false)
         setModalOpen(false)
     }
-
-    const handleErrors = (e) => {
-        if (e.dataInfo) {
-            setErrorsObject(e)
-        } else {
-            setErrorMessage(e)
-        }
+    const closeFormModal = (e) => {
+        e.preventDefault()
+        setPendingSubmit(false)
+        setModalOpen(false)
+        cleanObject()
+        setOpen('')
     }
+    console.log(displayError);
 
     return (
         <>
-            <Header title={'Sedes'}>
-                {/*
-                    <AddButton text={'Agregar Sedes'} onClick={() => {
-                    setOpen('sedes')
-                }} />
-                */}
-            </Header>
             <Table
+                title={'Sedes'}
                 emptyMessage="No existen sedes"
                 rowKey="sede_id"
                 columns={[
@@ -215,6 +228,17 @@ export default function SedesTable({ sedes }) {
                                 <strong>{row.contactos.length}</strong>
                             </div>
                             <div className="data-line" />
+                            <div className="info-label">
+                                <strong>Fecha de Registro:</strong>
+                                <strong>{formatDate(row.createdAt)}</strong>
+                            </div>
+                            <div className="data-line" />
+
+                            <div className="info-label">
+                                <strong>Última actualización:</strong>
+                                <strong>{formatDateTime(row.updatedAt)}</strong>
+                            </div>
+                            <div className="data-line" />
                             <div className="add-buttons">
                                 <button className="action-button"
                                     onClick={() => setOpen('newContactos')}>
@@ -244,16 +268,74 @@ export default function SedesTable({ sedes }) {
                                         field: "email",
                                         header: "Correo"
                                     },
-                                    {
-                                        field: "phone",
-                                        header: "Teléfono"
-                                    },
+
                                     {
                                         field: "tipoContacto",
                                         header: "Tipo"
                                     }]
                                 }
+                                actions={cont => (
+                                    <div className="table-actions">
+                                        <button className="action-button"
+                                            onClick={() => {
+                                                console.log(row.contactos);
 
+                                                setExistingContacts([cont]);
+                                                setOpen('updateContact');
+                                            }} >
+                                            <UserRoundPen />
+                                        </button>
+                                        <button type="button"
+
+                                            className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                )}
+                                renderExpanded={(cont) => (<div className="info-card">
+
+
+                                    <div className="info-label">
+                                        <strong>Nombre:</strong>
+                                        <strong>{cont.nombreContacto || 'Sin Datos'}</strong>
+                                    </div>
+                                    <div className="data-line" />
+                                    <div className="info-label">
+                                        <strong>Rut del contacto:</strong>
+                                        <strong>{cont.contacto_rut || 'Sin Datos'}</strong>
+                                    </div>
+                                    <div className="data-line" />
+
+                                    <div className="info-label">
+                                        <strong>Correo de contacto:</strong>
+                                        <strong>{cont.email}</strong>
+                                    </div>
+                                    <div className="data-line" />
+
+                                    <div className="info-label">
+                                        <strong>Teléfono de contacto:</strong>
+                                        <strong>{cont.phone || 'Sin Datos'}</strong>
+                                    </div>
+                                    <div className="data-line" />
+
+                                    <div className="info-label">
+                                        <strong>Tipo de contacto:</strong>
+                                        <strong>{cont.tipoContacto}</strong>
+                                    </div>
+                                    <div className="data-line" />
+
+                                    <div className="info-label">
+                                        <strong>Fecha de registro:</strong>
+                                        <strong>{formatDateTime(cont.createdAt)}</strong>
+                                    </div>
+                                    <div className="data-line" />
+
+                                    <div className="info-label">
+                                        <strong>Última actualización:</strong>
+                                        <strong>{formatDateTime(cont.updatedAt)}</strong>
+                                    </div>
+                                    <div className="data-line" />
+                                </div>)}
                             >
 
                             </Table>
@@ -262,75 +344,40 @@ export default function SedesTable({ sedes }) {
                 )}
                 actions={(row) => (
                     <>
-                        <button className="action-button"
-                            onClick={() => {
-                                setSelected(row);
-                                setExistingContacts(row.contactos);
-                                setNewContacts([{
-                                    nombreContacto: '',
-                                    contacto_rut: '',
-                                    email: '',
-                                    phone: '',
-                                    tipoContacto: ''
-                                }]);
-                                setOpen('updateSede');
-                            }} >
-                            <UserRoundPen />
-                        </button>
+                        <EditButton onClick={() => {
+                            setSelected(row);
+                            setSelectedId(row.sede_id)
+                            setExistingContacts(row.contactos);
+                            setNewContacts([{
+                                nombreContacto: '',
+                                contacto_rut: '',
+                                email: '',
+                                phone: '',
+                                tipoContacto: ''
+                            }]);
+                            setOpen('updateSede');
+                        }} />
+
                     </>
                 )}
             />
 
-            {/*Agregar Sedes con Anexo */}
-            <Modal
-                title={'Agregar Sedes'}
-                open={open === 'sedes'}
-                onClose={() => setOpen('')}
-                isForm
-                footer={
-
-
-                    <span className={`error-message`}>
-                        {errorsObject?.dataInfo ? `Error: ${errorsObject?.dataInfo}. ${errorsObject?.message}` : errorMessage}
-                    </span>
-
-                }
-            >
-                <form action="">
-
-                    <SedesArray sedes={newSedes} setFormData={setNewSedes}
-                        sedesPath={[]} />
-                    <br />
-                    <Acordeon title={`Anexo(s)`} level={0}
-                        isOpen={accOpen === "anexo"}
-                        onToggle={() => {
-                            setAccOpen(accOpen === "anexo" ? null : "anexo")
-                        }}
-                        content={
-                            <AnexosArray
-                                anexos={anexos}
-                                setFormData={setAnexos}
-                                anexosPath={[]}
-                                isUpdate={true} />
-                        }
-                    />
-
-                </form>
-            </Modal>
-
 
             {/*Actualizar Contactos + Sede */}
-            <form onSubmit={handleOpenModal}>
-                <Modal
-                    open={open === 'updateSede'}
-                    title={selected?.nombre_sede}
-                    subtitle={selected.direccion}
-                    onClose={() => setOpen('')}
-                    errorMessage={errorMessage}
-                    errorsObject={errorsObject}
-                    isForm={true}
-
-                >
+            <Modal
+                open={open === 'updateSede'}
+                title={selected?.nombre_sede}
+                subtitle={selected.direccion}
+                onClose={closeFormModal}
+                isForm={true}
+                onAcept={handleOpenModal}
+                footer={
+                    <span className={`error-message`}>
+                        {displayError}
+                    </span>
+                }
+            >
+                <form>
                     <SedeRow sede={selected} onChange={setSelected} isUpdate />
                     <Acordeon title={`Contactos Actuales (${selected.contactos.length})`}
                         isOpen={accOpen === 'updateSede'}
@@ -339,8 +386,12 @@ export default function SedesTable({ sedes }) {
 
                             <Contactos
                                 level={1}
-                                contactos={existingContacts}
-                                onChange={setExistingContacts}
+                                contactos={selected.contactos}
+                                onChange={(updater) =>
+                                    setSelected(prev => ({
+                                        ...prev,
+                                        contactos: updater(prev.contactos)
+                                    }))}
                                 addContact={false}
                                 isRegister={false}
                                 isUpdate
@@ -348,10 +399,39 @@ export default function SedesTable({ sedes }) {
 
                         }
                     />
+                </form>
 
 
-                </Modal>
-            </form>
+            </Modal>
+
+            {/*Actualizar UN contacto */}
+            <Modal
+                open={open === 'updateContact'}
+                title={'Actualizar Contacto'}
+                subtitle={selected.direccion}
+                onClose={closeFormModal}
+                isForm={true}
+                onAcept={handleOpenModal}
+                footer={
+                    <span className={`error-message`}>
+                        {displayError}
+                    </span>
+                }
+            >
+                <form >
+
+                    <Contactos
+                        contactos={existingContacts}
+                        onChange={setExistingContacts}
+                        addContact={false}
+                        isRegister={false}
+                        isUpdate
+                    />
+
+
+
+                </form>
+            </Modal>
 
             {/*Agregar Contactos */}
             <Modal
@@ -359,35 +439,38 @@ export default function SedesTable({ sedes }) {
                 open={open === 'newContactos'}
                 onClose={() => setOpen('')}
                 isForm={true}
-                errorMessage={errorMessage}
-                errorsObject={errorsObject}>
-                <form onSubmit={handleOpenModal}>
+                onAcept={handleOpenModal}
+                footer={
+                    <span className={`error-message`}>
+                        {displayError}
+                    </span>
+                }
+            >
+                <form>
                     <Contactos
                         level={1}
-                        contactos={selected.contactos}
-                        onChange={(updater) =>
-                            setSelected(prev => ({
-                                ...prev,
-                                contactos: updater(prev.contactos)
-                            }))
-                        }
-                        isRegister={true}
-                        isUpdate={false}
+                        contactos={newContacts}
+                        onChange={setNewContacts}
+                        isAparte={true}
                     />
                 </form>
             </Modal>
+
+            {/*AVISO DE CONFIRMACION */}
             <Modal title={'AVISO'} isForm
                 open={modalOpen}
-                onClose={() => {
-                    setModalOpen(false)
-                    setPendingSubmit(false)
+                onClose={(e) => {
+                    closeConfirmModal(e)
                 }}
                 onAcept={(e) => {
                     if (open === "updateSede") {
                         handleUpdateSede(e);
-                    } else {
-                        handleSubmit(e);
+                    } else if (open === "updateContact") {
+                        handleUpdateContact(e);
+                    } else if (open === 'newContactos') {
+                        handleCreateContact(e)
                     }
+                    closeConfirmModal(e)
                 }}
             >
                 ¿Confirmar cambios?

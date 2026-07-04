@@ -11,6 +11,7 @@ import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
 import InfoCliente from "./pages/Clientes/InfoCliente";
 import Home from "./pages/Home";
+import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
 
                     <Route path="clientes"  >
                         <Route path="" element={<ListaClientes />} />
+                        <Route path="documentos+comerciales" element={<VistaDocumentosComerciales />} />
                         <Route path="registrar" element={<RegisterClienteForm />} />
 
                     </Route>

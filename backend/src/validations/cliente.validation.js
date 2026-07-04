@@ -26,11 +26,11 @@ export const contactoValidation = Joi.object({
         .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/)
         .default(null)
         .messages({
-            "string.empty": "El rut no puede estar vacío.",
-            "string.base": "El rut debe ser de tipo string.",
-            "string.min": "El rut debe tener como mínimo 9 caracteres.",
-            "string.max": "El rut debe tener como máximo 12 caracteres.",
-            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+            "string.empty": "El rut del contacto no puede estar vacío.",
+            "string.base": "El rut del contacto no debe ser de tipo string.",
+            "string.min": "El rut del contacto no debe tener como mínimo 9 caracteres.",
+            "string.max": "El rut del contacto no debe tener como máximo 12 caracteres.",
+            "string.pattern.base": "Formato rut del contacto no inválido, debe ser sin puntos y con guión.",
         }).required(),
     email: Joi.string()
         .min(10)
@@ -38,12 +38,12 @@ export const contactoValidation = Joi.object({
         .email()
         .required()
         .messages({
-            "string.empty": "El correo electrónico no puede estar vacío.",
-            "any.required": "El correo electrónico es obligatorio.",
-            "string.base": "El correo electrónico debe ser de tipo texto.",
-            "string.email": "El correo electrónico no es válido",
-            "string.min": "El correo electrónico debe tener al menos 15 caracteres.",
-            "string.max": "El correo electrónico debe tener como máximo 35 caracteres.",
+            "string.empty": "El correo electrónico del contacto no no puede estar vacío.",
+            "any.required": "El correo electrónico del contacto no es obligatorio.",
+            "string.base": "El correo electrónico del contacto no debe ser de tipo texto.",
+            "string.email": "El correo electrónico del contacto no no es válido",
+            "string.min": "El correo electrónico del contacto no debe tener al menos 15 caracteres.",
+            "string.max": "El correo electrónico del contacto no debe tener como máximo 35 caracteres.",
         })
         .custom(domainEmailValidator, "Validación dominio email"),
     phone: Joi.string()
@@ -53,10 +53,10 @@ export const contactoValidation = Joi.object({
         .allow(null, '')
         .default(null)
         .messages({
-            "string.base": "El número telefónico debe contener entre 11 y 15 dígitos,opcionalmente con +.",
-            "string.min": "El número telefónico debe tener al menos 8 caracteres.",
-            "string.max": "El número telefónico debe tener como máximo 15 caracteres.",
-            "string.pattern.base": "Formato del número telefónico inválido.",
+            "string.base": "El número telefónico del contacto no debe contener entre 11 y 15 dígitos,opcionalmente con +.",
+            "string.min": "El número telefónico del contacto no debe tener al menos 8 caracteres.",
+            "string.max": "El número telefónico del contacto no debe tener como máximo 15 caracteres.",
+            "string.pattern.base": "Formato del número telefónico del contacto no inválido.",
         }),
     tipoContacto: Joi.string()
         .valid("PRINCIPAL", "SECUNDARIO")
@@ -82,20 +82,19 @@ export const sedeValidation = Joi.object({
 
         .default(null)
         .messages({
-            "string.empty": "El rut no puede estar vacío.",
-            "string.base": "El rut debe ser de tipo string.",
-            "string.min": "El rut debe tener como mínimo 9 caracteres.",
-            "string.max": "El rut debe tener como máximo 10 caracteres.",
-            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+            "string.base": "El rut de la sede debe ser de tipo string.",
+            "string.min": "El rut de la sede debe tener como mínimo 9 caracteres.",
+            "string.max": "El rut de la sede debe tener como máximo 10 caracteres.",
+            "string.pattern.base": "Formato rut de la sede inválido, debe ser sin puntos y con guión.",
         }),
     direccion: Joi.string()
         .min(5)
         .required()
         .pattern(/^[a-záéíóúA-ZÁÉÍÓÚÜñÑ0-9.,\s]+$/)
         .messages({
-            "string.empty": "La dirección no puede estar vacía.",
-            "any.required": "La dirección es obligatoria.",
-            "string.min": "La dirección debe tener al menos 5 caracteres.",
+            "string.empty": "La dirección de la sede no puede estar vacía.",
+            "any.required": "La dirección de la sede es obligatoria.",
+            "string.min": "La dirección de la sede debe tener al menos 5 caracteres.",
             "string.pattern.base": "La direccion de la empresa solo puede contener letras, espacios y puntos.",
         }),
     personalSolicitado: Joi.number()
@@ -177,11 +176,11 @@ export const clienteValidation = Joi.object({
         .max(100)
         .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9&().,\-\s]+$/)
         .messages({
-            "string.empty": "El nombre de la empresa no puede estar vacío.",
-            "any.required": "El nombre de la empresa es obligatorio.",
-            "string.base": "El nombre de la empresa debe ser de tipo texto.",
-            "string.min": "El nombre de la empresa debe tener al menos 15 caracteres.",
-            "string.max": "El nombre de la empresa debe tener como máximo 50 caracteres.",
+            "string.empty": "El nombre de la empresa/filial no puede estar vacío.",
+            "any.required": "El nombre de la empresa/filial es obligatorio.",
+            "string.base": "El nombre de la empresa/filial debe ser de tipo texto.",
+            "string.min": "El nombre de la empresa/filial debe tener al menos 15 caracteres.",
+            "string.max": "El nombre de la empresa/filial debe tener como máximo 50 caracteres.",
         }),
     rutCliente: Joi.string()
         .min(9)
@@ -189,11 +188,11 @@ export const clienteValidation = Joi.object({
         .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/)
 
         .messages({
-            "string.empty": "El rut no puede estar vacío.",
-            "string.base": "El rut debe ser de tipo string.",
-            "string.min": "El rut debe tener como mínimo 9 caracteres.",
-            "string.max": "El rut debe tener como máximo 10 caracteres.",
-            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+            "string.empty": "El rut de la empresa/filial no puede estar vacío.",
+            "string.base": "El rut de la empresa/filial debe ser de tipo string.",
+            "string.min": "El rut de la empresa/filial debe tener como mínimo 9 caracteres.",
+            "string.max": "El rut de la empresa/filial debe tener como máximo 10 caracteres.",
+            "string.pattern.base": "Formato rut de la empresa/filial inválido, debe ser sin puntos y con guión.",
         }),
 })
 
@@ -237,23 +236,22 @@ export const sedeJerarquicoValidation = Joi.object({
         .max(12)
         .pattern(/^(?:\d{7,8}|\d{1,2}(?:\.\d{3}){2})-[\dKk]$/, 'Sin rut')
 
-        .allow('Sin rut')
+        .allow('Sin rut', '')
         .default(null)
         .messages({
-            "string.empty": "El rut no puede estar vacío.",
-            "string.base": "El rut debe ser de tipo string.",
-            "string.min": "El rut debe tener como mínimo 9 caracteres.",
-            "string.max": "El rut debe tener como máximo 10 caracteres.",
-            "string.pattern.base": "Formato rut inválido, debe ser sin puntos y con guión.",
+            "string.base": "El rut de la sede debe ser de tipo string.",
+            "string.min": "El rut de la sede debe tener como mínimo 9 caracteres.",
+            "string.max": "El rut de la sede debe tener como máximo 10 caracteres.",
+            "string.pattern.base": "Formato rut de la sede inválido, debe ser sin puntos y con guión.",
         }),
     direccion: Joi.string()
         .min(5)
         .required()
         .pattern(/^[a-záéíóúA-ZÁÉÍÓÚÜñÑ0-9.,\s]+$/)
         .messages({
-            "string.empty": "La dirección no puede estar vacía.",
-            "any.required": "La dirección es obligatoria.",
-            "string.min": "La dirección debe tener al menos 5 caracteres.",
+            "string.empty": "La dirección de la sede no puede estar vacía.",
+            "any.required": "La dirección de la sede es obligatoria.",
+            "string.min": "La dirección de la sede debe tener al menos 5 caracteres.",
             "string.pattern.base": "La direccion de la empresa solo puede contener letras, espacios y puntos.",
         }),
     personalSolicitado: Joi.number()
@@ -320,3 +318,9 @@ export const registerClienteJerarquicoYArchivoValidation = Joi.object({
         .items(anexoCompletoValidation)
         .default([])
 }).id("clienteJerarquicoYArchivoValidation")
+
+
+
+
+export const contactosArrayValidation = Joi.array().min(1).items(contactoValidation).required()
+
