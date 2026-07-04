@@ -10,14 +10,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { cookieKey, HOST, PORT } from "./config/configEnv.js";
 import { connectDB } from "./config/configDb.js";
-import { 
-        createClientes,
-        createContactos,
-        createRoles,
-        createSedes,
-        createTrabajadores, 
-        createUsers, } from "./config/initialSetup.js";
+import {
+  createClientes,
+  createContactos,
+  createRoles,
+  createSedes,
+  createTrabajadores,
+  createUsers,
+} from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
+import { iniciarCronContratos } from "./cron/contratoCron.js";
 
 
 
@@ -85,6 +87,7 @@ async function setupServer() {
 async function setupAPI() {
   try {
     await connectDB();
+    await iniciarCronContratos();
     await setupServer();
     await createRoles();
     await createClientes();

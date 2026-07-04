@@ -24,6 +24,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
                 jornada,
                 monto,
                 detalles,
+                cantidadMinTrabajadores,
                 cantidadMaxTrabajadores,
                 tipoJornada,
                 tamanoInstalacion,
@@ -33,14 +34,17 @@ export async function createContratoComercialService(data, cliente_id, manager =
             } = data
 
             // Validaciones básicas
-            if (!fechaInicio || !fechaFinOriginal || !cliente_id) throw [null, createErrorMessage("contrato", "Datos incompletos")]
+            if (!fechaInicio || !fechaFinOriginal || !cliente_id) throw [null, createErrorMessage("Contrato", "Datos incompletos")]
 
 
             // Validar fechas
-            if (new Date(fechaInicio) >= new Date(fechaFinOriginal)) throw [null, createErrorMessage("fecha", "Fechas inválidas")]
+            if (new Date(fechaInicio) >= new Date(fechaFinOriginal)) throw [null, createErrorMessage("Fechas de contrato", "Fechas inválidas")]
 
-            // Validar máximo trabajadores
-            if (cantidadMaxTrabajadores && cantidadMaxTrabajadores <= 0) throw [null, createErrorMessage("trabajadores", "Cantidad máxima inválida")]
+            if (
+                cantidadMinTrabajadores &&
+                cantidadMaxTrabajadores &&
+                (cantidadMaxTrabajadores - cantidadMinTrabajadores < 0)
+            ) throw [null, createErrorMessage(`Contrato - Cantidad de trabajadores`, "Cantidad mínima no puede ser mayor a la máxima")]
 
 
             // Buscar cliente
@@ -52,6 +56,7 @@ export async function createContratoComercialService(data, cliente_id, manager =
             const [representante, errRep] = await getTopJerarquía(clienteFound.cliente_id, transactionManager)
 
             if (errRep) throw [null, errRep]
+
 
             // Validar sedes
             let sedesEncontradas = []
@@ -93,7 +98,8 @@ export async function createContratoComercialService(data, cliente_id, manager =
                 jornada: jornada || "COMPLETA",
                 monto: monto || 0,
                 detalles: detalles || "Sin descripción",
-                cantidadMaxTrabajadores: cantidadMaxTrabajadores || null,
+                cantidadMinTrabajadores: cantidadMinTrabajadores || 0,
+                cantidadMaxTrabajadores: cantidadMaxTrabajadores || 0,
                 tipoJornada: tipoJornada || "DIURNA",
                 tamanoInstalacion: tamanoInstalacion || null,
                 requiereGuardias: requiereGuardias || false,
@@ -400,4 +406,68 @@ export async function getAnexoComercialService(anexo_id = null, sede_id = null, 
     }
 }
 
-//NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente o trabajador
+function puedeIniciarContrato(contrato) {
+    return (
+        contrato.sedes.length > 0 &&
+        contrato.cantidadMaxTrabajadores > 0
+    );
+}
+
+export async function actualizarEstadosContratos() {
+    try {
+        const contratoRepository = AppDataSource.getRepository(Contrato);
+
+        const contratos = await contratoRepository.find({
+            relations: {
+                sedes: true,
+                documentos: true,
+                // agrega las relaciones que necesite puedeIniciarContrato()
+            }
+        });
+
+        const hoy = new Date();
+
+        for (const contrato of contratos) {
+
+            //El cron no los modifica
+            if (contrato.estado === "SUSPENDIDO" ||
+                contrato.estado === "CANCELADO" ||
+                contrato.estado === "TERMINADO"
+            ) {
+                continue;
+            }
+
+            let nuevoEstado = contrato.estado;
+
+            if (hoy < new Date(contrato.fechaInicio)) {
+                // Aún no comienza
+                nuevoEstado = "ESPERA";
+
+            } else if (puedeIniciarContrato(contrato)) {
+                // Ya puede comenzar
+                nuevoEstado = "VIGENTE";
+
+                // Ya debería haber comenzado pero aún no puede
+            } else {
+                nuevoEstado = "ATRASADO";
+            }
+
+            // Solo un contrato vigente puede terminar automáticamente
+            if (contrato.estado === "VIGENTE" && hoy > new Date(contrato.fechaFinReal)) {
+                nuevoEstado = "TERMINADO";
+            }
+
+            //Si hubo cambio de estado
+            if (nuevoEstado !== contrato.estado) {
+                contrato.estado = nuevoEstado;
+                await contratoRepository.save(contrato);
+            }
+        }
+
+        console.log("Estados de contratos actualizados.");
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+//NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente 

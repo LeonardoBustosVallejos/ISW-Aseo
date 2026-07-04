@@ -28,10 +28,18 @@ const contratoComercialSchema = new EntitySchema({
         },
         estado: {
             type: "enum",
-            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA",],
+            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA", "ATRASADO", "CANCELADO"],
             default: "ESPERA",
             nullable: false,
         },
+        /*
+        * ESPERA: El contrato existe, pero aún no llega su fecha de inicio.
+        * ATRASADO: Ya debería haber comenzado, pero hay impedimentos para iniciarlo.
+        * VIGENTE: Está en ejecución.
+        * SUSPENDIDO: Se pausó temporalmente.
+        * TERMINADO: Se ejecutó y finalizó normalmente.
+        * CANCELADO: Se decidió no ejecutar o dar por terminado el proceso antes de que se completara.
+        */
         jornada: {
             type: "enum",
             enum: ["COMPLETA", "PARCIAL"],
@@ -46,9 +54,13 @@ const contratoComercialSchema = new EntitySchema({
             type: "text",
             default: "Sin descripción"
         },
+        cantidadMinTrabajadores: {
+            type: "int",
+            default: 0
+        },
         cantidadMaxTrabajadores: {
             type: "int",
-            nullable: true
+            default: 0
         },
 
         tipoJornada: {
@@ -94,6 +106,16 @@ const contratoComercialSchema = new EntitySchema({
             nullable: false,
         },
     },
+    listeners: [
+        {
+            type: "before-insert",
+            method: "actualizarEstado"
+        },
+        {
+            type: "before-update",
+            method: "actualizarEstado"
+        }
+    ],
     indices: [
         {
             name: "IDX_CONTRATO_COMERCIAL",
@@ -128,7 +150,6 @@ const contratoComercialSchema = new EntitySchema({
         }
     }
 });
-
 export default contratoComercialSchema;
 /*
 export const ContratoArchivoSchema = new EntitySchema({
