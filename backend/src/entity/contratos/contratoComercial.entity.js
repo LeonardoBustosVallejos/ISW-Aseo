@@ -106,16 +106,6 @@ const contratoComercialSchema = new EntitySchema({
             nullable: false,
         },
     },
-    listeners: [
-        {
-            type: "before-insert",
-            method: "actualizarEstado"
-        },
-        {
-            type: "before-update",
-            method: "actualizarEstado"
-        }
-    ],
     indices: [
         {
             name: "IDX_CONTRATO_COMERCIAL",

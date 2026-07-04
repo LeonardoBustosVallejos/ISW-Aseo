@@ -14,7 +14,7 @@ import AnexoRow, { AnexosArray } from "../../../components/Contrato/AnexoComerci
 import { createContactos, updateContactos, updateSede } from "../../../services/clientes.service";
 import { useErrors } from "../../../hooks/errors";
 import { formatDate, formatDateTime } from "../../../helpers/formatDate";
-export default function SedesTable({ sedes }) {
+export default function SedesTable({ sedes, noTitle = false }) {
 
     const [open, setOpen] = useState('')
     const [accOpen, setAccOpen] = useState('old')
@@ -164,7 +164,7 @@ export default function SedesTable({ sedes }) {
     return (
         <>
             <Table
-                title={'Sedes'}
+                title={noTitle ? '' : 'Sedes'}
                 emptyMessage="No existen sedes"
                 rowKey="sede_id"
                 columns={[
