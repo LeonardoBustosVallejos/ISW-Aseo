@@ -9,7 +9,8 @@
     align-items: center;
 }
 
-.backButton:hover {
+.backButton:hover,
+.backButton:focus {
     background-color: var(--ubb-azul-hover);
     cursor: pointer;
 }

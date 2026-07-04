@@ -1,5 +1,6 @@
 .accordion {
     margin-bottom: 10px;
+    width: 100%;
 }
 
 .accordion-header {
@@ -113,4 +114,10 @@
     color: var(--ubb-azul-terciario);
 
 
+}
+
+
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

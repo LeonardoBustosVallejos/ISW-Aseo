@@ -1,20 +1,3 @@
-@media (max-width: 992px) {
-
-    .document-row {
-        grid-template-columns: 1fr;
-    }
-
-    .document-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: .75rem;
-    }
-
-    .remove-button {
-        width: 100%;
-    }
-}
-
 .adjuntar-documentos {
     width: 100%;
     display: flex;
@@ -38,19 +21,6 @@
     gap: 1.5rem;
 }
 
-.document-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.document-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-
 .document-row {
     display: grid;
     grid-template-columns: 4fr 4fr 3fr auto;
@@ -63,6 +33,34 @@
     padding: 1rem;
 }
 
+@media (max-width: 992px) {
+
+    .document-row {
+        grid-template-columns: 1fr;
+    }
+
+    .document-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .75rem;
+    }
+
+    .remove-button {
+        width: 100%;
+    }
+}
+
+.document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.document-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
 
 .form-group {
     display: flex;

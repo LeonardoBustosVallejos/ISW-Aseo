@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     ChevronDown,
     Trash2,
@@ -6,35 +6,27 @@ import {
 } from "lucide-react"
 
 import Contactos from "./ContactosForm"
-import "@styles/components/SedesForm.css"
+import "../../styles/components/SedesForm.css"
 import Acordeon from "../Acordeon"
+import { formatRut } from "../../helpers/formatRut"
+import AddButton from "../misc/add-button"
 
-export default function SedeRow({ sede, setFormData, path, removeSede, index, largo, formatRut, level = 0 }) {
+export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, level = 0, isRegister = true, isUpdate = false }) {
 
     const [open, setOpen] = useState(false)
-    const [openContactos, setOpenContactos] = useState(null)
+    const [openContactos, setOpenContactos] = useState(0)
     const [openSede, setOpenSede] = useState(index)
 
-    const getReference = (obj) => {
-        let ref = obj
 
-        for (const key of path) {
-            ref = ref[key]
-        }
-
-        return ref
-    }
 
     const handleChange = (field, value) => {
-        setFormData(prev => {
-            const copia = structuredClone(prev)
+        onChange(prev => ({
 
-            const sedeRef = getReference(copia)
+            ...prev,
 
-            sedeRef[field] = value
+            [field]: value
 
-            return copia
-        })
+        }));
     }
 
     return (
@@ -62,7 +54,9 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
                                         <span style={{ color: "red", marginLeft: "4px" }}>*</span>
                                     </label>
 
-                                    <input type="text"
+                                    <input
+                                        disabled={!isRegister || isUpdate}
+                                        type="text"
                                         value={sede?.direccion}
                                         onChange={(e) => handleChange("direccion", e.target.value)}
                                         className="input"
@@ -80,6 +74,7 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
                                     </label>
 
                                     <select
+                                        disabled={!isRegister || isUpdate}
                                         value={sede?.tipoSede}
                                         onChange={(e) => handleChange("tipoSede", e.target.value)}
                                         className="input"
@@ -103,6 +98,7 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
                                     </label>
 
                                     <input
+
                                         type="number"
                                         min={0}
                                         value={sede?.personalSolicitado}
@@ -114,7 +110,7 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
 
                                 {/* botones */}
 
-                                <div className="action-buttons">
+                                <div className="action-buttons oculto">
 
                                     {/* abrir */}
 
@@ -136,60 +132,73 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
 
                             {/* BODY */}
 
-                            {open && (
 
-                                <div
-                                    className="card-body"
-                                >
-                                    {/* nombre */}
-                                    <div className="sede-body-grid">
 
-                                        <div className="form-group">
+                            <div
+                                className="card-body"
+                            >
+                                {/* nombre */}
+                                <div className="sede-body-grid">
 
-                                            <label className="label">Nombre Sede</label>
+                                    <div className="form-group">
 
-                                            <input type="text"
-                                                value={sede?.nombre_sede}
-                                                onChange={(e) => handleChange("nombre_sede", e.target.value)}
-                                                className="input"
-                                            />
+                                        <label className="label">Nombre Sede
+                                            <span className="required">*</span>
+                                        </label>
 
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="label">
-                                                RUT Secundario
-                                                <span className="text-red-500 ml-1"></span>
-                                            </label>
-                                            <input type="text" name="rutCliente" value={sede.rut_secundario}
-                                                onChange={(e) => handleChange("rut_secundario", formatRut(e.target.value))} className="input" placeholder="12345678-9" />
-                                        </div>
+                                        <input
+                                            disabled={!isRegister}
+                                            type="text"
+                                            value={sede?.nombre_sede}
+                                            onChange={(e) => handleChange("nombre_sede", e.target.value)}
+                                            className="input"
+                                            required
+                                        />
+
                                     </div>
-
-
+                                    <div className="form-group">
+                                        <label className="label">
+                                            RUT Secundario
+                                        </label>
+                                        <input
+                                            disabled={!isRegister && !isUpdate}
+                                            type="text" name="rutCliente" value={sede.rutSecundario}
+                                            onChange={(e) => handleChange("rutSecundario", formatRut(e.target.value))} className="input" placeholder="12345678-9" />
+                                    </div>
                                 </div>
-                            )}
+
+
+                            </div>
                         </div>
                         <br />
-                        <Acordeon
-                            title={`Contactos de Sede ${sede?.nombre_sede || index + 1} (${sede.contactos.length})`}
-                            level={level + 1}
-                            required={true}
-                            isOpen={openContactos === index}
-                            onToggle={() => setOpenContactos(openContactos === index ? null : index)}
-                            content={
-                                <div className="form-card">
+                        <div className={`${isUpdate ? 'oculto' : ''}`}>
 
-                                    <Contactos
-                                        contactos={sede.contactos}
-                                        level={level + 2}
-                                        setFormData={setFormData}
-                                        path={[...path, "contactos"]}
-                                        formatRut={formatRut}
-                                    />
-                                </div>
+                            <Acordeon
+                                title={`Contactos de Sede ${sede?.nombre_sede || index + 1} (${sede.contactos.length})`}
+                                level={level + 1}
+                                required={true}
+                                isOpen={openContactos === index}
+                                onToggle={() => setOpenContactos(openContactos === index ? null : index)}
+                                content={
+                                    <div className="form-card">
 
-                            }
-                        />
+                                        <Contactos
+                                            contactos={sede.contactos}
+                                            level={level + 2}
+                                            onChange={(updater) => {
+                                                onChange(prev => ({
+                                                    ...prev,
+                                                    contactos: updater(prev.contactos)
+                                                }));
+
+                                            }}
+
+                                        />
+                                    </div>
+
+                                }
+                            />
+                        </div>
 
                     </div>
                 }
@@ -208,5 +217,116 @@ export default function SedeRow({ sede, setFormData, path, removeSede, index, la
             </button>
         </div>
 
+    )
+}
+
+
+export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 0, isRegister = false }) {
+    function getReference(obj, path) {
+        return path.reduce((ref, key) => ref[key], obj);
+    }
+
+
+    useEffect(() => {
+
+        if (
+            sedes.length === 1 &&
+            sedes[0].tipoSede !== "PRINCIPAL"
+            && !isRegister
+        ) {
+
+            setFormData(prev => [
+                {
+                    ...prev[0],
+                    tipoSede: "PRINCIPAL"
+                }
+            ]);
+
+        }
+        if (sedes.length === 0) {
+            addSede
+        }
+    }, [sedes.length]);
+
+    const addSede = () => {
+
+        setFormData(prev => {
+
+            const copia = structuredClone(prev);
+
+            let target = copia;
+
+            for (const key of sedesPath) {
+                target = target[key];
+            }
+
+            target.push({
+                nombre_sede: '',
+                direccion: '',
+                personalSolicitado: '',
+                tipoSede: '',
+                contactos: [{
+                    nombreContacto: '',
+                    contacto_rut: '',
+                    email: '',
+                    phone: '',
+                    tipoContacto: ''
+                }]
+            });
+
+            return copia;
+        });
+    };
+    const removeSede = (index) => {
+
+        setFormData(prev => {
+
+            const copia = structuredClone(prev);
+
+            let target = copia;
+
+            for (const key of sedesPath) {
+                target = target[key];
+            }
+
+            target.splice(index, 1);
+
+            return copia;
+        });
+    };
+    const updateSede = (index, updater) => {
+        setFormData(prev => {
+            const copia = structuredClone(prev);
+
+            const sedesRef = getReference(copia, sedesPath);
+
+            sedesRef[index] = updater(sedesRef[index]);
+
+            return copia;
+        });
+    };
+    return (
+        <div>
+            {sedes.map((sede, index) => (
+                <>
+                    <div className="form-card interior">
+                        <SedeRow sede={sede}
+                            level={level + 1}
+                            key={`${index}`}
+                            index={index}
+                            largo={sedes.length}
+                            onChange={(updater) =>
+                                updateSede(index, updater)}
+                            removeSede={(i) => removeSede(i)}
+                        />
+                    </div>
+                    <br />
+                </>
+            ))}
+            <AddButton
+                onClick={addSede}
+                text={'Agregar Sede'}
+            />
+        </div>
     )
 }

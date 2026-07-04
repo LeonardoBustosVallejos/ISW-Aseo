@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getInfoCliente } from "../../services/clientes.service";
 import '../../styles/infoCliente.css'
-import { Archive, Briefcase, Building2, FileText, MapPin, Info } from "lucide-react";
+import { Archive, Briefcase, Building2, FileText, MapPin, Info, Badge } from "lucide-react";
 import { formatDateTime } from "../../helpers/formatDate";
 import Error404 from "../Error404.jsx";
 import { Tab, Tabs } from "../../components/Tabs.jsx";
 import Header from "../../components/misc/Header.jsx";
+import { Table } from "../../components/Tabla2.jsx";
+import AddButton from "../../components/misc/add-button.jsx";
+import SedesTable from "./Tabs/SedesTable.jsx";
+import InfoGeneral from "./Tabs/InfoGeneral.jsx";
+import ContactosTable from "./Tabs/ContactosTable.jsx";
+import TabFiliales from "./Tabs/TabFiliales.jsx";
 
 export default function InfoCliente() {
     const [error, setError] = useState(null)
@@ -40,7 +46,6 @@ export default function InfoCliente() {
 
                 const response = await getInfoCliente(cliente_id, rutCliente)
 
-                console.log(response);
                 if (response.status !== "Success") {
                     throw (response || "Cliente no encontrado");
                 }
@@ -179,79 +184,16 @@ export default function InfoCliente() {
 
             <Tabs>
                 <Tab titulo={'Resumen'}>
-                    <div className="info-grid">
-
-
-                        <div className="info-card">
-                            <div className="card-tittle">
-
-                            </div>
-                            <div className="info-label">
-                                <strong>{'Nombre: '}</strong>
-                                {dataGeneral.cliente.nombreCliente}
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'RUT: '}</strong>
-                                {dataGeneral.cliente.rutCliente}
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Tipo de Cliente: '}</strong>
-                                {dataGeneral.cliente.tipoCliente}
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Fecha de Registro: '}</strong>
-                                {formatDateTime(dataGeneral.cliente.createdAt)}
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Última Actualización: '}</strong>
-                                {formatDateTime(dataGeneral.cliente.updatedAt)}
-                            </div>
-                            <div className="data-line" />
-                        </div>
-
-
-                        <div className="info-card">
-
-                            <div className="info-label">
-                                <strong>{'Total de Sedes: '}</strong>
-                                <strong>{dataGeneral.sedes.length}</strong>
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Total de Contratos: '}</strong>
-                                <strong>{dataGeneral.contratos.length}</strong>
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Total dde Anexos: '}</strong>
-                                <strong>{dataGeneral.anexos.length}</strong>
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Total de Documentos: '}</strong>
-                                <strong>{dataGeneral.documentos.length}</strong>
-                            </div>
-                            <div className="data-line" />
-                            <div className="info-label">
-                                <strong>{'Total de Filiales: '}</strong>
-                                <strong>{dataGeneral.filiales.length}</strong>
-                            </div>
-                            <div className="data-line" />
-                        </div>
-                    </div>
+                    <InfoGeneral dataGeneral={dataGeneral} />
                 </Tab>
                 <Tab titulo={'Filiales'} disabled={dataGeneral.filiales.length < 1}>
-
+                    <TabFiliales filiales={dataGeneral.filiales} />
                 </Tab>
                 <Tab titulo={'Sedes'}>
-                    {'dsf'}
+                    <SedesTable sedes={dataGeneral.sedes} />
                 </Tab>
                 <Tab titulo={'Contactos'}>
-
+                    <ContactosTable contactos={dataGeneral.contactos} />
                 </Tab>
                 <Tab titulo={'Contratos'}>
 

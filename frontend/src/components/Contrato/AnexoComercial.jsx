@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     ChevronDown,
     Trash2
@@ -6,8 +6,9 @@ import {
 import Acordeon from '../Acordeon.jsx';
 import Documentos from "./Documentos"
 import "@styles/components/AnexoForm.css"
+import AddButton from "../misc/add-button.jsx";
 
-export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contrato = null, level = 0 }) {
+export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contrato = null, level = 0, isRegister = false, largo = 1, isUpdate = false }) {
 
     const [open, setOpen] = useState(false)
 
@@ -16,16 +17,14 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
 
     // actualizar datos del anexo
     const handleChange = (field, value) => {
-
-        setFormData(prev => {
-
-            const copia = structuredClone(prev)
-
-            copia.anexos[index].datos[field] = value
-
-            return copia
-        })
-    }
+        setFormData(prev => ({
+            ...prev,
+            datos: {
+                ...prev.datos,
+                [field]: value
+            }
+        }));
+    };
 
     return (
         <div className="multiple-acordeon">
@@ -306,8 +305,15 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
                             content={
                                 <Documentos
                                     documentos={anexo.documentos}
-                                    setFormData={setFormData}
-                                    path={`anexos.${index}.documentos`}
+                                    setDocumentos={(updater) =>
+                                        setFormData(prev => {
+                                            const copia = structuredClone(prev);
+
+                                            copia.documentos = updater(copia.documentos);
+
+                                            return copia;
+                                        })
+                                    }
                                     tipo="ANEXO"
                                 />
 
@@ -319,7 +325,8 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
             <button
                 type="button"
                 onClick={() => removeAnexo(index)}
-                className="remove-button"
+                className={`remove-button ${!isRegister && isUpdate && largo === 1 ? 'oculto' : ''}`}
+                disabled={!isRegister && isUpdate && largo === 1}
             >
 
                 <Trash2 size={18} />
@@ -328,4 +335,84 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
         </div>
 
     )
+}
+
+export function AnexosArray({ anexos, setFormData, anexosPath = ['anexos'], contrato = null, level = 0, isOpen, isRegister = false, isUpdate = false }) {
+    useEffect(() => {
+        if (anexos.length === 0 && isRegister && isUpdate) addAnexo()
+    }, [anexos, isRegister])
+
+    const getReference = (obj, path) =>
+        path.reduce((ref, key) => ref[key], obj);
+    const addAnexo = () => {
+
+        setFormData(prev => ([
+            ...prev,
+            {
+                datos: {
+                    numeroAnexo: "",
+                    fechaInicio: contrato?.fechaInicio ?? "",
+                    fechaFin: contrato?.fechaFinOriginal ?? "",
+                    montoNuevo: contrato?.monto ?? "",
+                    cantidadMinTrabajadores: contrato?.cantidadMinTrabajadores ?? "",
+                    cantidadMaxTrabajadores: contrato?.cantidadMaxTrabajadores ?? "",
+                    tipoJornada: contrato?.tipoJornada ?? "",
+                    tipoAnexo: "",
+                    detalles: "",
+                    observacionesOperativas: "",
+                    requiereGuardias: contrato?.requiereGuardias ?? false,
+                    tamanoInstalacion: contrato?.tamanoInstalacion ?? ""
+                },
+                documentos: [{
+                    nombrePersonalizado: "",
+                    tipoDocumento: "ANEXO",
+                    fileKey: "anexo_pdf",
+                    file: null
+                }]
+            }
+        ]));
+    };
+    const updateAnexo = (index, updater) => {
+        setFormData(prev => {
+            const copia = structuredClone(prev);
+
+            copia[index] = updater(copia[index]);
+
+            return copia;
+        });
+    };
+    const removeAnexo = (index) => {
+        setFormData(prev => {
+            const copia = structuredClone(prev);
+
+            copia.splice(index, 1);
+
+            return copia;
+        });
+    };
+    return (<>
+
+        {anexos.map((anexo, index) => (
+
+            <AnexoRow anexo={anexo}
+                key={index}
+                index={index}
+                setFormData={(updater) =>
+                    updateAnexo(index, updater)
+                }
+                contrato={contrato}
+                removeAnexo={() => removeAnexo(index)}
+                isRegister={isRegister}
+                largo={anexos.length}
+                isUpdate={isUpdate}
+            />
+
+        )
+        )}
+        {/*Botón de agregar anexo */}
+        <AddButton
+            onClick={addAnexo}
+            text={'Agregar Anexo'}
+        />
+    </>)
 }
