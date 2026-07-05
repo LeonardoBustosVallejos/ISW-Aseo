@@ -221,7 +221,7 @@ export async function recontratarTrabajadorController(req, res) {
     }
     const { id } = paramValidation.value;
 
-    const [trabajador, errorTrabajador] = await recontratarTrabajadorService(id, despedido);
+    const [trabajador, errorTrabajador] = await recontratarTrabajadorService(id);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
@@ -241,11 +241,13 @@ export async function despidoTrabajadorController(req, res) {
     
     const {id} = paramValidation.value;
 
-    const bodyValidation = despidoTrabajadorBodyValidation.valid(req.body);
-    if(paramValidation.error){
+    const bodyValidation = despidoTrabajadorBodyValidation.validate(req.body);
+    if(bodyValidation.error){
       return handleErrorClient(res, 400, "Datos del despedido inválidos", bodyValidation.error.message);
     }
 
+    const { motivo } = bodyValidation.value;
+    
     const files = req.files || {};
     const archivo = files.archivo?.[0];
     let archivo_url = null;

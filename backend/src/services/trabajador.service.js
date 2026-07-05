@@ -188,6 +188,7 @@ export async function updateTrabajadorService(id, body) {
         return [null, "Error interno del servidor"];
     }
 }
+
 export async function despidoTrabajadorService(id, data) {
     try {
         const { motivo, archivo_url } = data;
@@ -196,36 +197,52 @@ export async function despidoTrabajadorService(id, data) {
             return [null, "Debe indicar el motivo de su desvinculación"];
         }
 
+        const trabajadoresRepoGlobal = AppDataSource.getRepository(Trabajador);
+        const supervisorCheck = await trabajadoresRepoGlobal.findOne({
+            where: { id: Number(id) },
+            relations: ["gruposSupervisados"]
+        });
+
+        if (supervisorCheck && supervisorCheck.gruposSupervisados && supervisorCheck.gruposSupervisados.length > 0) {
+            const nombresGrupos = supervisorCheck.gruposSupervisados.map(g => `'${g.nombre}'`).join(", ");
+            return [
+                null, 
+                `No se puede despedir al supervisor porque actualmente tiene a su cargo los siguientes grupos: ${nombresGrupos}. Primero reasigne estos grupos a otro supervisor.`
+            ];
+        }
+
         return await AppDataSource.transaction(async (manager) => {
             const trabajadoresRepository = manager.getRepository(Trabajador);
             const historialRepository = manager.getRepository(TrabajadorHistorialSchema);
+            const sedeRepository = manager.getRepository(Sede);
 
             const trabajadorFound = await trabajadoresRepository.findOne({
                 where: { id: Number(id), despedido: false },
-                relations: ["grupoAsignado", "gruposSupervisados"]
+                relations: [
+                    "grupoAsignado", 
+                    "grupoAsignado.sedeAsignada"
+                ]
             });
             
             if (!trabajadorFound) return [null, "Trabajador activo no encontrado"];
 
-            trabajadorFound.grupoAsignado = null;
-            
-            if (trabajadorFound.gruposSupervisados && trabajadorFound.gruposSupervisados.length > 0) {
-                for (const grupo of trabajadorFound.gruposSupervisados) {
-                    grupo.supervisor = null; 
-                    await manager.save(grupo);
-                }
-                trabajadorFound.gruposSupervisados = [];
+            if (trabajadorFound.grupoAsignado && trabajadorFound.grupoAsignado.sedeAsignada) {
+                const sede = trabajadorFound.grupoAsignado.sedeAsignada;
+                sede.personalAsignado = Math.max(0, sede.personalAsignado - 1);
+                await sedeRepository.save(sede);
             }
 
+            trabajadorFound.grupoAsignado = null;
             trabajadorFound.despedido = true;
             trabajadorFound.updatedAt = new Date();
+            
             await trabajadoresRepository.save(trabajadorFound);
 
             const historial = historialRepository.create({
                 motivo: motivo.trim(),
                 fechaDesvinculacion: new Date(),
                 archivo_url: archivo_url,
-                trabajador: trabajadorFound.id, // TypeORM mapea el ID automáticamente a la relación
+                trabajador: trabajadorFound,
             });
             await historialRepository.save(historial);
 
@@ -237,8 +254,8 @@ export async function despidoTrabajadorService(id, data) {
             return [trabajadorData, null];
         });
     } catch (error) {
-        console.error("Error al despedir un trabajador:", error);
-        return [null, "Error interno del servidor"];
+        console.error("Error real en la base de datos al despedir:", error);
+        return [null, "Error interno del servidor al procesar el despido."];
     }
 }
 
@@ -361,6 +378,8 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
         const trabajadorRepo = AppDataSource.getRepository(Trabajador);
         const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
 
+        const cantidadNuevosMiembros = miembros_ids.length;
+
         const grupoExistente = await gruposRepo.findOneBy({ nombre: nombre.trim() });
         if (grupoExistente) {
             return [null, `Ya existe un grupo con el nombre '${nombre}'.`];
@@ -455,7 +474,6 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
     }
 }
     
-
 export async function getGruposService({ page, limit }) {
     try {
         const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
@@ -509,8 +527,6 @@ export async function getGrupoService(grupo_id) {
   }
 }
 
-import { Not } from "typeorm"; 
-
 export async function updateGrupoService(grupo_id, { nombre, supervisor_id, miembros_ids }) {
   try {
     const trabajadorRepo = AppDataSource.getRepository(Trabajador);
@@ -536,7 +552,7 @@ export async function updateGrupoService(grupo_id, { nombre, supervisor_id, miem
       const gruposDelSupervisor = await gruposRepo.count({
         where: {
           supervisorAsignado: { id: nuevoSupervisor.id },
-          grupo_id: Not(grupo_id) // 🌟 Evita que se cuente a sí mismo si ya lo supervisaba
+          grupo_id: grupo_id
         }
       });
       if (gruposDelSupervisor >= 6) {
