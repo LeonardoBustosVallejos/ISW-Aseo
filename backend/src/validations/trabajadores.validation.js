@@ -2,16 +2,9 @@
 import Joi from "joi";
 
 
-// RegEx que permite solo letras (con tildes, mayúsculas, Ñ) y espacios
-const nombresRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
-const rutRegex = /^[0-9]{7,8}-([0-9]|k|K)$/;
-const nacimientoRegex = /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;
-const rolesTrabajador = ["Supervisor", "Trabajador"];
-const sexoPermitido = ["M", "F"]
-
 export const createTrabajadorBodyValidation = Joi.object({
     nombres: Joi.string()
-        .pattern(nombresRegex)
+        .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
         .min(2)
         .max(100)
         .required()
@@ -23,7 +16,7 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.max": "El nombre no puede superar los {#limit} caracteres.",
         }),
     apellidoPaterno: Joi.string()
-        .pattern(nombresRegex)
+        .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
         .min(2)
         .max(60)
         .required()
@@ -35,7 +28,7 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.max": "El apellido paterno no puede superar los {#limit} caracteres.",
         }),
     apellidoMaterno: Joi.string()
-        .pattern(nombresRegex)
+        .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
         .min(2)
         .max(60)
         .required()
@@ -47,7 +40,7 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.max": "El apellido materno no puede superar los {#limit} caracteres.",
         }),
     rut: Joi.string()
-        .pattern(rutRegex)
+        .pattern(/^[0-9]{7,8}-([0-9]|k|K)$/)
         .min(9)
         .max(10)
         .required()
@@ -59,12 +52,19 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.max": "El rut no puede superar los {#limit} caracteres.",
         }),
     nacimiento: Joi.string()
-    .pattern(nacimientoRegex) 
+    .pattern(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/) 
     .required()
     .messages({
         "string.empty": "La fecha de nacimiento no puede estar vacía.",
         "string.pattern.base": "La fecha debe tener el formato válido AAAA-MM-DD.",
         "any.required": "La fecha de nacimiento es requerida."
+    }),
+    telefono: Joi.string()
+    .pattern(/^\+[0-9]{11}$/)
+    .required().messages({
+        "string.empty": "El número de contacto no puede estar vacío.",
+        "string.pattern.base": "El número debe de cumplir con el formato. Ejemplo: +56123456789",
+        "any.required": "El número de contacto es requerido."
     }),
     email: Joi.string() 
         .email({ minDomainSegments: 2, //Debe haber 2 partes, separadas por el dominio (@)
@@ -78,23 +78,31 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.email": "Por favor, ingresa un correo electrónico válido (ej: usuario@dominio.com).",
         }),
     rol: Joi.string()
-        .valid(...rolesTrabajador)
+        .valid(...["Supervisor", "Trabajador"])
         .required()
         .messages({
             "string.empty": "Debe de haber un rol asignado.",
             "any.required": "El rol es requerido.",
-            "any.only": `Un trabajador de la empresa sólo puede tener los roles de ${rolesTrabajador.join(", ")}`,
+            "any.only": `Un trabajador de la empresa sólo puede tener los roles de ${["Supervisor", "Trabajador"].join(", ")}`,
         }),
     sexo: Joi.string()
-        .valid(...sexoPermitido)
+        .valid(...["M", "F"])
         .required()
         .messages({
             "string.empty": "El sexo no puede ser vacío",
             "any.required": "El sexo es requerido.",
             "any.only": "Un trabajador sólo puedes Masculino o Femenino.",
         }),
-    competencias: Joi.any().optional(),// Está así por ahora, ya que se deberá mover después
-    grupo_id: Joi.any().optional(), // Está así por ahora, ya que se moverán los grupos después
+    grupo_id: Joi.number()
+        .integer()
+        .positive()
+        .allow(null)
+        .optional()
+        .messages({
+            "number.base": "El id del grupo debe de ser un numero.",
+            "number.integer": "El id del grupo debe ser un entero.",
+            "number.positive": "El id del grupo debe de ser positivo."
+        }),
     foto_url: Joi.string()
         .uri()
         .required()
@@ -119,5 +127,33 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.empty": "Los antecedentes no pueden estar vacíos.",
             "any.required": "La URL de los antecedentes es requerida.",
         }),
+    competenciasIds: Joi.array()
+        .items(
+            Joi.number()
+                .integer()
+                .positive()
+        )
+        .allow(null)
+        .optional()
+        .messages({
+            "array.base": "Las competencias deben ser una lista.",
+            "number.base": "El id de la competencia debe ser un número.",
+            "number.integer": "El id del ítem debe ser un entero.",
+            "number.positive": "El id del ítem debe ser positivo."
+        }),
     
+}); 
+
+export const getTrabajadoresQueryValidation = Joi.object({
+    page: Joi.number()
+        .integer()
+        .min(1)
+        .default(1)
+        .optional(),
+    limit: Joi.number()
+        .integer()
+        .min(1)
+        .max(100)
+        .default(10)
+        .optional()
 });
