@@ -33,7 +33,10 @@ import {
  getTrabajadoresQueryValidation,
  getTrabajadorParamValidation,
  updateTrabajadorBodyValidation,
- updateTrabajadorParamValidation
+ updateTrabajadorParamValidation,
+ despidoTrabajadorBodyValidation,
+ despidoTrabajadorParamValidation,
+ recontratarTrabajadorParamValidation
 } from "../validations/trabajadores.validation.js"
 
 
@@ -206,8 +209,11 @@ export async function updateTrabajadorController(req, res) {
 
 export async function recontratarTrabajadorController(req, res) {
   try {
-    const { id } = req.params;
-    const { despedido } = req.body;
+    const paramValidation = recontratarTrabajadorParamValidation.validate(req.params);
+    if (paramValidation.error) {
+      return handleErrorClient(res, 400, "Id inválido en la ruta", paramValidation.error.message);
+    }
+    const { id } = paramValidation.value;
 
     const [trabajador, errorTrabajador] = await recontratarTrabajadorService(id, despedido);
 
@@ -222,31 +228,34 @@ export async function recontratarTrabajadorController(req, res) {
 
 export async function despidoTrabajadorController(req, res) {
   try {
-    const { id } = req.params;
-    const { despedido } = req.body;
-    const { motivo } = req.body;
+    const paramValidation = despidoTrabajadorParamValidation.validate(req.params);
+    if(paramValidation.error) {
+      return handleErrorClient(res, 400, "ID inválido en la ruta", paramValidation.error.message);
+    }
     
-    const files = req.files || {};
-    const archivo = files.archivo?.[0];
-    const payload = {
-      despedido,
-      motivo,
+    const {id} = paramValidation.value;
 
-      archivo: archivo
-      ? {
-        original: archivo.originalname,
-        archivo: archivo.filename,
-        ruta: archivo.path,
-        mime: archivo.mimetype,
-        peso: archivo.size,
-      } : null,
+    const bodyValidation = despidoTrabajadorBodyValidation.valid(req.body);
+    if(paramValidation.error){
+      return handleErrorClient(res, 400, "Datos del despedido inválidos", bodyValidation.error.message);
     }
 
-    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, payload);
+    const files = req.files || {};
+    const archivo = files.archivo?.[0];
+    let archivo_url = null;
 
-    if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
+    if (archivo) {
+      archivo_url = `${req.protocol}://${req.get('host')}/uploads/archivos/${archivo.filename}`;
+    }
 
-    return (handleSuccess(res, 200, "Trabajador despedido", trabajador));
+    const [trabajador, errorTrabajador] = await despidoTrabajadorService(id, { 
+      motivo, 
+      archivo_url 
+    });
+
+    if (errorTrabajador) return handleErrorClient(res, 400, errorTrabajador);
+
+    return handleSuccess(res, 200, "Trabajador despedido correctamente", trabajador);
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);

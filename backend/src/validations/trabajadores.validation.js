@@ -219,3 +219,44 @@ export const updateTrabajadorParamValidation = Joi.object({
             "any.required": "El ID es obligatorio."
         })
 });
+
+export const despidoTrabajadorBodyValidation = Joi.object({
+    motivo: Joi.string()
+        .trim()
+        .min(10)
+        .max(1000)
+        .required()
+        .messages({
+            "string.base": "El motivo debe ser un texto.",
+            "string.empty": "El motivo de la desvinculación no puede estar vacío.",
+            "string.min": "El motivo debe tener al menos 10 caracteres para ser descriptivo.",
+            "string.max": "El motivo no puede exceder los 1000 caracteres.",
+            "any.required": "El motivo de la desvinculación es obligatorio."
+        })
+});
+
+export const despidoTrabajadorParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID debe ser un número.",
+            "number.integer": "El ID debe ser un entero.",
+            "number.positive": "El ID debe ser positivo.",
+            "any.required": "El ID del trabajador es obligatorio."
+        })
+});
+
+export const recontratarTrabajadorParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID debe ser un número.",
+            "number.integer": "El ID debe ser un entero.",
+            "number.positive": "El ID debe ser positivo.",
+            "any.required": "El ID del trabajador es obligatorio."
+        })
+});

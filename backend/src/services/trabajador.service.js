@@ -188,100 +188,77 @@ export async function updateTrabajadorService(id, body) {
         return [null, "Error interno del servidor"];
     }
 }
-
 export async function despidoTrabajadorService(id, data) {
     try {
-        const {
-            despedido = true,
-            motivo,
-            archivo = null
-        } = data;
+        const { motivo, archivo_url } = data;
 
         if (!motivo || !motivo.trim()) {
             return [null, "Debe indicar el motivo de su desvinculación"];
         }
 
         return await AppDataSource.transaction(async (manager) => {
-        const trabajadoresRepository = manager.getRepository(Trabajador);
-        const historialRepository = manager.getRepository(TrabajadorHistorialSchema);
+            const trabajadoresRepository = manager.getRepository(Trabajador);
+            const historialRepository = manager.getRepository(TrabajadorHistorialSchema);
 
-        const trabajadorFound = await trabajadoresRepository.findOne({
-            where:
-            {
-                id: Number(id),
-                despedido: false,
-            },
-        })
-        if (!trabajadorFound) {
-            return [null, "Trabajador no encontrado"]
-        };
+            const trabajadorFound = await trabajadoresRepository.findOne({
+                where: { id: Number(id), despedido: false },
+                relations: ["grupoAsignado", "gruposSupervisados"]
+            });
+            
+            if (!trabajadorFound) return [null, "Trabajador activo no encontrado"];
 
-        await trabajadoresRepository.update (
-            { id: trabajadorFound.id },
-            { despedido: Boolean(despedido),
-                updatedAt: new Date()
+            trabajadorFound.grupoAsignado = null;
+            
+            if (trabajadorFound.gruposSupervisados && trabajadorFound.gruposSupervisados.length > 0) {
+                for (const grupo of trabajadorFound.gruposSupervisados) {
+                    grupo.supervisor = null; 
+                    await manager.save(grupo);
+                }
+                trabajadorFound.gruposSupervisados = [];
             }
-        );
 
-        const historial = historialRepository.create({
-            motivo: motivo.trim(),
-            fechaDesvinculacion: new Date(),
-            archivoNombreOriginal: archivo?.original ?? null,
-            archivoNombreArchivo: archivo?.archivo ?? null,
-            archivoRuta: archivo?.ruta ?? null,
-            archivoMimeType: archivo?.mime ?? null,
-            archivoPeso: archivo?.peso ?? null,
-            trabajador: trabajadorFound.id,
-        });
+            trabajadorFound.despedido = true;
+            trabajadorFound.updatedAt = new Date();
+            await trabajadoresRepository.save(trabajadorFound);
 
-        await historialRepository.save(historial);
+            const historial = historialRepository.create({
+                motivo: motivo.trim(),
+                fechaDesvinculacion: new Date(),
+                archivo_url: archivo_url,
+                trabajador: trabajadorFound.id, // TypeORM mapea el ID automáticamente a la relación
+            });
+            await historialRepository.save(historial);
 
-        const trabajadorData = await trabajadoresRepository.findOne({
-            where: { 
-                id: trabajadorFound.id 
-                },
+            const trabajadorData = await trabajadoresRepository.findOne({
+                where: { id: trabajadorFound.id },
                 relations: ["historialDesvinculaciones"],
             });
 
             return [trabajadorData, null];
         });
-        } catch (error) {
-            console.error("Error al despedir un trabajador:", error);
-            return [null, "Error interno del servidor"];
-        }
-}
-
-export async function recontratarTrabajadorService(id, despedido = false) {
-    try {
-        const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
-        const trabajadorFound = await trabajadoresRepository.findOne({
-            where:
-            {
-                id: Number(id),
-                despedido: true,
-            },
-        })
-        if (!trabajadorFound) return [null, "Trabajador no encontrado"]
-
-        const dataTrabajadorUpdate = {
-            despedido: Boolean(despedido),
-            updatedAt: new Date(),
-        }
-
-        await trabajadoresRepository.update({ id: trabajadorFound.id }, dataTrabajadorUpdate);
-
-        const trabajadorData = await trabajadoresRepository.findOne({
-            where: { id: trabajadorFound.id },
-        });
-
-        if (!trabajadorData) {
-            return [null, "Trabajador no encontrado después de despedirse"];
-        }
-
-        return [trabajadorData, null];
-
     } catch (error) {
         console.error("Error al despedir un trabajador:", error);
+        return [null, "Error interno del servidor"];
+    }
+}
+
+export async function recontratarTrabajadorService(id) {
+    try {
+        const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        
+        const trabajadorFound = await trabajadoresRepository.findOne({
+            where: { id: Number(id), despedido: true },
+        });
+        if (!trabajadorFound) return [null, "Trabajador despedido no encontrado"];
+
+        trabajadorFound.despedido = false;
+        trabajadorFound.updatedAt = new Date();
+
+        const saved = await trabajadoresRepository.save(trabajadorFound);
+        return [saved, null];
+
+    } catch (error) {
+        console.error("Error al recontratar un trabajador:", error);
         return [null, "Error interno del servidor"];
     }
 }
