@@ -260,3 +260,30 @@ export const recontratarTrabajadorParamValidation = Joi.object({
             "any.required": "El ID del trabajador es obligatorio."
         })
 });
+
+export const getGruposQueryValidation = Joi.object({
+    page: Joi.number()
+        .integer()
+        .min(1)
+        .default(1)
+        .optional(),
+    limit: Joi.number()
+        .integer()
+        .min(1)
+        .max(100)
+        .default(10)
+        .optional()
+});
+
+export const getGrupoParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID del grupo debe ser un número.",
+            "number.integer": "El ID del grupo debe ser un número entero.",
+            "number.positive": "El ID del grupo debe ser un valor positivo.",
+            "any.required": "El ID del grupo es obligatorio en la ruta."
+        })
+});

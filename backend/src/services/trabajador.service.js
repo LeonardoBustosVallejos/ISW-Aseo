@@ -435,19 +435,40 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
 }
     
 
-export async function getGruposService() {
-  try {
-    const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
-    const grupos = await gruposRepo.find({
-      relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
-    });
+export async function getGruposService({ page, limit }) {
+    try {
+        const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
+        const skip = (page - 1) * limit;
 
-    if (!grupos || grupos.length === 0) return [null, "No hay grupos"];
-    return [grupos, null];
-  } catch (error) {
-    console.error("Error al obtener grupos:", error);
-    return [null, "Error interno del servidor"];
-  }
+        // 🌟 Usamos tu patrón exacto: findAndCount
+        const [grupos, totalItems] = await gruposRepo.findAndCount({
+            relations: ["sedeAsignada", 
+                        "supervisorAsignado", 
+                        "miembros"],
+            skip: skip,
+            take: limit,
+        });
+
+        if (!grupos || grupos.length === 0) return [null, "No hay grupos"];
+
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const payload = {
+            grupos,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                perPage: limit
+            }
+        };
+
+        return [payload, null];
+    }
+    catch (error) {
+        console.error("Error al obtener los grupos:", error);
+        return [null, error.message || "Error interno del servidor"];
+    }
 }
 
 export async function getGrupoService(grupo_id) {

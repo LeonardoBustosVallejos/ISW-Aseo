@@ -19,7 +19,7 @@ import {
   getTrabajadorService,
   recontratarTrabajadorService,
   updateTrabajadorService,
-  updateGrupoService
+  updateGrupoService,
 } from "../services/trabajador.service.js";
 import { 
   formatDate,
@@ -36,7 +36,9 @@ import {
  updateTrabajadorParamValidation,
  despidoTrabajadorBodyValidation,
  despidoTrabajadorParamValidation,
- recontratarTrabajadorParamValidation
+ recontratarTrabajadorParamValidation,
+ getGruposQueryValidation,
+ getGrupoParamValidation
 } from "../validations/trabajadores.validation.js"
 
 
@@ -323,19 +325,42 @@ export async function updateGrupoController(req, res) {
 
 export async function getGruposController(req, res) {
   try {
-    const [grupos, error] = await getGruposService();
-    if (error) return handleErrorClient(res, 404, error);
-    return handleSuccess(res, 200, "Grupos encontrados", grupos);
-  } catch (error) {
+    const { error, value } = getGruposQueryValidation.validate(req.query);
+    if (error) return handleErrorClient(res, 400, "Parámetros de paginación inválidos", error.message);
+    
+    const [result, errorGrupos] = await getGruposService(value);
+    if (errorGrupos) return handleErrorClient(res, 404, errorGrupos);
+    
+    const responseData = result.grupos.map(grupo => {
+      return {
+        ...grupo
+      };
+    });
+
+    const finalResponse = {
+        grupos: responseData,
+        pagination: result.pagination
+    };
+
+    return handleSuccess(res, 200, "Grupos encontrados", finalResponse);
+  }
+  catch (error) {
     handleErrorServer(res, 500, error.message);
   }
 }
+
 export async function getGrupoController(req, res) {
   try {
-    const { id } = req.params;
-    const [grupo, error] = await getGrupoService(Number(id));
+    const paramValidation = getGrupoParamValidation.validate(req.params)
+    if (paramValidation.error) {
+      return handleErrorClient(res, 400, "ID del grupo inválido", paramValidation.error.message);
+    }
+    const { id } = paramValidation.value;
     
-    if (error) return handleErrorClient(res, 404, error);
+    const [grupo, error] = await getGrupoService(Number(id));
+    if (error) {
+      return handleErrorClient(res, 404, error);
+    }
     return handleSuccess(res, 200, "Grupo encontrado", grupo);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
