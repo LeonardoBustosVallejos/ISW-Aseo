@@ -1,5 +1,5 @@
 "use strict";
-import { EntitySchema, JoinColumn } from "typeorm";
+import { EntitySchema, JoinColumn, JoinTable } from "typeorm";
 
 const TrabajadorSchema = new EntitySchema({
   name: "Trabajador",
@@ -35,6 +35,12 @@ const TrabajadorSchema = new EntitySchema({
       type: "date",
       nullable: false,
     },
+    telefono: {
+      type: "varchar",
+      length: 12,
+      nullable: true,
+      unique: true
+    },
     email: {
       type: "varchar",
       length: 255,
@@ -45,26 +51,26 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 1,
       nullable: false,
-    },
+    },/*
     competencias: {
       type: "varchar",
       length: 255,
       nullable: true,
-    },
+    },*/
     foto_url: {
       type: "varchar",
       length: 255,
-      nullable: true
+      nullable: false
     },
     cv_url: {
       type: "varchar",
       length: 255,
-      nullable: true
+      nullable: false
     },
     antecedentes_url: {
       type: "varchar",
       length: 255,
-      nullable: true
+      nullable: false
     },
     despedido: {
       type: "boolean",
@@ -110,18 +116,26 @@ const TrabajadorSchema = new EntitySchema({
         },
         eager: true //hace que al buscar un trabajador, traiga automáticamente su rol
       },
-      grupoAsignado: {
-        type: "many-to-one",
-        target: "TrabajadoresGrupos",
-        joinColumn: { name: "grupo_id" },
-        inverseSide: "miembros",
-        nullable: true
-      },
       gruposSupervisados: {
         type: "one-to-many",
         target: "TrabajadoresGrupos",
         inverseSide: "supervisorAsignado",
         //nullable: true
+      },
+      competencias: {
+        type: "many-to-many",
+        target: "Item",
+        inverseSide: "competenciasTrabajadores",
+        JoinTable: true,
+        nullable: true,
+        joinTable: {
+          name: "trabajadoresCompetencias",
+          referencedColumn: "id"
+        },
+        inverseJoinColumn: {
+          name: "item_id",
+          referencedColumn: "id"
+        }
       }
   },
 });

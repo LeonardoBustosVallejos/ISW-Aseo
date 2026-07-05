@@ -9,23 +9,43 @@ import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 import Sede from "../entity/sede.entity.js"
 import TrabajadoresGruposSchema from "../entity/trabajadoresGrupos.entity.js";
 
-export async function getTrabajadoresService() {
+export async function getTrabajadoresService({ page, limit }) {
     try {
-        const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
 
-        const trabajadores = await TrabajadoresRepository.find({
+        const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
+        const skip = (page - 1) * limit;
+        const [trabajadores, totalItems] = await TrabajadoresRepository.findAndCount({
             where: {
                 despedido: false
-            }
-        });
+            },
+            relations: ["rol", 
+                        "competencias", 
+                        "grupoAsignado", 
+                        "supervisorDeGrupo", 
+                        "gruposSupervisados"],
+            skip: skip,
+            take: limit
 
+        });
         if (!trabajadores || trabajadores.length === 0) return [null, "No hay trabajadores"];
 
-        return [trabajadores, null];
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const payload = {
+            trabajadores,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                perPage: limit
+            }
+        };
+
+        return [payload, null];
     }
     catch (error) {
         console.error("Error al obtener a los trabajadores:", error);
-        return [null, "Error interno del servidor"];
+        return [null, error.message || "Error interno del servidor"];
     }
 }
 
@@ -259,17 +279,18 @@ export async function createTrabajadoresService(trabajadoresData) {
             apellidoPaterno,
             apellidoMaterno,
             nacimiento,
+            telefono,
             rut,
             email,
             grupo_id,
             rol,
             sexo,
-            competencias,
             nombreCompleto,
             despedido,
             foto_url,
             cv_url,
-            antecedentes_url } = trabajadoresData;
+            antecedentes_url,
+            competenciasIds } = trabajadoresData;
 
         let rutSinPuntos = rut;
 
@@ -281,6 +302,8 @@ export async function createTrabajadoresService(trabajadoresData) {
         const contactoRepository = AppDataSource.getRepository(Contacto);
         const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
         const rolRepository = AppDataSource.getRepository("Rol");
+        const itemRepository = AppDataSource.getRepository("Item");
+        
 
         // verificar que el rol exista en la base de datos antes de seguir
         const rolObj = await rolRepository.findOne({ where: { nombre: rol } });
@@ -291,10 +314,20 @@ export async function createTrabajadoresService(trabajadoresData) {
         const existingContacto = await contactoRepository.findOne({ where: { contacto_rut: rutSinPuntos } })
         if (existingContacto || existingRut) return [null, "Rut ya registrado previamente"]
 
+        //verificar que el teléfono no esté registrado
+        const existingTelefono = await TrabajadoresRepository.findOne({ where: { telefono: telefono } });
+        if (existingTelefono) return [null, "Telefono ya en uso"]
+
         //verificar que el correo electrónico no esté registrado
         const existingEmail = await TrabajadoresRepository.findOne({ where: [{ email: email }] })
         const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: email }] })
         if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
+
+        //verificar si los items existen
+        let asignarItems = [];
+        if (competenciasIds && competenciasIds.length > 0) {
+            asignarItems = await itemRepository.findByIds(competenciasIds);
+        }
 
         const newTrabajador = TrabajadoresRepository.create({
             nombres,
@@ -302,15 +335,16 @@ export async function createTrabajadoresService(trabajadoresData) {
             apellidoMaterno,
             nacimiento,
             rut: rutSinPuntos,
+            telefono,
             email,
             rol: rolObj,
             sexo,
-            competencias,
             nombreCompleto: `${trabajadoresData.nombres} ${trabajadoresData.apellidoPaterno} ${trabajadoresData.apellidoMaterno}`,
             despedido: despedido ?? false,
             foto_url: foto_url ?? null,
             cv_url: cv_url || null,
-            antecedentes_url: antecedentes_url || null
+            antecedentes_url: antecedentes_url || null,
+            competencias: asignarItems
         });
         
         if (grupo_id) {
@@ -322,7 +356,7 @@ export async function createTrabajadoresService(trabajadoresData) {
             }
             newTrabajador.grupoAsignado = grupoObj;
         }
-
+       
         const trabajadorGuardado = await TrabajadoresRepository.save(newTrabajador);
         return [trabajadorGuardado, null];
     }

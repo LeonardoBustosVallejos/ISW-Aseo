@@ -29,18 +29,31 @@ import {
   calcularEdad
 } from "../helpers/calcularEdad.js"
 import {
- createTrabajadorBodyValidation
+ createTrabajadorBodyValidation,
+ getTrabajadoresQueryValidation
 } from "../validations/trabajadores.validation.js"
 
 
 export async function getTrabajadoresController(req, res) {
   try {
-
-    const [trabajadores, errorTrabajadores] = await getTrabajadoresService();
-
+    const { error, value } = getTrabajadoresQueryValidation.validate(req.query);
+    if (error) return handleErrorClient(res, 400, "Parámetros de paginación inválidos", error.message);
+    
+    const [result, errorTrabajadores] = await getTrabajadoresService(value);
     if (errorTrabajadores) return handleErrorClient(res, 404, errorTrabajadores);
+    
+    const responseData = result.trabajadores.map(trabajador => {
+      return {
+        ...trabajador
+      };
+    })
 
-    return (handleSuccess(res, 200, "Trabajadores encontrados", trabajadores));
+    const finalResponse = {
+        trabajadores: responseData,
+        pagination: result.pagination
+    };
+
+    return (handleSuccess(res, 200, "Trabajadores encontrados", finalResponse));
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);
@@ -93,6 +106,15 @@ export async function createTrabajadoresController(req, res) {
         body.despedido = body.despedido === "true" || body.despedido === true;
       }
 
+      if (body.competenciasIds) {
+      if (typeof body.competenciasIds === "string") {
+        body.competenciasIds = body.competenciasIds.split(",").map(id => parseInt(id.trim(), 10)).filter(Boolean);
+      } else if (Array.isArray(body.competenciasIds)) {
+        body.competenciasIds = body.competenciasIds.map(id => parseInt(id, 10)).filter(Boolean);}
+      } else {
+        body.competenciasIds = [];
+      }
+
     const { error } = createTrabajadorBodyValidation.validate(body);
 
     if(error) {
@@ -118,8 +140,10 @@ export async function createTrabajadoresController(req, res) {
       nacimiento: formatNacimiento(created.nacimiento),
       rol: created.rol ? created.rol.nombre : null, // Asi solo devuelve el nombre
       nombreCompleto: `${created.nombres} ${created.apellidoPaterno} ${created.apellidoMaterno}`,
+      competencias: created.competencias || [],
       createdAt: formatDate(created.createdAt), 
       updatedAt: formatDate(created.updatedAt)  
+      
     };
 
     return handleSuccess(res, 201, "Trabajador creado correctamente", responseData);

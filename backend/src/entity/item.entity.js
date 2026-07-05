@@ -46,6 +46,12 @@ const ItemSchema = new EntitySchema({
       unique: true,
     }
   ],
+  relations:{
+  competenciasTrabajadores: {
+    type: "many-to-many",
+    target: "Trabajador",
+    inverseSide: "competencias",
+  }}
 });
 
 export default ItemSchema;
