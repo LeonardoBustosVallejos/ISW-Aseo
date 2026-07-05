@@ -11,6 +11,39 @@ export async function getItems() {
     }
 }
 
+export async function getItemById(id) {
+    try {
+        const { data } = await axios.get('/item/');
+        const item = data?.data?.find((entry) => Number(entry.id) === Number(id));
+
+        if (!item) {
+            return { success: false, message: 'Item no encontrado' };
+        }
+
+        return { success: true, data: formatItemData(item) };
+    } catch (error) {
+        return error.response?.data || { success: false, message: 'Error al cargar el item' };
+    }
+}
+
+export async function getCapacitacionesByItemId(id) {
+    try {
+        const { data } = await axios.get(`/capacitaciones/itemId/${id}`);
+        return data;
+    } catch (error) {
+        return error.response?.data || { success: false, message: 'Error al cargar las capacitaciones' };
+    }
+}
+
+export async function createItem(itemData) {
+    try {
+        const response = await axios.post('/item/create', itemData);
+        return response.data;
+    } catch (error) {
+        return error.response?.data || { success: false, message: error.message || 'Error al crear item' };
+    }
+}
+
 export async function updateEdit(data, id) {
     try {
         const response = await axios.patch(`/item/update/?id=${id}`, data);
