@@ -382,6 +382,16 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
             return [null, "El trabajador seleccionado no posee el rol de 'Supervisor'."];
         }
 
+        const gruposDelSupervisor = await gruposRepo.countBy({
+            supervisorAsignado: { id: supervisor.id }
+        });
+        if (gruposDelSupervisor >= 6) {
+            return [
+                null, 
+                `El supervisor ${supervisor.nombres} ${supervisor.apellidos} ya tiene a cargo el límite máximo de 6 grupos.`
+            ];
+        }
+
         const miembros = await trabajadorRepo.find({
             where: miembros_ids.map((id) => ({ id: Number(id) })),
             relations: ["grupoAsignado"]
@@ -398,12 +408,11 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
             if (m.grupoAsignado) {
                 return [
                     null, 
-                    `El trabajador ${m.nombres} ${m.apellidos} ya se encuentra asignado al grupo '${m.grupoAsignado.nombre}'. Debe ser removido de ese equipo antes de integrarlo a uno nuevo.`
+                    `El trabajador ${m.nombres} ${m.apellidos} ya pertenece al grupo '${m.grupoAsignado.nombre}'.`
                 ];
             }
         }
 
-        const cantidadNuevosMiembros = miembros_ids.length;
         if (sede.personalAsignado + cantidadNuevosMiembros > sede.personalSolicitado) {
             return [
                 null, 
@@ -588,4 +597,48 @@ export async function updateGrupoService(grupo_id, { nombre, supervisor_id, miem
     console.error("Hubo un error al actualizar el grupo:", error);
     return [null, error.message];
   }
+}
+
+export async function deleteGrupoService(grupo_id) {
+    try {
+        const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
+
+        const grupo = await gruposRepo.findOne({
+            where: { grupo_id: Number(grupo_id) },
+            relations: ["sedeAsignada", "miembros"]
+        });
+
+        if (!grupo) return [null, "El grupo que intenta eliminar no existe."];
+
+        await AppDataSource.transaction(async (manager) => {
+            const trabajadoresRepoTx = manager.getRepository(Trabajador);
+            const sedeRepoTx = manager.getRepository(Sede);
+            const gruposRepoTx = manager.getRepository(TrabajadoresGruposSchema);
+
+            if (grupo.miembros && grupo.miembros.length > 0) {
+                const cantidadMiembrosALiberar = grupo.miembros.length;
+
+                for (const miembro of grupo.miembros) {
+                    miembro.grupoAsignado = null; // Quedan disponibles para otras cuadrillas
+                }
+                await manager.save(Trabajador, grupo.miembros);
+
+                // 3. Devolvemos los cupos liberados a la sede correspondiente
+                if (grupo.sedeAsignada) {
+                    const sede = grupo.sedeAsignada;
+                    sede.personalAsignado = Math.max(0, sede.personalAsignado - cantidadMiembrosALiberar);
+                    await sedeRepoTx.save(sede);
+                }
+            }
+
+            // 4. Finalmente, eliminamos el grupo de forma física o lógica según tu esquema
+            await gruposRepoTx.remove(grupo);
+        });
+
+        return ["Grupo eliminado correctamente", null];
+
+    } catch (error) {
+        console.error("Error al eliminar el grupo:", error);
+        return [null, "Error interno del servidor al intentar disolver el grupo."];
+    }
 }

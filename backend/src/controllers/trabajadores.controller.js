@@ -20,6 +20,7 @@ import {
   recontratarTrabajadorService,
   updateTrabajadorService,
   updateGrupoService,
+  deleteGrupoService
 } from "../services/trabajador.service.js";
 import { 
   formatDate,
@@ -39,7 +40,8 @@ import {
  recontratarTrabajadorParamValidation,
  getGruposQueryValidation,
  getGrupoParamValidation,
- createGrupoBodyValidation
+ createGrupoBodyValidation,
+ deleteGrupoParamValidation
 } from "../validations/trabajadores.validation.js"
 
 
@@ -353,6 +355,22 @@ export async function getGrupoController(req, res) {
       return handleErrorClient(res, 404, error);
     }
     return handleSuccess(res, 200, "Grupo encontrado", grupo);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
+
+export async function deleteGrupoController(req, res) {
+  try {
+    const { error, value } = deleteGrupoParamValidation.validate(req.params);
+    if (error) return handleErrorClient(res, 400, "ID de grupo inválido", error.message);
+    
+    const { id } = value;
+
+    const [msg, errorService] = await deleteGrupoService(id);
+    if (errorService) return handleErrorClient(res, 404, errorService);
+
+    return handleSuccess(res, 200, "Grupo disuelto exitosamente", null);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }

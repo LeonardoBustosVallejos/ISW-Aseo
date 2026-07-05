@@ -11,7 +11,8 @@ import {
   getTrabajadoresController,
   recontratarTrabajadorController,
   updateTrabajadorController,
-  updateGrupoController
+  updateGrupoController,
+  deleteGrupoController
 } from "../controllers/trabajadores.controller.js";
 
 const router = Router();
@@ -23,6 +24,7 @@ router
   .get("/detail/grupos/:id", getGrupoController)
   .patch("/detail/update/grupos/:id", updateGrupoController)
   .post("/create/grupos", createGrupoController)
+  .delete("/detail/delete/grupos/:id", deleteGrupoController)
 
   .get("/detail/:id", getTrabajadorController)
   .patch("/detail/:id", uploadFiles, updateTrabajadorController)

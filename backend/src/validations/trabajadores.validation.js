@@ -319,11 +319,26 @@ export const createGrupoBodyValidation = Joi.object({
         .items(Joi.number()
                 .integer()
                 .positive())
-        .min(2)
+        .min(1)
+        .max(25)
         .required()
         .messages({
             "array.base": "Los miembros deben venir en formato de arreglo.",
             "array.min": "El grupo debe tener al menos un miembro asignado.",
+            "array.max": "El grupo no puede exceder los 25 miembros",
             "any.required": "Los miembros del grupo son obligatorios."
+        })
+});
+
+export const deleteGrupoParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID del grupo debe ser un número.",
+            "number.integer": "El ID del grupo debe ser un número entero.",
+            "number.positive": "El ID del grupo debe ser un valor positivo.",
+            "any.required": "El ID del grupo es obligatorio en la ruta."
         })
 });
