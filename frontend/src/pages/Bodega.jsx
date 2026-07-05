@@ -2,15 +2,20 @@ import Table from '@components/Table';
 import useItems from '@hooks/items/useGetItems.jsx';
 import useEditItems from '@hooks/items/useEditItems';
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ItemModal from './AgregarItemModal.jsx';
+import SolicitarItemModal from './SolicitarItemModal.jsx';
 import Popup from '../components/Popup';
 import { deleteItem, createItem } from '@services/item.service.js';
+import { createSolicitud } from '@services/solicitud.service.js';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
 
 
 const Bodega = () => {
+  const navigate = useNavigate();
   const { items, fetchItems, setItems } = useItems();
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
+  const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
   //tabla que muestra los datos de los items que existen en bodega
@@ -35,6 +40,7 @@ const Bodega = () => {
           try {
             // mark selection in React state for parent component
             setSelectedItem(rowData);
+            setIsSolicitarModalOpen(true);
           } catch (err) {
             // fallback: log if state setter is not available in this scope
             // (shouldn't happen because setSelectedItem is in component scope)
@@ -56,13 +62,13 @@ const Bodega = () => {
           e.stopPropagation();
           const rowData = cell.getData();
           try {
-            // mark selection in React state for parent component
             setSelectedItem(rowData);
+            if (rowData?.id) {
+              navigate(`/item/${rowData.id}`);
+            }
           } catch (err) {
-            // fallback: log if state setter is not available in this scope
-            // (shouldn't happen because setSelectedItem is in component scope)
             // eslint-disable-next-line no-console
-            console.log('Solicitar clicked', rowData);
+            console.log('Ver clicked', rowData, err);
           }
         });
         return btn;
@@ -119,6 +125,48 @@ const Bodega = () => {
     dataItems,
     setDataItems
   } = useEditItems(setItems);
+
+  const handleCreateSolicitud = async (cantidad) => {
+    if (!selectedItem?.id) {
+      return {
+        success: false,
+        message: 'Selecciona un item antes de solicitar.'
+      };
+    }
+
+    try {
+      const result = await createSolicitud({
+        cantidad_solicitud: Number(cantidad),
+        id_item_solicitud: Number(selectedItem.id),
+        id_solicitante: 0,
+        id_administrador_solicitud: 0,
+        id_sede_solicitud: 0,
+        detalle_solicitud: '0',
+        estado_solicitud: '0'
+      });
+
+      if (result?.success === false) {
+        return {
+          success: false,
+          message: result.message || 'No se pudo crear la solicitud.'
+        };
+      }
+
+      showSuccessAlert('Solicitud creada', 'La solicitud se creó correctamente.');
+      setIsSolicitarModalOpen(false);
+      setSelectedItem(null);
+      return {
+        success: true,
+        message: result.message || 'Solicitud creada correctamente.'
+      };
+    } catch (error) {
+      console.error('Error creando solicitud', error);
+      return {
+        success: false,
+        message: error.message || 'Error al crear la solicitud'
+      };
+    }
+  };
 
   const handleDeleteItem = async () => {
     if (!selectedItem || !selectedItem.id) {
@@ -181,6 +229,15 @@ const Bodega = () => {
         isOpen={AgregarItemOpen}
         onClose={()=>setAgregarItemOpen(false)}
         onSubmit={handleAddItem}
+      />
+      <SolicitarItemModal
+        isOpen={isSolicitarModalOpen}
+        onClose={() => {
+          setIsSolicitarModalOpen(false);
+          setSelectedItem(null);
+        }}
+        item={selectedItem}
+        onSubmit={handleCreateSolicitud}
       />
       <h1></h1>
     </div>
