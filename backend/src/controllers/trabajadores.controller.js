@@ -39,6 +39,7 @@ import {
  despidoTrabajadorParamValidation,
  recontratarTrabajadorParamValidation,
  getGruposQueryValidation,
+ updateGrupoBodyValidation,
  getGrupoParamValidation,
  createGrupoBodyValidation,
  deleteGrupoParamValidation
@@ -292,22 +293,22 @@ export async function createGrupoController(req, res) {
 export async function updateGrupoController(req, res) {
   try {
     const { id } = req.params; 
-    const { nombre, supervisor_id, miembros } = req.body;
+    
+    if (req.body.miembros && typeof req.body.miembros === "string") {
+      try { req.body.miembros = JSON.parse(req.body.miembros); } catch (e) {}
+    }
 
-    const miembros_ids = Array.isArray(miembros)
-      ? miembros
-      : typeof miembros === "string"
-        ? JSON.parse(miembros)
-        : [];
+    const { error, value } = updateGrupoBodyValidation.validate(req.body);
+    if (error) return handleErrorClient(res, 400, "Datos de actualización inválidos", error.message);
 
-    const [grupoActualizado, error] = await updateGrupoService(Number(id), {
-      nombre,
-      supervisor_id,
-      miembros_ids,
+    const [grupoActualizado, errorService] = await updateGrupoService(Number(id), {
+      nombre: value.nombre,
+      supervisor_id: value.supervisor_id,
+      miembros_ids: value.miembros,
     });
 
-    if (error) {
-      return handleErrorClient(res, 400, error);
+    if (errorService) {
+      return handleErrorClient(res, 400, errorService);
     }
 
     return handleSuccess(res, 200, "Grupo actualizado correctamente", grupoActualizado);

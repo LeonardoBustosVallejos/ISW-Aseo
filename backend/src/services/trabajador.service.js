@@ -388,7 +388,7 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
         if (gruposDelSupervisor >= 6) {
             return [
                 null, 
-                `El supervisor ${supervisor.nombres} ${supervisor.apellidos} ya tiene a cargo el límite máximo de 6 grupos.`
+                `El supervisor ${supervisor.nombres} ${supervisor.apellidoMaterno} ya tiene a cargo el límite máximo de 6 grupos.`
             ];
         }
 
@@ -408,7 +408,7 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
             if (m.grupoAsignado) {
                 return [
                     null, 
-                    `El trabajador ${m.nombres} ${m.apellidos} ya pertenece al grupo '${m.grupoAsignado.nombre}'.`
+                    `El trabajador ${m.nombres} ${m.apellidoMaterno} ya pertenece al grupo '${m.grupoAsignado.nombre}'.`
                 ];
             }
         }
@@ -509,23 +509,17 @@ export async function getGrupoService(grupo_id) {
   }
 }
 
-import { In } from "typeorm"; 
+import { Not } from "typeorm"; 
 
 export async function updateGrupoService(grupo_id, { nombre, supervisor_id, miembros_ids }) {
   try {
     const trabajadorRepo = AppDataSource.getRepository(Trabajador);
     const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
-    const sedeRepo = AppDataSource.getRepository("Sede"); // Usamos el repositorio común corriente
-
-    if (!Array.isArray(miembros_ids) || miembros_ids.length === 0) {
-      return [null, "Debe especificar al menos un miembro para el grupo"];
-    }
 
     const grupoExistente = await gruposRepo.findOne({
       where: { grupo_id },
       relations: ["sedeAsignada", "supervisorAsignado", "miembros"]
     });
-
     if (!grupoExistente) return [null, "Grupo no encontrado"];
 
     let nuevoSupervisor = grupoExistente.supervisorAsignado;
@@ -534,68 +528,95 @@ export async function updateGrupoService(grupo_id, { nombre, supervisor_id, miem
         where: { id: Number(supervisor_id) },
         relations: ["rol"]
       });
-      if (!nuevoSupervisor || nuevoSupervisor.despedido) return [null, "Supervisor inválido"];
-      if (!nuevoSupervisor || nuevoSupervisor.rol?.id !== 3) {
-        return [null, "El trabajador seleccionado no cuenta con el rol de 'Supervisor'"];
+      if (!nuevoSupervisor || nuevoSupervisor.despedido) return [null, "El supervisor seleccionado no está activo."];
+      if (nuevoSupervisor.rol?.id !== 3) {
+        return [null, "El trabajador seleccionado no cuenta con el rol de 'Supervisor'."];
+      }
+
+      const gruposDelSupervisor = await gruposRepo.count({
+        where: {
+          supervisorAsignado: { id: nuevoSupervisor.id },
+          grupo_id: Not(grupo_id) // 🌟 Evita que se cuente a sí mismo si ya lo supervisaba
+        }
+      });
+      if (gruposDelSupervisor >= 6) {
+        return [null, `El supervisor ${nuevoSupervisor.nombres} ya está a cargo del límite máximo de 6 grupos.`];
       }
     }
 
     const nuevosMiembros = await trabajadorRepo.find({
       where: miembros_ids.map((id) => ({ id: Number(id) })),
+      relations: ["grupoAsignado"]
     });
 
-    if (nuevosMiembros.length !== miembros_ids.length) return [null, "Alguno de los miembros especificados no existe"];
-    if (nuevosMiembros.some(m => m.despedido)) return [null, "Alguno de los miembros está despedido"];
+    if (nuevosMiembros.length !== miembros_ids.length) return [null, "Uno o más miembros especificados no existen."];
+    if (nuevosMiembros.some(m => m.despedido)) return [null, "No se puede asignar un miembro que se encuentra despedido."];
+
+    for (const nm of nuevosMiembros) {
+      if (nm.grupoAsignado && nm.grupoAsignado.grupo_id !== grupo_id) {
+        return [
+          null, 
+          `El trabajador ${nm.nombres} ${nm.apellidoPaterno} ya está asignado al grupo '${nm.grupoAsignado.nombre}'.`
+        ];
+      }
+    }
 
     const sede = grupoExistente.sedeAsignada;
     const miembrosActualesCount = grupoExistente.miembros ? grupoExistente.miembros.length : 0;
     const miembrosNuevosCount = nuevosMiembros.length;
     const diferenciaNeta = miembrosNuevosCount - miembrosActualesCount;
 
-    if (sede) {
-      if (diferenciaNeta > 0 && (sede.personalAsignado + diferenciaNeta > sede.personalSolicitado)) {
+    if (sede && diferenciaNeta > 0) {
+      if (sede.personalAsignado + diferenciaNeta > sede.personalSolicitado) {
         return [
           null,
-          `Cupos insuficientes en la sede '${sede.nombre_sede}'. Solicitados: ${sede.personalSolicitado}, Asignados actuales: ${sede.personalAsignado}. Esta actualización requiere ${diferenciaNeta} cupos extra.`
+          `Cupos insuficientes en la sede '${sede.nombre_sede}'. Solicitados: ${sede.personalSolicitado}, Asignados: ${sede.personalAsignado}. Esta actualización requiere ${diferenciaNeta} cupos extra.`
         ];
       }
     }
 
-    
-    if (grupoExistente.miembros && grupoExistente.miembros.length > 0) {
-      for (const miembroViejo of grupoExistente.miembros) {
-        miembroViejo.grupoAsignado = null;
-        await trabajadorRepo.save(miembroViejo);
+    return await AppDataSource.transaction(async (manager) => {
+      const trabajadorRepoTx = manager.getRepository(Trabajador);
+      const gruposRepoTx = manager.getRepository(TrabajadoresGruposSchema);
+      const sedeRepoTx = manager.getRepository("Sede");
+
+      if (grupoExistente.miembros && grupoExistente.miembros.length > 0) {
+        for (const miembroViejo of grupoExistente.miembros) {
+          if (!miembros_ids.includes(miembroViejo.id)) {
+            miembroViejo.grupoAsignado = null;
+            await trabajadorRepoTx.save(miembroViejo);
+          }
+        }
       }
-    }
 
-    grupoExistente.nombre = nombre || grupoExistente.nombre;
-    grupoExistente.supervisorAsignado = nuevoSupervisor;
-    grupoExistente.miembros = nuevosMiembros;
+      grupoExistente.nombre = nombre ? nombre.trim() : grupoExistente.nombre;
+      grupoExistente.supervisorAsignado = nuevoSupervisor;
+      grupoExistente.miembros = nuevosMiembros;
 
-    const grupoGuardado = await gruposRepo.save(grupoExistente);
+      const grupoGuardado = await gruposRepoTx.save(grupoExistente);
 
-    for (const nuevoMiembro of nuevosMiembros) {
-      nuevoMiembro.grupoAsignado = grupoGuardado;
-      await trabajadorRepo.save(nuevoMiembro);
-    }
+      for (const nuevoMiembro of nuevosMiembros) {
+        nuevoMiembro.grupoAsignado = grupoGuardado;
+      }
+      await trabajadorRepoTx.save(nuevosMiembros); // Guardado en bloque optimizado 🌟
 
-    if (sede && diferenciaNeta !== 0) {
-      sede.personalAsignado += diferenciaNeta;
-      if (sede.personalAsignado < 0) sede.personalAsignado = nuevosMiembros.length;
-      await sedeRepo.save(sede);
-    }
+      if (sede && diferenciaNeta !== 0) {
+        sede.personalAsignado += diferenciaNeta;
+        if (sede.personalAsignado < 0) sede.personalAsignado = nuevosMiembros.length;
+        await sedeRepoTx.save(sede);
+      }
 
-    const grupoFull = await gruposRepo.findOne({
-      where: { grupo_id: grupoGuardado.grupo_id },
-      relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
+      const grupoFull = await gruposRepoTx.findOne({
+        where: { grupo_id: grupoGuardado.grupo_id },
+        relations: ["sedeAsignada", "supervisorAsignado", "miembros"],
+      });
+
+      return [grupoFull, null];
     });
-
-    return [grupoFull, null];
 
   } catch (error) {
     console.error("Hubo un error al actualizar el grupo:", error);
-    return [null, error.message];
+    return [null, "Error interno del servidor al modificar el grupo."];
   }
 }
 

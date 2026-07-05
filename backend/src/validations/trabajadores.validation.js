@@ -342,3 +342,28 @@ export const deleteGrupoParamValidation = Joi.object({
             "any.required": "El ID del grupo es obligatorio en la ruta."
         })
 });
+
+export const updateGrupoBodyValidation = Joi.object({
+    nombre: Joi.string()
+            .trim()
+            .min(3)
+            .max(100)
+            .optional(),
+    supervisor_id: Joi.number()
+            .integer()
+            .positive()
+            .optional(),
+    miembros: Joi.array()
+                .items(
+                    Joi.number()
+                    .integer()
+                    .positive())
+            .min(1)
+            .max(25)
+            .required()
+            .messages({
+                "array.min": "El grupo debe tener al menos un miembro asignado.",
+                "array.max": "Un grupo de trabajo no puede exceder el máximo de 25 personas.",
+                "any.required": "Los miembros del grupo son obligatorios en la actualización."
+            })
+});
