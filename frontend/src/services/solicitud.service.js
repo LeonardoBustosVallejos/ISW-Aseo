@@ -1,5 +1,22 @@
 import axios from './root.service.js';
 
+export async function createSolicitud(solicitudData) {
+  try {
+    const { data } = await axios.post('/solicitud/create/', solicitudData);
+    return {
+      success: true,
+      data: data?.data || data,
+      message: data?.message || 'Solicitud creada correctamente'
+    };
+  } catch (error) {
+    console.error('Error creating solicitud', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Error al crear la solicitud'
+    };
+  }
+}
+
 export async function getSolicitudes() {
   try {
     const { data } = await axios.get('/solicitud/');
