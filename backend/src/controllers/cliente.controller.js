@@ -9,7 +9,6 @@ export async function registerContactos(req, res) {
         if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
 
         const { sede_id } = req.params
-        console.log(sede_id);
 
         const [data, err] = await registerContactoJerarquicoService(req.body, sede_id, null)
 
@@ -60,7 +59,7 @@ export async function updateSede(req, res) {
         const [data, err] = await updateSedeService(sede_id, sede, null)
 
         if (err) {
-            console.log(err);
+            console.error(err);
 
             return handleErrorClient(res, 400, err)
         }

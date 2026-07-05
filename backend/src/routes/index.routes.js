@@ -9,6 +9,7 @@ import trabajadoresRoutes from "./trabajadores.routes.js";
 import capacitacionesRoutes from "./capacitacion.route.js";
 import clienteRoutes from "./cliente.routes.js";
 import solicitudRoutes from "./solicitud.routes.js";
+import contratoCmercial from "./contratoComercial.routes.js";
 const router = Router();
 
 router
@@ -19,6 +20,7 @@ router
     .use("/solicitud", solicitudRoutes)
     .use("/clientes", clienteRoutes)
     .use("/trabajadores", trabajadoresRoutes)
-    .use("/capacitaciones", capacitacionesRoutes);
+    .use("/capacitaciones", capacitacionesRoutes)
+    .use("/contratos/comercial", contratoCmercial);
 
 export default router;

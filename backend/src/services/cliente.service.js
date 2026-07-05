@@ -322,7 +322,7 @@ export async function updateContactoService(contacto_id, data, index = 1, manage
             }
             return [contactoActualizado, null];
         }
-        if (manager) return execute(manager)
+        if (manager) return await execute(manager)
         return AppDataSource.transaction(execute)
     } catch (error) {
         if (Array.isArray(error)) {
@@ -412,7 +412,6 @@ export async function getSedeByService(query, manager = null) {
         if (Object.keys(where).length === 0) {
             return [null, "Debe enviar al menos un criterio de busqueda"]
         }
-        console.log(query);
 
         const sede = await sedeRepository.findOne({
             relations: ["cliente", "contactos", "cliente.clientePadre"],
@@ -563,7 +562,7 @@ export async function updateSedeService(sede_id, data, manager = null) {
             }
             return [{ updatedSede, contactosActualizados }, null];
         }
-        if (manager) return execute(manager)
+        if (manager) return await execute(manager)
         return AppDataSource.transaction(execute)
     } catch (error) {
         if (Array.isArray(error)) {
@@ -1033,7 +1032,7 @@ export async function getInfoSedeService(cliente, sede_id = null, manager = null
 
         //1. Obter la sede por su ID y a quien pertenece
         const sedes = await sedeRepository.find({
-            relations: ["contactos", "cliente",],
+            relations: ["contactos", "cliente", "contrato"],
             where
         })
         if (!sedes || sedes.length === 0) return [null, createErrorMessage("sede", "Sede no encontrada")]
@@ -1129,12 +1128,12 @@ export async function getInfoClientesService(cliente_id, rutCliente, manager = n
     }
 }
 
-export async function getInfoClienteService(cliente, manager = null) {
+export async function getInfoClienteService(clienteData, manager = null) {
     try {
         const clienteRepository = manager ? manager.getRepository(Cliente) :
             AppDataSource.getRepository(Cliente)
 
-        const { rutCliente, cliente_id } = cliente
+        const { rutCliente, cliente_id } = clienteData
         if (!rutCliente) return [null, createErrorMessage("rutCliente", "Debe entregar el rut del cliente para obtener su información")]
         const where = {}
 
@@ -1144,7 +1143,7 @@ export async function getInfoClienteService(cliente, manager = null) {
         //1. obtener al/los cliente(s) buscado(s)
         const clienteFound = await clienteRepository.findOne({
             where,
-            relations: ["contactos", "contrato", 'contrato.anexos', 'contrato.documentos', 'contrato.anexos.documentos']
+            relations: ["contactos", "contrato", 'contrato.anexos', 'contrato.documentos', 'contrato.anexos.documentos', 'clientePadre']
         })
         if (!clienteFound) {
             if (manager) throw [null, createErrorMessage("cliente", "No encontrado")];
@@ -1154,7 +1153,8 @@ export async function getInfoClienteService(cliente, manager = null) {
             contratos: clienteFound.contrato,
             anexos: [],
             documentos: [],
-            contactos: []
+            contactos: [],
+            filiales: []
         }
 
         data.cliente = clienteFound
@@ -1182,10 +1182,16 @@ export async function getInfoClienteService(cliente, manager = null) {
         //3. Obtener las filiales
         const filiales = await clienteRepository.find({
             relations: ['sede'],
-            where: { clientePadre: { rutCliente: rutCliente }, },
+            where: { clientePadre: { cliente_id: clienteFound.cliente_id }, },
         })
-        data.filiales = filiales
+        if (filiales && filiales.length > 0) {
+            for (const filial of filiales) {
 
+                const [filialData, errFilial] = await getInfoClienteService({ cliente_id: filial.cliente_id, rutCliente: filial.rutCliente }, manager)
+                if (errFilial) return [null, errFilial]
+                data.filiales.push({ ...filialData, ...filialData.cliente })
+            }
+        }
         let estadoActual = 'TERMINADO'
         if (clienteFound.contrato.some(contrato => contrato.estado === 'VIGENTE')) {
             estadoActual = 'VIGENTE'
@@ -1455,8 +1461,8 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
             if (Array.isArray(anexos) && anexos.length > 0) {
                 let index = 1
                 for (const anexoData of anexos) {
-
-                    const [anexoCreado, errAnexo] = await createContratoAnexoService(anexoData.datos, contratoCreado.id_contrato_comercial, transactionManager, index)
+                    const { datos } = anexoData
+                    const [anexoCreado, errAnexo] = await createContratoAnexoService({ ...datos, sedes }, contratoCreado.id_contrato_comercial, transactionManager, index)
 
                     if (errAnexo) throw [null, errAnexo]
 
@@ -1628,7 +1634,6 @@ export async function registerContactoJerarquicoService(contactos, sede_id, mana
         const execute = async (transactionManager) => {
             const contactosCreados = []
             //recorrer la lista de contactos 
-            console.log(contactos);
             let i = 1
             for (const contacto of contactos || []) {
                 const { nombreContacto, contacto_rut, email, phone, tipoContacto } = contacto

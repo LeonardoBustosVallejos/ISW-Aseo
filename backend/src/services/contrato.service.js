@@ -30,7 +30,6 @@ export async function createContratoComercialService(data, cliente_id, manager =
                 tamanoInstalacion,
                 requiereGuardias,
                 observacionesOperativas,
-                sedes
             } = data
 
             // Validaciones básicas
@@ -467,6 +466,67 @@ export async function actualizarEstadosContratos() {
         console.log("Estados de contratos actualizados.");
     } catch (error) {
         console.error(error);
+    }
+}
+
+export async function getVistaContratosService(filtros = {}, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+
+            const contratoRepository = transactionManager.getRepository(Contrato);
+
+            const {
+                contrato_id,
+                codigoContrato,
+                cliente_id,
+                estado,
+                sede_id
+            } = filtros;
+
+            const where = {};
+
+            if (contrato_id) where.id_contrato_comercial = contrato_id;
+            if (codigoContrato) where.codigoContrato = codigoContrato;
+            if (cliente_id) where.cliente = { cliente_id };
+            if (estado) where.estado = estado;
+            if (sede_id) where.sedes = { sede_id };
+
+            const contratos = await contratoRepository.find({
+                where,
+                relations: [
+                    "cliente",
+                    "sedes",
+                    "documentos",
+                    "anexos",
+                    "anexos.sedes",
+                    "anexos.documentos"
+                ],
+                order: {
+                    createdAt: "DESC"
+                }
+            });
+
+            if (!contratos.length)
+                return [null, "No se encontraron contratos"];
+
+            return [contratos, null];
+        };
+
+        if (manager) return await execute(manager);
+
+        return await AppDataSource.transaction(execute);
+
+    } catch (error) {
+        console.error("Error obteniendo vista de contratos:", error);
+
+        if (Array.isArray(error)) {
+            if (manager) throw error;
+            return error;
+        }
+
+        if (manager) throw error;
+
+        return [null, "Error interno"];
     }
 }
 

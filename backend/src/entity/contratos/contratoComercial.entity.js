@@ -137,6 +137,7 @@ const contratoComercialSchema = new EntitySchema({
             joinTable: { name: "rel_contrato_sede" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
             nullable: false,
             onDelete: "CASCADE",
+            inverseSide: "contrato"
         }
     }
 });

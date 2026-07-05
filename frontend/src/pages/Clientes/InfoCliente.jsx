@@ -27,19 +27,7 @@ export default function InfoCliente() {
         sedes: [],
         documentos: []
     })
-    const [infoCliente, setInfoCliente] = useState({})
-    const [infoSedes, setInfoSedes] = useState([])
-    const [estado, setEstado] = useState('')
-    const [infoFiliales, setInfoFiliales] = useState([])
-    const [infoContratos, setInfoContratos] = useState([])
-    const [infoAnexos, setInfoAnexos] = useState([])
-    const [infoDocumentos, setInfoDocumentos] = useState([])
-    const [contactos, setContactos] = useState([])
 
-    const [personal, setPersonal] = useState({
-        solicitados: '',
-        asignados: ''
-    })
     useEffect(() => {
         const obtenerInfo = async () => {
             try {
@@ -195,18 +183,18 @@ export default function InfoCliente() {
                 <Tab titulo={'Contactos'}>
                     <ContactosTable contactos={dataGeneral.contactos} />
                 </Tab>
+                {/*
                 <Tab titulo={'Contratos'}>
 
                 </Tab>
                 <Tab titulo={'Anexos'} disabled={dataGeneral.anexos.length < 1}>
 
                 </Tab>
-                {/*
                 
-                    <Tab titulo={'Documentos'}>
+                */}
+                <Tab titulo={'Documentos'}>
 
                 </Tab>
-                */}
             </Tabs>
         </div >
     )

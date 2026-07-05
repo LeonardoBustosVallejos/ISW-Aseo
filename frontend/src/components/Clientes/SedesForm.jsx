@@ -270,7 +270,7 @@ export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 
                     contacto_rut: '',
                     email: '',
                     phone: '',
-                    tipoContacto: ''
+                    tipoContacto: 'PRINCIPAL'
                 }]
             });
 
