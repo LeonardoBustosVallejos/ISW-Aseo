@@ -38,7 +38,8 @@ import {
  despidoTrabajadorParamValidation,
  recontratarTrabajadorParamValidation,
  getGruposQueryValidation,
- getGrupoParamValidation
+ getGrupoParamValidation,
+ createGrupoBodyValidation
 } from "../validations/trabajadores.validation.js"
 
 
@@ -264,30 +265,20 @@ export async function despidoTrabajadorController(req, res) {
   }
 }
 
+
 export async function createGrupoController(req, res) {
   try {
-    const {
-      nombre,
-      sede_id,
-      supervisor_id,
-      miembros
-    } = req.body;
+    if (req.body.miembros && typeof req.body.miembros === "string") {
+      try { req.body.miembros = JSON.parse(req.body.miembros); } catch (e) {}
+    }
 
-    const miembros_ids = Array.isArray(miembros)
-    ? miembros
-    : typeof miembros === "string"
-      ? JSON.parse(miembros)
-      : [];
+    const { error, value } = createGrupoBodyValidation.validate(req.body);
+    if (error) return handleErrorClient(res, 400, "Datos de grupo inválidos", error.message);
 
-    const [grupo, error] = await createGrupoService({
-      nombre,
-      sede_id,
-      supervisor_id,
-      miembros_ids,
-    });
+    const [grupo, errorService] = await createGrupoService(value);
 
-    if (error) {
-      return handleErrorClient(res, 400, error);
+    if (errorService) {
+      return handleErrorClient(res, 400, errorService);
     }
 
     return handleSuccess(res, 201, "Grupo creado correctamente", grupo);

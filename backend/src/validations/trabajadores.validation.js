@@ -287,3 +287,43 @@ export const getGrupoParamValidation = Joi.object({
             "any.required": "El ID del grupo es obligatorio en la ruta."
         })
 });
+
+export const createGrupoBodyValidation = Joi.object({
+    nombre: Joi.string()
+        .trim()
+        .min(3)
+        .max(100)
+        .required()
+        .messages({
+            "string.empty": "El nombre del grupo no puede estar vacío.",
+            "string.min": "El nombre del grupo debe tener al menos 3 caracteres.",
+            "any.required": "El nombre del grupo es obligatorio."
+        }),
+    sede_id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID de la sede debe ser un número.",
+            "any.required": "La sede es obligatoria."
+        }),
+    supervisor_id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID del supervisor debe ser un número.",
+            "any.required": "El supervisor es obligatorio."
+        }),
+    miembros: Joi.array()
+        .items(Joi.number()
+                .integer()
+                .positive())
+        .min(2)
+        .required()
+        .messages({
+            "array.base": "Los miembros deben venir en formato de arreglo.",
+            "array.min": "El grupo debe tener al menos un miembro asignado.",
+            "any.required": "Los miembros del grupo son obligatorios."
+        })
+});

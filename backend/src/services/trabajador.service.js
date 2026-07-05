@@ -355,15 +355,18 @@ export async function createTrabajadoresService(trabajadoresData) {
     }
 }
 
-export async function createGrupoService({ nombre, sede_id, supervisor_id, miembros_ids }) {
+export async function createGrupoService({ nombre, sede_id, supervisor_id, miembros: miembros_ids }) {
     try {
         const sedeRepo = AppDataSource.getRepository(Sede);
         const trabajadorRepo = AppDataSource.getRepository(Trabajador);
         const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
 
-        const sede = await sedeRepo.findOneBy({
-            sede_id: Number(sede_id)
-        });
+        const grupoExistente = await gruposRepo.findOneBy({ nombre: nombre.trim() });
+        if (grupoExistente) {
+            return [null, `Ya existe un grupo con el nombre '${nombre}'.`];
+        }
+
+        const sede = await sedeRepo.findOneBy({ sede_id: Number(sede_id) });
         if (!sede) {
             return [null, "Sede no encontrada"];
         }
@@ -372,50 +375,59 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
             where: { id: Number(supervisor_id) },
             relations: ["rol"]
         });
+        if (!supervisor || supervisor.despedido) {
+            return [null, "El supervisor seleccionado no está activo."];
+        }
+        if (supervisor.rol.id !== 3) {
+            return [null, "El trabajador seleccionado no posee el rol de 'Supervisor'."];
+        }
 
-        if (!supervisor || supervisor.despedido) return [null, "Supervisor inválido"];
+        const miembros = await trabajadorRepo.find({
+            where: miembros_ids.map((id) => ({ id: Number(id) })),
+            relations: ["grupoAsignado"]
+        });
 
-        if (!supervisor || supervisor.rol.id !== 3) {
-            return [null, "El trabajador seleccionado no tiene el rol de 'Supervisor'."]
+        if (miembros.length !== miembros_ids.length) {
+            return [null, "Uno o más miembros seleccionados no existen."];
+        }
+        if (miembros.some(m => m.despedido)) {
+            return [null, "No se puede asignar un miembro que se encuentra despedido."];
+        }
+
+        for (const m of miembros) {
+            if (m.grupoAsignado) {
+                return [
+                    null, 
+                    `El trabajador ${m.nombres} ${m.apellidos} ya se encuentra asignado al grupo '${m.grupoAsignado.nombre}'. Debe ser removido de ese equipo antes de integrarlo a uno nuevo.`
+                ];
+            }
         }
 
         const cantidadNuevosMiembros = miembros_ids.length;
         if (sede.personalAsignado + cantidadNuevosMiembros > sede.personalSolicitado) {
             return [
                 null, 
-                `Cupos insuficientes en la sede '${sede.nombre_sede}'. Solicitados: ${sede.personalSolicitado}, Asignados actuales: ${sede.personalAsignado}. Intentas meter ${cantidadNuevosMiembros} trabajadores.`
+                `Cupos excedidos en la sede '${sede.nombre_sede}'. Solicitados: ${sede.personalSolicitado}, Asignados: ${sede.personalAsignado}. Intentas ingresar ${cantidadNuevosMiembros}.`
             ];
-        }
-
-        const miembros = await trabajadorRepo.find({
-            where: miembros_ids.map((id) => ({ id: Number(id) })),
-        });
-
-        if (miembros.length !== miembros_ids.length) {
-            return [null, "Alguno de los miembros no existe"];
-        }
-
-        if (miembros.some(m => m.despedido)) {
-            return [null, "Alguno de los miembros está despedido"];
         }
 
         return await AppDataSource.transaction(async (manager) => {
             const gruposRepoTx = manager.getRepository(TrabajadoresGruposSchema);
-            const trabajadorRepoTx = manager.getRepository(Trabajador);
             const sedeRepoTx = manager.getRepository(Sede); 
 
             const grupoToSave = gruposRepoTx.create({
-                nombre,
+                nombre: nombre.trim(),
                 sedeAsignada: sede,
                 supervisorAsignado: supervisor,
+                miembros: miembros 
             });
 
             const savedGrupo = await gruposRepoTx.save(grupoToSave);
 
             for (const miembro of miembros) {
                 miembro.grupoAsignado = savedGrupo;
-                await trabajadorRepoTx.save(miembro);
             }
+            await manager.save(Trabajador, miembros); 
 
             sede.personalAsignado += cantidadNuevosMiembros;
             await sedeRepoTx.save(sede);
@@ -429,8 +441,8 @@ export async function createGrupoService({ nombre, sede_id, supervisor_id, miemb
         });
 
     } catch (error) {
-        console.log("Hubo un error al crear los grupos", error);
-        return [null, error.message]
+        console.error("Hubo un error al crear los grupos", error);
+        return [null, "Error interno del servidor al procesar el grupo."];
     }
 }
     
@@ -440,7 +452,6 @@ export async function getGruposService({ page, limit }) {
         const gruposRepo = AppDataSource.getRepository(TrabajadoresGruposSchema);
         const skip = (page - 1) * limit;
 
-        // 🌟 Usamos tu patrón exacto: findAndCount
         const [grupos, totalItems] = await gruposRepo.findAndCount({
             relations: ["sedeAsignada", 
                         "supervisorAsignado", 
