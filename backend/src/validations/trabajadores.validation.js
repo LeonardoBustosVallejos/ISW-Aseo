@@ -86,7 +86,7 @@ export const createTrabajadorBodyValidation = Joi.object({
             "any.only": `Un trabajador de la empresa sólo puede tener los roles de ${["Supervisor", "Trabajador"].join(", ")}`,
         }),
     sexo: Joi.string()
-        .valid(...["M", "F"])
+        .valid("M", "F")
         .required()
         .messages({
             "string.empty": "El sexo no puede ser vacío",
@@ -156,4 +156,66 @@ export const getTrabajadoresQueryValidation = Joi.object({
         .max(100)
         .default(10)
         .optional()
+});
+
+export const getTrabajadorParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID debe ser un número.",
+            "number.integer": "El ID debe ser un entero.",
+            "number.positive": "El numero debe ser positivo.",
+            "any.required": "El ID es un parámetro obligatorio."
+        })
+});
+
+export const updateTrabajadorBodyValidation = Joi.object({
+    telefono: Joi.string()
+    .pattern(/^\+[0-9]{11}$/)
+    .optional().messages({
+        "string.pattern.base": "El número debe de cumplir con el formato. Ejemplo: +56123456789",
+    }),
+    email: Joi.string()
+        .email({ tlds: { allow: false } })
+        .optional()
+        .messages({
+            "string.email": "El formato del correo electrónico no es válido."
+        }),
+    rol: Joi.number()
+        .integer()
+        .positive()
+        .optional()
+        .messages({
+            "number.base": "El rol debe ser el ID numérico del Rol."
+        }),
+    grupo_id: Joi.number()
+        .integer()
+        .positive()
+        .allow(null, "") 
+        .optional()
+        .messages({
+            "number.base": "El grupo_id debe ser un número entero."
+        }),
+    competenciasIds: Joi.array()
+        .items(Joi.number().integer().positive())
+        .optional()
+        .messages({
+            "array.base": "Las competencias deben venir en un formato de lista (Array)."
+        }),
+
+});
+
+export const updateTrabajadorParamValidation = Joi.object({
+    id: Joi.number()
+        .integer()
+        .positive()
+        .required()
+        .messages({
+            "number.base": "El ID debe ser un número.",
+            "number.integer": "El ID debe ser un entero.",
+            "number.positive": "El ID debe ser positivo.",
+            "any.required": "El ID es obligatorio."
+        })
 });

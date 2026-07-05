@@ -55,7 +55,12 @@ export async function getTrabajadorService(id) {
         const trabajador = await TrabajadoresRepository.findOne({
             where:
                 { id: Number(id) },
-                relations: ["historialDesvinculaciones"],
+                relations: ["rol", 
+                            "competencias", 
+                            "grupoAsignado", 
+                            "supervisorDeGrupo", 
+                            "gruposSupervisados",
+                            "historialDesvinculaciones"],
         });
 
         if (!trabajador) return [null, "No se encontró el trabajador"];
@@ -103,10 +108,16 @@ export async function updateTrabajadorService(id, body) {
     try {
         const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const contactoRepository = AppDataSource.getRepository(Contacto);
-        const gruposRepository = AppDataSource.getTreeRepository(TrabajadoresGruposSchema);
+        const gruposRepository = AppDataSource.getRepository(TrabajadoresGruposSchema);
+        const itemRepository = AppDataSource.getRepository("Item");
+        const rolRepository = AppDataSource.getRepository("Rol");
 
         const trabajadorFound = await trabajadoresRepository.findOne({
             where: { id: Number(id) },
+            relations: ["competencias", 
+                        "rol", 
+                        "grupoAsignado",
+                        "gruposSupervisados"]
         });
         if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
@@ -118,58 +129,60 @@ export async function updateTrabajadorService(id, body) {
                 { where: [{ email: body.email }] })
             if (existingEmail || existingContactoEmail) {
                 return [null, "Email ya en uso"]};
+
+            trabajadorFound.email = body.email;
+        }
+        
+        // Verifica que si era supervisor no puede ser un Trabajador mientras tenga grupos asignados
+        if (body.rol) {
+            const rolObj = await rolRepository.findOne({ where: { id: Number(body.rol) } });
+            if (!rolObj) return [null, "El rol especificado no es válido"];
+
+            const esSupervisorActual = trabajadorFound.rol && trabajadorFound.rol.id === 3;
+            const vaASerTrabajador = rolObj.id === 2;
+            const tieneGruposACargo = trabajadorFound.gruposSupervisados && trabajadorFound.gruposSupervisados.length > 0;
+
+            if (esSupervisorActual && vaASerTrabajador && tieneGruposACargo) {
+                return [
+                    null, 
+                    `No se puede cambiar el rol a Trabajador porque actualmente es supervisor de ${trabajadorFound.gruposSupervisados.length} grupo(s). Primero debes asignar otro supervisor a esos grupos.`
+                ];
+            }
+
+            trabajadorFound.rol = rolObj;
+            }
+
+        if (body.telefono) {
+            const existingTelefono = await trabajadoresRepository.findOne({ 
+                where: { telefono: body.telefono, id: id } });
+            if (existingTelefono) {
+                return [null, "El teléfono ya se encuentra en uso"];}
+            trabajadorFound.telefono = body.telefono;
         }
 
-        if (body.nombreCompleto !== undefined) trabajadorFound.nombreCompleto = body.nombreCompleto;
-        if (body.email !== undefined) trabajadorFound.email = body.email;
-        if (body.rol !== undefined) trabajadorFound.rol = body.rol;
-        if (body.competencias !== undefined) trabajadorFound.competencias = body.competencias;
-        if (body.sexo !== undefined) trabajadorFound.sexo = body.sexo;
-        trabajadorFound.updatedAt = new Date();
-
         if (Object.prototype.hasOwnProperty.call(body, "grupo_id")) {
-            if (BeforeUpdate.grupo_id == null) {
+            if (body.grupo_id === null || body.grupo_id === "null" || body.grupo_id === "") {
                 trabajadorFound.grupoAsignado = null;
             } else {
-                const grupoObj = await gruposRepository.findOneBy({
-                    grupo_id: Number(body.grupo_id)
-                });
-
-                if (!grupo) {
-                    return [null, "Grupo no encontrado"];
-
-                    trabajadorFound.grupoAsignado = grupoObj;
-                }
+                const grupoObj = await gruposRepository.findOneBy({ grupo_id: Number(body.grupo_id) });
+                if (!grupoObj) return [null, "Grupo no encontrado"];
+                trabajadorFound.grupoAsignado = grupoObj;
             }
         }
 
-        if (body.foto) {
-        dataTrabajadorUpdate.fotoNombreOriginal = body.foto.original;
-        dataTrabajadorUpdate.fotoNombreArchivo = body.foto.archivo;
-        dataTrabajadorUpdate.fotoRuta = body.foto.ruta;
-        dataTrabajadorUpdate.fotoMimeType = body.foto.mime;
-        dataTrabajadorUpdate.fotoPeso = body.foto.peso;
+        if (body.competenciasIds) {
+            const nuevosItems = await itemRepository.findByIds(body.competenciasIds);
+            trabajadorFound.competencias = nuevosItems;
         }
 
-        if (body.cv) {
-        dataTrabajadorUpdate.cvNombreOriginal = body.cv.original;
-        dataTrabajadorUpdate.cvNombreArchivo = body.cv.archivo;
-        dataTrabajadorUpdate.cvRuta = body.cv.ruta;
-        dataTrabajadorUpdate.cvMimeType = body.cv.mime;
-        dataTrabajadorUpdate.cvPeso = body.cv.peso;
-        }
+        if (body.foto_url) trabajadorFound.foto_url = body.foto_url;
+        if (body.antecedentes_url) trabajadorFound.antecedentes_url = body.antecedentes_url;
 
-        if (body.antecedentes) {
-        dataTrabajadorUpdate.antecedentesNombreOriginal = body.antecedentes.original;
-        dataTrabajadorUpdate.antecedentesNombreArchivo = body.antecedentes.archivo;
-        dataTrabajadorUpdate.antecedentesRuta = body.antecedentes.ruta;
-        dataTrabajadorUpdate.antecedentesMimeType = body.antecedentes.mime;
-        dataTrabajadorUpdate.antecedentesPeso = body.antecedentes.peso;
-        }
+        trabajadorFound.updatedAt = new Date();
 
         const saved = await trabajadoresRepository.save(trabajadorFound);
+        return [saved, null]
 
-        return [saved, null];
     } catch (error) {
         console.error("Error al modificar un trabajador:", error);
         return [null, "Error interno del servidor"];

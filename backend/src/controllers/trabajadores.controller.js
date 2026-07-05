@@ -30,7 +30,10 @@ import {
 } from "../helpers/calcularEdad.js"
 import {
  createTrabajadorBodyValidation,
- getTrabajadoresQueryValidation
+ getTrabajadoresQueryValidation,
+ getTrabajadorParamValidation,
+ updateTrabajadorBodyValidation,
+ updateTrabajadorParamValidation
 } from "../validations/trabajadores.validation.js"
 
 
@@ -63,8 +66,11 @@ export async function getTrabajadoresController(req, res) {
 export async function getTrabajadorController(req, res) {
   try {
 
-    const { id } = req.params;
-    const [trabajador, errorTrabajador] = await getTrabajadorService(id);
+    const {error, value} = getTrabajadorParamValidation.validate(req.params);
+    if(error) { 
+      return handleErrorClient(res, 400, "ID inválido en la ruta", error.message)
+    }
+    const [trabajador, errorTrabajador] = await getTrabajadorService(value.id);
 
     if (errorTrabajador) return handleErrorClient(res, 404, errorTrabajador);
 
@@ -156,44 +162,37 @@ export async function createTrabajadoresController(req, res) {
 export async function updateTrabajadorController(req, res) {
   try {
 
-    const { id } = req.params;
+    const paramValidation = updateTrabajadorParamValidation.validate(req.params);
+    if (paramValidation.error) {
+      return handleErrorClient(res, 400, "ID inválido en la ruta", paramValidation.error.message);
+    }
+
+    const targetId = paramValidation.value.id;
     const { body } = req;
 
     const files = req.files || {};
-    const foto = files.foto?.[0];
-    const cv = files.cv?.[0];
-    const antecedentes = files.antecedentes?.[0];
+    if (files.foto?.[0]) {
+      body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
+    }
+    if (files.antecedentes?.[0]) {
+      body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
+    }
 
-    const payload = {
-      ...body,
+    if (body.competenciasIds) {
+      if (typeof body.competenciasIds === "string") {
+        body.competenciasIds = body.competenciasIds.split(",").map(id => parseInt(id.trim(), 10)).filter(Boolean);
+      } else if (Array.isArray(body.competenciasIds)) {
+        body.competenciasIds = body.competenciasIds.map(id => parseInt(id, 10)).filter(Boolean);
+      }
+    }
+    
+    const bodyValidation = updateTrabajadorBodyValidation.validate(body, { abortEarly: false });
+    if (bodyValidation.error) {
+      const erroresDetallados = bodyValidation.error.details.map(err => err.message).join(", ");
+      return handleErrorClient(res, 400, "Parámetros del cuerpo inválidos", erroresDetallados);
+    }
 
-      foto: foto
-      ? {
-        original: foto.originalname,
-        archivo: foto.filename,
-        ruta: foto.path,
-        mime: foto.mimetype,
-        peso: foto.size,
-      } : null,
-      cv: cv
-      ? {
-        original: cv.originalname,
-        archivo: cv.filename,
-        ruta: cv.path,
-        mime: cv.mimetype,
-        peso: cv.size,
-      } : null,
-      antecedentes : antecedentes
-      ? {
-        original: antecedentes.originalname,
-        archivo: antecedentes.filename,
-        ruta: antecedentes.path,
-        mime: antecedentes.mimetype,
-        peso: antecedentes.size,
-      } : null,
-    };
-
-    const [trabajador, trabajadorError] = await updateTrabajadorService(id, payload);
+    const [trabajador, trabajadorError] = await updateTrabajadorService(targetId, bodyValidation.value);
 
     if (trabajadorError) {
       return handleErrorClient(res, 400, "Error modificando al trabajador", trabajadorError);
