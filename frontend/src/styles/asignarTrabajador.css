@@ -77,8 +77,9 @@
 }
 
 .tarjeta-trabajador p {
-  margin: 4px 0;
-  font-size: 0.95rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 /* Resaltamos el nombre del trabajador */

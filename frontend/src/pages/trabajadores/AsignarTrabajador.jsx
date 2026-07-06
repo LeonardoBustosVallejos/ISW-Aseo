@@ -4,7 +4,9 @@ import Search from "@components/Search.jsx";
 import Table from "@components/Table.jsx";
 import { showErrorAlert } from "@helpers/sweetAlert.js";
 import "@styles/asignarTrabajador.css";
+import "@styles/acordeon.css"
 import { useState } from "react";
+import Acordeon from '@components/acordeon';
 
 export default function Trabajadores() {
 
@@ -19,6 +21,9 @@ export default function Trabajadores() {
   const [selectedId, 
         setSelectedId] = useState(null); 
 
+  const [openSection,
+        setOpenSection] = useState(null);
+        
   const { detalle, 
           loadingDetalle, 
           errorDetalle } = useDetalleTrabajador(selectedId); 
@@ -34,6 +39,55 @@ export default function Trabajadores() {
       <div className="columnas-layout">
         <section className="columna-lista-trabajadores">
           <ul className="lista-trabajadores">
+
+  <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
+
+
+    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+      <button 
+        onClick={() => setPagina(p => Math.max(p - 1, 1))} 
+        disabled={pagina === 1 || loading}
+        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
+      >
+        &lt;
+      </button>
+      
+      {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
+        const numeroPagina = index + 1;
+        const esActiva = numeroPagina === pagina;
+        
+        return (
+          <button
+            key={numeroPagina}
+            onClick={() => setPagina(numeroPagina)}
+            disabled={loading}
+            style={{
+              border: "none",
+              borderRadius: "50%",
+              width: "30px",
+              height: "30px",
+              cursor: "pointer",
+              backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
+              color: "#333",
+              fontWeight: esActiva ? "bold" : "normal",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {numeroPagina}
+          </button>
+        );
+      })}
+
+      {/* Flecha Siguiente (>) */}
+      <button 
+        onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
+        disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
+        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
+      >
+        &gt;
+      </button>
+    </div>
+  </div>
             {trabajadores.map((trabajador) => (
               <li key={trabajador.id}
               className={`tarjeta-trabajador ${selectedId === trabajador.id ? "seleccionado" : ""}`}
@@ -42,29 +96,73 @@ export default function Trabajadores() {
                 <p>{`${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno} ${trabajador.nombres} `}</p>
                 <p>{trabajador.rut}</p>
                 <p>{trabajador.rol.nombre}</p>
+                {trabajador.rol?.nombre === "Trabajador" && (
+                  <p>
+                    Grupo asignado: {
+                      trabajador.grupoAsignado?.nombre || "Ninguno asignado."
+                    }
+                  </p>
+                  )}
+                {trabajador.rol?.nombre === "Supervisor" && (
+                  <p>
+                    Grupo(s) supervisado(s): {
+                      trabajador.gruposSupervisados && trabajador.gruposSupervisados.length > 0
+                        ? trabajador.gruposSupervisados.map(grupo => grupo.nombre).join(", ")
+                        : "Ninguno supervisado."
+                    }
+                  </p>
+                  )}
               </li>
             ))}
           </ul>
 
-<div className="paginacion-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "15px", padding: "10px" }}>
-            <button 
-              onClick={() => setPagina(p => Math.max(p - 1, 1))} 
-              disabled={pagina === 1 || loading}
-              className="btn-paginacion"
-            >
-              Anterior
-            </button>
-            
-            <span>Página {infoPaginacion.currentPage} de {infoPaginacion.totalPages}</span>
-            
-            <button 
-              onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion.totalPages))} 
-              disabled={pagina === infoPaginacion.totalPages || loading}
-              className="btn-paginacion"
-            >
-              Siguiente
-            </button>
-          </div>
+  <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
+
+    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+      <button 
+        onClick={() => setPagina(p => Math.max(p - 1, 1))} 
+        disabled={pagina === 1 || loading}
+        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
+      >
+        &lt;
+      </button>
+      
+      {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
+        const numeroPagina = index + 1;
+        const esActiva = numeroPagina === pagina;
+        
+        return (
+          <button
+            key={numeroPagina}
+            onClick={() => setPagina(numeroPagina)}
+            disabled={loading}
+            style={{
+              border: "none",
+              borderRadius: "50%",
+              width: "30px",
+              height: "30px",
+              cursor: "pointer",
+              backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
+              color: "#333",
+              fontWeight: esActiva ? "bold" : "normal",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {numeroPagina}
+          </button>
+        );
+      })}
+
+      {/* Flecha Siguiente (>) */}
+      <button 
+        onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
+        disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
+        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
+      >
+        &gt;
+      </button>
+    </div>
+  </div>
         </section>
 
         <section className="columna-detalle">
@@ -106,73 +204,100 @@ export default function Trabajadores() {
                   </div>
                 )}
             </div>
-              <p>Nombre: {detalle.nombreCompleto}</p>
-              <p>Rut: {detalle.rut}</p>
-              <p>Edad: {detalle.edad}</p>
-              <p>Sexo: {detalle.sexo}</p>
-              <p>Rol: {detalle.rol?.nombre}</p>
-              <p>Fecha de nacimiento: {detalle.nacimiento} </p>
-              <p>Fecha de Contratación: {detalle.createdAt}</p>
-              <div className="campo-editable">
-                <label>Competencias:</label>
-                <input type="text" defaultValue={detalle.competencias || "Sin Competencias registradas"}/>
-              </div>
-              <div className="campo-editable">
-                <label>Grupo asignado:</label>
-                <input type="text" defaultValue={detalle.grupo || "Sin Grupo"}/>
-              </div>
-              <div className="documentosAdjuntos"
-                    style={{ 
-                      marginTop: '20px', 
-                      padding: '10px', 
-                      background: '#f9f9f9', 
-                      borderRadius: '5px' }}>
+            <Acordeon title={"Información Personal"} level={0} isOpen={openSection === "infoPersonal"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoPersonal" ? null : "infoPersonal")
+                                }}
+                                content={
+                                    <div className="">
+                                        <p>Nombre: {detalle.nombreCompleto}</p>
+                                        <p>Rut: {detalle.rut}</p>
+                                        <p>Edad: {detalle.edad}</p>
+                                        <p>Sexo: {detalle.sexo}</p>
+                                        <p>Fecha de nacimiento: {detalle.nacimiento} </p>
+                                        <p>Fecha de Contratación: {detalle.createdAt}</p>
+                                    </div>
+                                } />
+            <Acordeon title={"Contacto"} level={0} isOpen={openSection === "infoContacto"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoContacto" ? null : "infoContacto")
+                                }}
+                                content={
+                                    <div className="">
 
-                <h4>Documentos Adjuntos</h4>
-                  <div style={{
-                    marginBottom: "10px"
-                  }}>
-                    <label style={{ 
-                                  fontWeight: 'bold', 
-                                  display: 'block' }}> 
-                      Curriculum Vitae 
-                    </label>
-                    <a href= {detalle.cv_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-documento">Ver o descargar</a>
-                  </div>
-              
-                  <div style={{
-                    marginBottom: "10px"
-                  }}>
-                    <label style={{ 
-                                  fontWeight: 'bold', 
-                                  display: 'block' }}> 
-                      Antecedentes 
-                    </label>
-                    <a href= {detalle.antecedentes_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="btn-documento">Ver o descargar</a>
-                  </div>
-                </div>
-          
-            
-            {/*detalle.historialDesvinculaciones && (
-              <div className="historial.box">
-              <h4>Historial Desvinculaciones:</h4>
-              {detalle.historialDesvinculaciones.length === 0 ? (
-                <p>Sin despidos registrados</p>
-              ) : (
-                <ul>
-                  {detalle.historialDesvinculaciones.map((h, idx) => (
-                    <li key={idx}> Motivo: {h.motivo} - Fecha: {h.fecha}</li>
-                  ))}
-                </ul>
-              )}
-              </div>
-            )}*/}
+                                        <p>Teléfono: {detalle.telefono}</p>
+                                        <p>Correo: {detalle.email}</p>
+                                    </div>
+                                } />
+<Acordeon title={"Documentos del empleado"} level={0} isOpen={openSection === "infoDocumentos"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoDocumentos" ? null : "infoDocumentos")
+                                }}
+                                content={
+                                <div className="documentosAdjuntos"
+                                      style={{ 
+                                        padding: '10px', 
+                                        background: '#f9f9f9', 
+                                        borderRadius: '5px' }}>
+                                    <div style={{
+                                      marginBottom: "5px"
+                                    }}>
+                                      <label style={{ 
+                                                    fontWeight: 'bold', 
+                                                    display: 'block' }}> 
+                                        Curriculum Vitae 
+                                      </label>
+                                      <a href= {detalle.cv_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="btn-documento">Ver o descargar</a>
+                                    </div>
+                                
+                                    <div style={{
+                                      marginBottom: "10px"
+                                    }}>
+                                      <label style={{ 
+                                                    fontWeight: 'bold', 
+                                                    display: 'block' }}> 
+                                        Antecedentes 
+                                      </label>
+                                      <a href= {detalle.antecedentes_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="btn-documento">Ver o descargar</a>
+                                    </div>
+                                  </div>
+                                } />
+            <Acordeon title={"Rol y grupos"} level={0} isOpen={openSection === "infoRYG"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoRYG" ? null : "infoRYG")
+                                }}
+                                content={
+                                    <div className="">
+                                        <p>Rol: {detalle.rol?.nombre}</p>
+                                        {detalle.rol?.nombre === "Trabajador" && (
+                  <p>
+                    Grupo asignado: {
+                      detalle.grupoAsignado?.nombre || "Ninguno asignado."
+                    }
+                  </p>
+                  )}
+                {detalle.rol?.nombre === "Supervisor" && (
+                  <p>
+                    Grupo(s) supervisado(s): {
+                      detalle.gruposSupervisados && detalle.gruposSupervisados.length > 0
+                        ? detalle.gruposSupervisados.map(grupo => grupo.nombre).join(", ")
+                        : "Ninguno supervisado."
+                    }
+                  </p>
+                  )}
+                                    </div>
+                                } />
+
           </div>
           ): (
             !loadingDetalle && <p className="sin-seleccion">Haz clic en un trabajador para ver los detalles</p>

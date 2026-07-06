@@ -20,7 +20,7 @@ export function useTrabajadores() {
     setSucces("");
 
     try {
-      const result = await getTrabajadores();
+      const result = await getTrabajadores(pagina);
       console.log(result);
 
       if (result.succes) {
@@ -31,7 +31,7 @@ export function useTrabajadores() {
           setInfoPaginacion(result.data.pagination);
         }
 
-        setSucces(`Mostrando trabajadores del ${((pagina - 1) * 10) + 1} al ${Math.min(pagina * 10, result.data.pagination?.totalItems || 10)}`);
+        //setSucces(`Mostrando trabajadores del ${((pagina - 1) * 10) + 1} al ${Math.min(pagina * 10, result.data.pagination?.totalItems || 10)}`);
       } else {
         setError(result.message);
         setTrabajadores([]);

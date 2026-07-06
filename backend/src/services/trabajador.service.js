@@ -21,7 +21,7 @@ export async function getTrabajadoresService({ page, limit }) {
             relations: ["rol", 
                         "competencias", 
                         "grupoAsignado", 
-                        "supervisorDeGrupo", 
+                        "gruposSupervisados", 
                         "gruposSupervisados"],
             skip: skip,
             take: limit
@@ -58,7 +58,7 @@ export async function getTrabajadorService(id) {
                 relations: ["rol", 
                             "competencias", 
                             "grupoAsignado", 
-                            "supervisorDeGrupo", 
+                            "gruposSupervisados", 
                             "gruposSupervisados",
                             "historialDesvinculaciones"],
         });

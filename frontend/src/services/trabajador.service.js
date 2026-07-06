@@ -5,9 +5,9 @@ import axios from "./root.service.js";
  * @returns { Promise } Lista de trabajadores
  */
 
-export const getTrabajadores = async () => {
+export const getTrabajadores = async (page = 1, limit = 10) => {
   try {
-    const response = await axios.get("/trabajadores/");
+    const response = await axios.get(`/trabajadores/?page=${page}&limit=${limit}`);
     return {
       succes: true,
       data: response.data.data,

@@ -15,25 +15,25 @@ import {
   updateGrupoController,
   deleteGrupoController
 } from "../controllers/trabajadores.controller.js";
-import { isAdmin } from "../middlewares/authorization.middleware.js";
+import { authorizeRoles } from "../middlewares/authorization.middleware.js";
 
 const router = Router();
 
 router
   .use(authenticateJwt)
   
-  .get("/", isAdmin(["Administrador"]), getTrabajadoresController)
+  .get("/", authorizeRoles(["Administrador"]), getTrabajadoresController)
   
-  .get("/detail/grupos", isAdmin(["Administrador"]), getGruposController)
-  .get("/detail/grupos/:id", isAdmin(["Administrador"]), getGrupoController)
-  .patch("/detail/update/grupos/:id", isAdmin(["Administrador"]), updateGrupoController)
-  .post("/create/grupos", isAdmin(["Administrador"]), createGrupoController)
-  .delete("/detail/delete/grupos/:id", isAdmin(["Administrador"]), deleteGrupoController)
+  .get("/detail/grupos", authorizeRoles(["Administrador"]), getGruposController)
+  .get("/detail/grupos/:id", authorizeRoles(["Administrador"]), getGrupoController)
+  .patch("/detail/update/grupos/:id", authorizeRoles(["Administrador"]), updateGrupoController)
+  .post("/create/grupos", authorizeRoles(["Administrador"]), createGrupoController)
+  .delete("/detail/delete/grupos/:id", authorizeRoles(["Administrador"]), deleteGrupoController)
 
-  .get("/detail/:id", isAdmin(["Administrador"]), getTrabajadorController)
-  .patch("/detail/:id", isAdmin(["Administrador"]), uploadFiles, updateTrabajadorController)
-  .patch("/detail/despedir/:id", isAdmin(["Administrador"]), uploadFiles, despidoTrabajadorController)
-  .patch("/detail/recontratar/:id", isAdmin(["Administrador"]), recontratarTrabajadorController)
-  .post("/create/", isAdmin(["Administrador"]), uploadFiles, createTrabajadoresController);
+  .get("/detail/:id", authorizeRoles(["Administrador"]), getTrabajadorController)
+  .patch("/detail/:id", authorizeRoles(["Administrador"]), uploadFiles, updateTrabajadorController)
+  .patch("/detail/despedir/:id", authorizeRoles(["Administrador"]), uploadFiles, despidoTrabajadorController)
+  .patch("/detail/recontratar/:id", authorizeRoles(["Administrador"]), recontratarTrabajadorController)
+  .post("/create/", authorizeRoles(["Administrador"]), uploadFiles, createTrabajadoresController);
 
   export default router;
