@@ -19,7 +19,7 @@ export async function iniciarCronContratos() {
         }
     });
 
-    console.log("Cron de contratos iniciado.");
+    logCron("Cron de contratos iniciado.");
 
 }
 

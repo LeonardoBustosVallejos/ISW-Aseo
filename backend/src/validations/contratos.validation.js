@@ -125,3 +125,13 @@ export const anexoCompletoValidation = Joi.object({
         .items(documentoValidation)
         .default([])
 })
+
+export const uploadContratoValidation = Joi.object({
+    contrato: contratoComercialValidation.required(),
+
+    metadataDocumentos: Joi.array()
+        .items(documentoValidation)
+        .required()
+})
+
+export const uploadAnexoValidation = Joi.array().min(1).items(anexoCompletoValidation).required()

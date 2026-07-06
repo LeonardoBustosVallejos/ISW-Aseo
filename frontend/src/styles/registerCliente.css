@@ -90,7 +90,7 @@
     justify-content: center;
     gap: .5rem;
 
-    background-color: var(--ubb-azul-principal);
+    background-color: var(--ubb-azul-secundario);
     color: var(--ubb-texto);
 
     border: none;
@@ -138,7 +138,7 @@
 }
 
 .expand-button {
-    background: var(--ubb-azul-principal);
+    background: var(--ubb-azul-secundario);
     color: var(--ubb-texto);
     border: none;
     border-radius: .75rem;
@@ -148,7 +148,7 @@
 
 .expand-button:hover,
 .expand-button:focus {
-    background: var(--ubb-azul-secundario);
+    background: var(--ubb-azul-hover);
 }
 
 .rotate {

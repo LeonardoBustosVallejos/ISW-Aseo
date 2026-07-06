@@ -13,6 +13,7 @@ import SedesTable from "./Tabs/SedesTable.jsx";
 import InfoGeneral from "./Tabs/InfoGeneral.jsx";
 import ContactosTable from "./Tabs/ContactosTable.jsx";
 import TabFiliales from "./Tabs/TabFiliales.jsx";
+import ContratosTable from "./Tabs/ContratosTable.jsx";
 
 export default function InfoCliente() {
     const [error, setError] = useState(null)
@@ -183,18 +184,18 @@ export default function InfoCliente() {
                 <Tab titulo={'Contactos'}>
                     <ContactosTable contactos={dataGeneral.contactos} />
                 </Tab>
-                {/*
                 <Tab titulo={'Contratos'}>
-
+                    <ContratosTable contratos={dataGeneral.contratos} cliente={dataGeneral.cliente} estado={dataGeneral.estado} />
                 </Tab>
+                {/*
                 <Tab titulo={'Anexos'} disabled={dataGeneral.anexos.length < 1}>
 
                 </Tab>
                 
-                */}
                 <Tab titulo={'Documentos'}>
 
                 </Tab>
+                    */}
             </Tabs>
         </div >
     )

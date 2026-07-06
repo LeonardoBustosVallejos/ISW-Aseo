@@ -7,9 +7,10 @@ import { createErrorMessage } from "../cleaners/extras.js";
 import { getClienteByService, getSedeByService } from "./cliente.service.js";
 import { getTopJerarquía } from "./user.service.js";
 import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
+import { createMultipleDocumentosService } from "./archivo.service.js";
 
 
-export async function createContratoComercialService(data, cliente_id, manager = null) {
+export async function createContratoComercialService(data, documentos, cliente_id, manager = null) {
     try {
         const execute = async (transactionManager) => {
 
@@ -30,7 +31,9 @@ export async function createContratoComercialService(data, cliente_id, manager =
                 tamanoInstalacion,
                 requiereGuardias,
                 observacionesOperativas,
+                sedes
             } = data
+            if (!documentos || documentos.length === 0) throw [null,]
 
             // Validaciones básicas
             if (!fechaInicio || !fechaFinOriginal || !cliente_id) throw [null, createErrorMessage("Contrato", "Datos incompletos")]
@@ -47,7 +50,8 @@ export async function createContratoComercialService(data, cliente_id, manager =
 
 
             // Buscar cliente
-            const [clienteFound, errCliente] = await getClienteByService({ cliente_id }, transactionManager)
+
+            const [clienteFound, errCliente] = await getClienteByService({ cliente_id: cliente_id }, transactionManager)
 
             if (errCliente) throw [null, errCliente]
 
@@ -107,13 +111,31 @@ export async function createContratoComercialService(data, cliente_id, manager =
                 sedes: sedesEncontradas
             })
 
-            await contratoRepository.save(contrato)
+            const resContrato = await contratoRepository.save(contrato)
+            console.log("=>Contrato creado");
 
-            return [contrato, null]
+            //Continuar con los archivos/documentos
+            let documentosCreados = [];
+
+            if (Array.isArray(documentos) && documentos.length > 0) {
+
+                const [docsContrato, errDocs] = await createMultipleDocumentosService(documentos,
+                    { id_contrato_comercial: resContrato.id_contrato_comercial },
+                    transactionManager
+                );
+
+                if (errDocs) throw [null, errDocs];
+
+                documentosCreados = docsContrato;
+
+                console.log("=>Documentos del contrato creados");
+            }
+
+
+            return [{ ...resContrato, documentos: documentosCreados }, null];
         }
 
-        if (manager)
-            return await execute(manager)
+        if (manager) return await execute(manager)
 
         return await AppDataSource.transaction(execute)
 
@@ -319,6 +341,47 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
     }
 }
 
+export async function createAnexosYDocumentos(anexos, sedes = [], id_contrato_comercial, manager = null) {
+    try {
+        const execute = async (transactionManager) => {
+            const anexosCreados = []
+            let index = 1
+            for (const anexoData of anexos) {
+                const { datos } = anexoData
+                datos.sedes = datos.sedes ? datos.sedes : sedes
+                const [anexoCreado, errAnexo] = await createContratoAnexoService({ ...datos, sedes }, id_contrato_comercial, transactionManager, index)
+                if (errAnexo) throw [null, errAnexo]
+
+                let documentosAnexo = []
+
+                if (Array.isArray(anexoData.documentos) && anexoData.documentos.length > 0) {
+                    const [docsAnexo, errDocsAnexo] = await createMultipleDocumentosService(anexoData.documentos, { anexo_id: anexoCreado.id_anexo }, transactionManager)
+                    if (errDocsAnexo) throw [null, errDocsAnexo]
+                    documentosAnexo = docsAnexo
+                }
+
+                anexosCreados.push({ ...anexoCreado, documentos: documentosAnexo })
+                index++
+            }
+            console.log("=>Anexos Creados");
+
+            return [anexosCreados, null]
+        }
+
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+
+    } catch (error) {
+        console.error("Error creando anexo", error)
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            return error
+        }
+        if (manager) throw error
+        return [null, "Error interno"]
+    }
+}
 
 export async function getContratoComercialService(contrato = null, data = null, manager = null) {
     try {

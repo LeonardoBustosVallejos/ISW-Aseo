@@ -14,7 +14,7 @@ import AnexoRow, { AnexosArray } from "../../../components/Contrato/AnexoComerci
 import { createContactos, updateContactos, updateSede } from "../../../services/clientes.service";
 import { useErrors } from "../../../hooks/errors";
 import { formatDate, formatDateTime } from "../../../helpers/formatDate";
-export default function SedesTable({ sedes, noTitle = false }) {
+export default function SedesTable({ sedes, noTitle = false, noActions = false }) {
 
     const [open, setOpen] = useState('')
     const [accOpen, setAccOpen] = useState('old')
@@ -196,7 +196,7 @@ export default function SedesTable({ sedes, noTitle = false }) {
                         <div className="info-card">
                             <div className="info-label">
                                 <strong>Propietario:</strong>
-                                <strong>{row.cliente.nombreCliente + ' - ' + row.cliente.rutCliente || 'Sin Datos'}</strong>
+                                <strong>{row.cliente?.nombreCliente + ' - ' + row.cliente.rutCliente || 'Sin Datos'}</strong>
                             </div>
                             <div className="data-line" />
                             <div className="info-label">
@@ -284,22 +284,22 @@ export default function SedesTable({ sedes, noTitle = false }) {
                                                 header: "Tipo"
                                             }]
                                         }
-                                        actions={cont => (
-                                            <div className="table-actions">
-                                                <button className="action-button"
-                                                    onClick={() => {
-                                                        setExistingContacts([cont]);
-                                                        setOpen('updateContact');
-                                                    }} >
-                                                    <UserRoundPen />
-                                                </button>
-                                                <button type="button"
-
-                                                    className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        )}
+                                        actions={(cont) =>
+                                        (<div className="table-actions">
+                                            <button className="action-button"
+                                                onClick={() => {
+                                                    setExistingContacts([cont]);
+                                                    setOpen('updateContact');
+                                                }} >
+                                                <UserRoundPen />
+                                            </button>
+                                            <button type="button"
+                                                className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                        )
+                                        }
                                         renderExpanded={(cont) => (<div className="info-card">
 
 
@@ -367,7 +367,9 @@ export default function SedesTable({ sedes, noTitle = false }) {
                                 tipoContacto: ''
                             }]);
                             setOpen('updateSede');
-                        }} />
+                        }}
+                            disabled={noActions}
+                        />
 
                     </>
                 )}

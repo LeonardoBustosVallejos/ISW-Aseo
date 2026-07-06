@@ -10,7 +10,7 @@
     button {
         flex: 1;
         border-radius: 8px;
-        background-color: var(--ubb-azul-principal);
+        background-color: var(--ubb-azul-secundario);
         color: var(--ubb-texto);
         cursor: pointer;
         height: 20%;
