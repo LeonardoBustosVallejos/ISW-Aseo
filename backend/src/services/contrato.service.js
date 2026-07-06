@@ -8,14 +8,16 @@ import { getClienteByService, getSedeByService } from "./cliente.service.js";
 import { getTopJerarquía } from "./user.service.js";
 import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
+import ClienteSchema from "../entity/cliente.entity.js";
+import { In } from "typeorm"
 
 
 export async function createContratoComercialService(data, documentos, cliente_id, manager = null) {
     try {
         const execute = async (transactionManager) => {
 
-            const contratoRepository = transactionManager.getRepository(Contrato);
-            const clienteRepository = transactionManager.getRepository(Clientes);
+            const contratoRepository = transactionManager.getRepository(Contrato)
+            const clienteRepository = transactionManager.getRepository(Clientes)
             const sedeRepository = transactionManager.getRepository(Sedes)
 
             const {
@@ -33,25 +35,25 @@ export async function createContratoComercialService(data, documentos, cliente_i
                 observacionesOperativas,
                 sedes
             } = data
-            if (!documentos || documentos.length === 0) throw [null,]
 
-            // Validaciones básicas
-            if (!fechaInicio || !fechaFinOriginal || !cliente_id) throw [null, createErrorMessage("Contrato", "Datos incompletos")]
+            if (!documentos || documentos.length === 0)
+                throw [null, createErrorMessage("Contrato", "Debe incluir documentos")]
 
+            if (!fechaInicio || !fechaFinOriginal || !cliente_id)
+                throw [null, createErrorMessage("Contrato", "Datos incompletos")]
 
-            // Validar fechas
-            if (new Date(fechaInicio) >= new Date(fechaFinOriginal)) throw [null, createErrorMessage("Fechas de contrato", "Fechas inválidas")]
+            if (new Date(fechaInicio) >= new Date(fechaFinOriginal))
+                throw [null, createErrorMessage("Fechas de contrato", "Fechas inválidas")]
 
             if (
                 cantidadMinTrabajadores &&
                 cantidadMaxTrabajadores &&
                 (cantidadMaxTrabajadores - cantidadMinTrabajadores < 0)
-            ) throw [null, createErrorMessage(`Contrato - Cantidad de trabajadores`, "Cantidad mínima no puede ser mayor a la máxima")]
+            )
+                throw [null, createErrorMessage("Contrato", "Cantidad mínima no puede ser mayor a la máxima")]
 
-
-            // Buscar cliente
-
-            const [clienteFound, errCliente] = await getClienteByService({ cliente_id: cliente_id }, transactionManager)
+            const [clienteFound, errCliente] =
+                await getClienteByService({ cliente_id }, transactionManager)
 
             if (errCliente) throw [null, errCliente]
 
@@ -60,40 +62,38 @@ export async function createContratoComercialService(data, documentos, cliente_i
 
             if (errRep) throw [null, errRep]
 
-
-            // Validar sedes
-            let sedesEncontradas = []
+            let sedesEntities = []
 
             if (sedes?.length > 0) {
 
-                for (const sede of sedes) {
-                    const sedeFound = await sedeRepository.findOne({ where: { sede_id: sede } })
-                    if (!sedeFound || sedeFound.length < 1) throw [null, createErrorMessage("sede", "Una o más sedes no existen")]
-                    sedesEncontradas.push({ sede_id: sedeFound.sede_id })
+                sedesEntities = await sedeRepository.findBy({
+                    sede_id: In(sedes)
+                })
+
+                if (sedesEntities.length !== sedes.length) {
+                    throw [null, createErrorMessage("Sede", "Una o más sedes no existen")]
                 }
 
-
             } else {
-                // Si no se proporcionan sedes, asignar la sede principal del cliente
+
                 const sedePrincipal = await sedeRepository.findOne({
                     where: {
                         cliente: { cliente_id },
                         tipo_sede: "PRINCIPAL"
                     }
                 })
-                if (!sedePrincipal) throw [null, createErrorMessage("sede", "Sede principal no encontrada para el cliente")]
-                sedesEncontradas.push({ sede_id: sedePrincipal.sede_id })
+
+                if (!sedePrincipal)
+                    throw [null, createErrorMessage("Sede", "Sede principal no encontrada")]
+
+                sedesEntities = [sedePrincipal]
             }
 
-            // Estado automático
             const fechaActual = new Date()
-
             const estado = fechaActual >= new Date(fechaInicio) ? "VIGENTE" : "ESPERA"
 
-            // Crear contrato
             const contrato = contratoRepository.create({
-                codigoContrato:
-                    `COM-${representante.cliente_id}-${Date.now()}`,
+                codigoContrato: `COM-${representante.cliente_id}-${Date.now()}`,
                 fechaInicio,
                 fechaFinOriginal,
                 fechaFinReal: fechaFinReal || fechaFinOriginal,
@@ -107,32 +107,29 @@ export async function createContratoComercialService(data, documentos, cliente_i
                 tamanoInstalacion: tamanoInstalacion || null,
                 requiereGuardias: requiereGuardias || false,
                 observacionesOperativas: observacionesOperativas || null,
-                cliente: { cliente_id: representante.cliente_id },
-                sedes: sedesEncontradas
+                cliente: [representante],
+
+                sedes: sedesEntities
             })
 
             const resContrato = await contratoRepository.save(contrato)
-            console.log("=>Contrato creado");
+            console.log(contrato);
 
             //Continuar con los archivos/documentos
             let documentosCreados = [];
 
-            if (Array.isArray(documentos) && documentos.length > 0) {
-
-                const [docsContrato, errDocs] = await createMultipleDocumentosService(documentos,
+            const [docsContrato, errDocs] =
+                await createMultipleDocumentosService(
+                    documentos,
                     { id_contrato_comercial: resContrato.id_contrato_comercial },
                     transactionManager
-                );
+                )
 
-                if (errDocs) throw [null, errDocs];
+            if (errDocs) throw [null, errDocs]
 
-                documentosCreados = docsContrato;
+            documentosCreados = docsContrato
 
-                console.log("=>Documentos del contrato creados");
-            }
-
-
-            return [{ ...resContrato, documentos: documentosCreados }, null];
+            return [{ ...resContrato, documentos: documentosCreados }, null]
         }
 
         if (manager) return await execute(manager)
@@ -141,31 +138,23 @@ export async function createContratoComercialService(data, documentos, cliente_i
 
     } catch (error) {
 
-        console.error(
-            "Error creando contrato: ",
-            error
-        )
+        console.error("Error creando contrato:", error)
 
         if (Array.isArray(error)) {
-
             if (manager) throw error
-
             return error
         }
 
         if (manager) throw error
-
         return [null, "Error interno"]
     }
 }
-
 export async function createContratoAnexoService(data, contrato_id, manager = null, index = 1) {
     try {
 
         const execute = async (transactionManager) => {
 
             const contratoRepository = transactionManager.getRepository(Contrato)
-
             const anexoRepository = transactionManager.getRepository(ContratoAnexoSchema)
             const sedeRepository = transactionManager.getRepository(Sedes)
 
@@ -186,29 +175,30 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 sedes
             } = data
 
-            // Validaciones básicas
-            if (!numeroAnexo || !fechaInicio || !contrato_id) throw [null, createErrorMessage(`Anexo ${index}`, "Datos incompletos")]
+            if (!numeroAnexo || !fechaInicio || !contrato_id)
+                throw [null, createErrorMessage(`Anexo ${index}`, "Datos incompletos")]
 
-            // Buscar contrato
             const contrato = await contratoRepository.findOne({
-                where: { id_contrato_comercial: contrato_id }
+                where: { id_contrato_comercial: contrato_id },
+                relations: ["sedes"]
             })
 
-            if (!contrato) throw [null, createErrorMessage("Contrato", "Contrato no encontrado")]
+            if (!contrato)
+                throw [null, createErrorMessage("Contrato", "Contrato no encontrado")]
 
+            let sedesEntities = []
 
-            let sedesEncontradas = []
-            if (sedes) {
-                for (const sede of sedes) {
-                    const sedeFound = await sedeRepository.findOne({
-                        where: sede
-                    })
-                    if (!sedeFound) throw [null, createErrorMessage("Contrato", "Sede no encontrada para el cliente")]
-                    sedesEncontradas.push({ sede_id: sedeFound.sede_id })
+            if (sedes?.length > 0) {
+
+                sedesEntities = await sedeRepository.findBy({
+                    sede_id: In(sedes)
+                })
+
+                if (sedesEntities.length !== sedes.length) {
+                    throw [null, createErrorMessage("Sede", "Sede no encontrada")]
                 }
             }
 
-            // Validar número anexo
             const existe = await anexoRepository.findOne({
                 where: {
                     numeroAnexo,
@@ -216,22 +206,19 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 }
             })
 
-            if (existe) throw [null, createErrorMessage(`Anexo ${index}`, "Número de anexo ya registrado")]
+            if (existe)
+                throw [null, createErrorMessage(`Anexo ${index}`, "Número de anexo ya registrado")]
 
+            if (fechaFin && new Date(fechaInicio) >= new Date(fechaFin))
+                throw [null, createErrorMessage(`Anexo ${index}`, "Rango de fechas inválido")]
 
-            // Validar fechas
-            if (fechaFin && new Date(fechaInicio) >= new Date(fechaFin)) throw [null, createErrorMessage(`Anexo ${index}`, "Rango de fechas inválido")]
-
-
-            // Validar trabajadores
             if (
                 cantidadMinTrabajadores &&
                 cantidadMaxTrabajadores &&
                 (cantidadMaxTrabajadores - cantidadMinTrabajadores < 0)
-            ) throw [null, createErrorMessage(`Anexo ${index}`, "Cantidad mínima no puede ser mayor a la máxima")]
+            )
+                throw [null, createErrorMessage(`Anexo ${index}`, "Cantidad mínima no puede ser mayor a la máxima")]
 
-
-            // Crear anexo
             const anexo = anexoRepository.create({
                 numeroAnexo,
                 fechaInicio,
@@ -247,83 +234,70 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 detalles,
                 tipoAnexo: tipoAnexo || "OTRO",
                 contratoComercial: { id_contrato_comercial: contrato_id },
-                sedes: sedesEncontradas
+
+                sedes: sedesEntities
             })
 
-            await anexoRepository.save(anexo)
+            const savedAnexo = await anexoRepository.save(anexo)
 
-            /**
-             * Actualizar contrato vigente
-             */
 
             let contratoActualizado = false
 
-            // Renovación fecha
             if (fechaFin && new Date(fechaFin) > new Date(contrato.fechaFinReal)) {
                 contrato.fechaFinReal = fechaFin
                 contratoActualizado = true
             }
 
-            // Cambio monto
-            if (montoNuevo && montoNuevo > 0 && montoNuevo !== contrato.monto) {
+            if (montoNuevo && montoNuevo !== contrato.monto) {
                 contrato.monto = montoNuevo
                 contratoActualizado = true
             }
 
-            // Trabajadores mínimos
-            if (cantidadMinTrabajadores && cantidadMinTrabajadores !== contrato.cantidadMinTrabajadores) {
+            if (cantidadMinTrabajadores !== contrato.cantidadMinTrabajadores) {
                 contrato.cantidadMinTrabajadores = cantidadMinTrabajadores
                 contratoActualizado = true
             }
 
-            // Trabajadores máximos
-            if (cantidadMaxTrabajadores && cantidadMaxTrabajadores !== contrato.cantidadMaxTrabajadores) {
+            if (cantidadMaxTrabajadores !== contrato.cantidadMaxTrabajadores) {
                 contrato.cantidadMaxTrabajadores = cantidadMaxTrabajadores
                 contratoActualizado = true
             }
 
-            // Jornada contractual
             if (jornada && jornada !== contrato.jornada) {
                 contrato.jornada = jornada
                 contratoActualizado = true
             }
 
-            // Tipo jornada
             if (tipoJornada && tipoJornada !== contrato.tipoJornada) {
                 contrato.tipoJornada = tipoJornada
                 contratoActualizado = true
             }
 
-            // Tamaño instalación
             if (tamanoInstalacion && tamanoInstalacion !== contrato.tamanoInstalacion) {
                 contrato.tamanoInstalacion = tamanoInstalacion
                 contratoActualizado = true
             }
 
-            // Guardias
-            if (requiereGuardias !== undefined && requiereGuardias !== contrato.requiereGuardias) {
+            if (requiereGuardias !== undefined) {
                 contrato.requiereGuardias = requiereGuardias
                 contratoActualizado = true
             }
 
-            // Observaciones operativas
             if (observacionesOperativas) {
                 contrato.observacionesOperativas = observacionesOperativas
                 contratoActualizado = true
             }
 
-            // Detalles
             if (detalles) {
                 contrato.detalles = detalles
                 contratoActualizado = true
             }
 
-            // Guardar cambios contrato
             if (contratoActualizado) {
-                await contratoRepository.save({ ...contrato, updatedAt: new Date() })
+                await contratoRepository.save(contrato)
             }
 
-            return [anexo, null]
+            return [savedAnexo, null]
         }
 
         if (manager) return await execute(manager)
@@ -331,11 +305,13 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
         return await AppDataSource.transaction(execute)
 
     } catch (error) {
+
         console.error("Error creando anexo", error)
         if (Array.isArray(error)) {
             if (manager) throw error
             return error
         }
+
         if (manager) throw error
         return [null, "Error interno"]
     }
@@ -343,27 +319,51 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
 
 export async function createAnexosYDocumentos(anexos, sedes = [], id_contrato_comercial, manager = null) {
     try {
+
         const execute = async (transactionManager) => {
+
             const anexosCreados = []
             let index = 1
+
             for (const anexoData of anexos) {
+
                 const { datos } = anexoData
-                datos.sedes = datos.sedes ? datos.sedes : sedes
-                const [anexoCreado, errAnexo] = await createContratoAnexoService({ ...datos, sedes }, id_contrato_comercial, transactionManager, index)
+
+                const sedesFinal = datos.sedes?.length ? datos.sedes : sedes
+
+                const [anexoCreado, errAnexo] =
+                    await createContratoAnexoService(
+                        { ...datos, sedes: sedesFinal },
+                        id_contrato_comercial,
+                        transactionManager,
+                        index
+                    )
+
                 if (errAnexo) throw [null, errAnexo]
 
                 let documentosAnexo = []
 
                 if (Array.isArray(anexoData.documentos) && anexoData.documentos.length > 0) {
-                    const [docsAnexo, errDocsAnexo] = await createMultipleDocumentosService(anexoData.documentos, { anexo_id: anexoCreado.id_anexo }, transactionManager)
+
+                    const [docsAnexo, errDocsAnexo] =
+                        await createMultipleDocumentosService(
+                            anexoData.documentos,
+                            { anexo_id: anexoCreado.id_anexo },
+                            transactionManager
+                        )
+
                     if (errDocsAnexo) throw [null, errDocsAnexo]
+
                     documentosAnexo = docsAnexo
                 }
 
-                anexosCreados.push({ ...anexoCreado, documentos: documentosAnexo })
+                anexosCreados.push({
+                    ...anexoCreado,
+                    documentos: documentosAnexo
+                })
+
                 index++
             }
-            console.log("=>Anexos Creados");
 
             return [anexosCreados, null]
         }
@@ -373,11 +373,14 @@ export async function createAnexosYDocumentos(anexos, sedes = [], id_contrato_co
         return await AppDataSource.transaction(execute)
 
     } catch (error) {
-        console.error("Error creando anexo", error)
+
+        console.error("Error creando anexos", error)
+
         if (Array.isArray(error)) {
             if (manager) throw error
             return error
         }
+
         if (manager) throw error
         return [null, "Error interno"]
     }
@@ -483,7 +486,6 @@ export async function actualizarEstadosContratos() {
             relations: {
                 sedes: true,
                 documentos: true,
-                // agrega las relaciones que necesite puedeIniciarContrato()
             }
         });
 
@@ -531,9 +533,9 @@ export async function actualizarEstadosContratos() {
         console.error(error);
     }
 }
-
 export async function getVistaContratosService(filtros = {}, manager = null) {
     try {
+
         const execute = async (transactionManager) => {
 
             const contratoRepository = transactionManager.getRepository(Contrato);
@@ -546,28 +548,47 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
                 sede_id
             } = filtros;
 
-            const where = {};
+            const qb = contratoRepository
+                .createQueryBuilder("contrato")
+                .leftJoinAndSelect("contrato.cliente", "cliente")
+                .leftJoinAndSelect("contrato.sedes", "sede")
+                .leftJoinAndSelect("contrato.documentos", "documento")
+                .leftJoinAndSelect("contrato.anexos", "anexo")
+                .leftJoinAndSelect("anexo.sedes", "anexoSede")
+                .leftJoinAndSelect("anexo.documentos", "anexoDocumento")
+                .orderBy("contrato.createdAt", "DESC");
 
-            if (contrato_id) where.id_contrato_comercial = contrato_id;
-            if (codigoContrato) where.codigoContrato = codigoContrato;
-            if (cliente_id) where.cliente = { cliente_id };
-            if (estado) where.estado = estado;
-            if (sede_id) where.sedes = { sede_id };
+            if (contrato_id) {
+                qb.andWhere("contrato.id_contrato_comercial = :contrato_id", {
+                    contrato_id
+                });
+            }
 
-            const contratos = await contratoRepository.find({
-                where,
-                relations: [
-                    "cliente",
-                    "sedes",
-                    "documentos",
-                    "anexos",
-                    "anexos.sedes",
-                    "anexos.documentos"
-                ],
-                order: {
-                    createdAt: "DESC"
-                }
-            });
+            if (codigoContrato) {
+                qb.andWhere("contrato.codigoContrato = :codigoContrato", {
+                    codigoContrato
+                });
+            }
+
+            if (estado) {
+                qb.andWhere("contrato.estado = :estado", {
+                    estado
+                });
+            }
+
+            if (cliente_id) {
+                qb.andWhere("cliente.cliente_id = :cliente_id", {
+                    cliente_id
+                });
+            }
+
+            if (sede_id) {
+                qb.andWhere("sede.sede_id = :sede_id", {
+                    sede_id
+                });
+            }
+
+            const contratos = await qb.getMany();
 
             if (!contratos.length)
                 return [null, "No se encontraron contratos"];
@@ -575,11 +596,13 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
             return [contratos, null];
         };
 
-        if (manager) return await execute(manager);
+        if (manager)
+            return await execute(manager);
 
         return await AppDataSource.transaction(execute);
 
     } catch (error) {
+
         console.error("Error obteniendo vista de contratos:", error);
 
         if (Array.isArray(error)) {
@@ -592,170 +615,356 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
         return [null, "Error interno"];
     }
 }
-
 //NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente 
 
 
 export async function createContratoClienteExistenteService(data, manager = null) {
     try {
-
         const execute = async (transactionManager) => {
-
             const {
                 cliente_id,
-                sedesId = [],
-                sedes = [],
-                filialesId = [],
-                filiales = [],
                 contrato,
-                documentosContrato = [],
-                anexos = []
-            } = data;
+                documentosContrato,
+                anexos,
+                sedes = [],
+                sedesId = [],
+                filiales = [],
+                filialesId = []
+            } = data
 
-            const sedeRepository =
-                transactionManager.getRepository(Sedes);
+            // Cliente
 
-            const clienteRepository =
-                transactionManager.getRepository(Clientes);
+            const [cliente, errCliente] = await getClienteByService(
+                { cliente_id },
+                transactionManager
+            )
 
-            //------------------------------------------------------------------
-            // Validar cliente
-            //------------------------------------------------------------------
+            if (errCliente)
+                throw [null, errCliente]
 
-            const cliente = await clienteRepository.findOne({
-                where: { cliente_id }
-            });
+            // Registrar sedes nuevas
 
-            if (!cliente)
-                throw [null, createErrorMessage("Cliente", "Cliente no encontrado")];
+            let sedesNuevas = []
 
-            //------------------------------------------------------------------
-            // Obtener sedes existentes
-            //------------------------------------------------------------------
+            if (Array.isArray(sedes) && sedes.length > 0) {
 
-            const sedesFinales = [];
-
-            for (const sede_id of sedesId) {
-
-                const sede = await sedeRepository.findOne({
-                    where: {
-                        sede_id,
-                        cliente: {
-                            cliente_id
-                        }
-                    }
-                });
-
-                if (!sede)
-                    throw [null, createErrorMessage("Sede", `La sede ${sede_id} no existe o no pertenece al cliente.`)];
-
-                sedesFinales.push(sede.sede_id);
-            }
-
-            //------------------------------------------------------------------
-            // Crear nuevas sedes
-            //------------------------------------------------------------------
-
-            if (sedes.length > 0) {
-
-                const [sedesCreadas, errSedes] =
-                    await registerSedesJerarquicoService(
-                        sedes,
-                        cliente_id,
-                        transactionManager
-                    );
-
-                if (errSedes)
-                    throw [null, errSedes];
-
-                sedesFinales.push(
-                    ...sedesCreadas.map(s => s.sede_id)
-                );
-            }
-
-            // Crear contrato
-            const [contratoCreado, errContrato] =
-                await createContratoComercialService(
-                    {
-                        ...contrato,
-                        sedes: sedesFinales
-                    },
-                    documentosContrato,
+                const [nuevas, errSedes] = await registerSedesJerarquicoService(
+                    sedes,
                     cliente_id,
                     transactionManager
-                );
+                )
+
+                if (errSedes) throw [null, errSedes]
+
+                sedesNuevas = nuevas
+            }
+
+            // IDs de sedes
+
+            const sedesContrato = [
+
+                ...sedesId,
+                ...sedesNuevas.map(s => s.sede_id)
+
+            ]
+
+            // Crear contrato
+
+            const [contratoCreado, errContrato] = await createContratoComercialService(
+
+                {
+                    ...contrato,
+                    sedes: sedesContrato
+                },
+                documentosContrato,
+                cliente_id,
+                transactionManager
+
+            )
 
             if (errContrato)
-                throw [null, errContrato];
+                throw [null, errContrato]
 
-            //------------------------------------------------------------------
+            // Asociar contrato al cliente padre
+
+            await agregarContratoAClienteService(
+                cliente_id,
+                contratoCreado.id_contrato_comercial,
+                transactionManager
+            )
+
+            // Filiales existentes
+
+            for (const filialId of filialesId) {
+
+                await agregarContratoAClienteService(
+
+                    filialId,
+                    contratoCreado.id_contrato_comercial,
+                    transactionManager
+
+                )
+
+            }
+
             // Crear anexos
-            //------------------------------------------------------------------
+            let anexosCreados = []
 
-            let anexosCreados = [];
+            if (Array.isArray(anexos) && anexos.length > 0) {
 
-            if (anexos.length > 0) {
+                const [nuevosAnexos, errAnexos] = await createAnexosYDocumentos(
 
-                const [resultado, err] =
-                    await createAnexosYDocumentos(
-                        anexos,
-                        contratoCreado.id_contrato_comercial,
+                    anexos,
+                    sedesContrato,
+                    contratoCreado.id_contrato_comercial,
+                    transactionManager
+
+                )
+
+                if (errAnexos) throw [null, errAnexos]
+
+                anexosCreados = nuevosAnexos
+            }
+
+            const anexosIds = anexosCreados.map(a => a.id_anexo)
+
+            // Asociar anexos al cliente padre
+
+            if (anexosIds.length > 0) {
+
+                await agregarAnexosAClienteService(
+
+                    cliente_id,
+                    anexosIds,
+                    transactionManager
+
+                )
+
+            }
+
+            // Filiales existentes
+
+            for (const filialId of filialesId) {
+
+                await agregarContratoAClienteService(
+
+                    filialId,
+                    contratoCreado.id_contrato_comercial,
+                    transactionManager
+
+                )
+
+                if (anexosIds.length > 0) {
+
+                    await agregarAnexosAClienteService(
+
+                        filialId,
+                        anexosIds,
                         transactionManager
-                    );
 
-                if (err)
-                    throw [null, err];
+                    )
 
-                anexosCreados = resultado;
-            }
-
-            // Asociar filiales existentes
-
-            if (filialesId.length > 0) {
-
-
+                }
 
             }
 
-            // Crear nuevas filiales
+            // Filiales nuevas
 
-            const filialesCreadas = [];
+            const filialesCreadas = []
 
             for (const filial of filiales) {
 
-                const [nuevaFilial, err] =
-                    await registerClienteJerarquicoService(
-                        filial,
-                        filial.sedes,
-                        contratoCreado.id_contrato_comercial,
-                        cliente_id,
-                        transactionManager
-                    );
+                const [nuevaFilial, errFilial] = await registerClienteJerarquicoService(
 
-                if (err)
-                    throw [null, err];
+                    filial,
+                    filial.sedes,
+                    [contratoCreado.id_contrato_comercial],
+                    anexosIds,
+                    cliente_id,
+                    transactionManager
 
-                filialesCreadas.push(nuevaFilial);
+                )
+
+                if (errFilial) throw [null, errFilial]
+
+                filialesCreadas.push(nuevaFilial)
+
             }
 
 
             return [{
+
+                cliente,
                 contrato: contratoCreado,
-                sedes: sedesFinales,
+                sedes: sedesNuevas,
                 anexos: anexosCreados,
                 filiales: filialesCreadas
-            }, null];
 
+            }, null]
+
+        }
+
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+
+    } catch (error) {
+
+        if (Array.isArray(error)) {
+            if (manager) throw error
+            return error
+        }
+
+        console.error(error)
+
+        if (manager) throw error
+
+        return [null, "Error interno del servidor"]
+
+    }
+}
+
+export async function agregarContratoAClienteService(
+    cliente_id,
+    contratos = [],
+    manager = null
+) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const clienteRepository = transactionManager.getRepository(ClienteSchema);
+
+            const contratoRepository = transactionManager.getRepository(Contrato);
+
+            const cliente = await clienteRepository.findOne({
+                where: { cliente_id },
+                relations: ["contrato"]
+            });
+
+            if (!cliente)
+                throw [null, createErrorMessage("cliente", "Cliente no encontrado")];
+
+            const contratosIds = Array.isArray(contratos)
+                ? contratos
+                : [contratos];
+
+            if (contratosIds.length === 0)
+                return [cliente, null];
+
+            const contratosEncontrados = await contratoRepository.find({
+                where: {
+                    id_contrato_comercial: In(contratosIds)
+                }
+            });
+
+            if (contratosEncontrados.length !== contratosIds.length)
+                throw [null, createErrorMessage("contrato", "Uno o más contratos no existen")];
+
+            const actuales = cliente.contrato || [];
+
+            const mapa = new Map(
+                actuales.map(c => [c.id_contrato_comercial, c])
+            );
+
+            for (const contrato of contratosEncontrados) {
+                mapa.set(
+                    contrato.id_contrato_comercial,
+                    contrato
+                );
+            }
+
+            cliente.contrato = [...mapa.values()];
+
+            await clienteRepository.save(cliente);
+
+            return [cliente, null];
         };
 
-        if (manager)
-            return await execute(manager);
+        if (manager) return await execute(manager);
 
         return await AppDataSource.transaction(execute);
 
     } catch (error) {
 
         if (Array.isArray(error)) {
+
+            if (manager) throw error;
+            return error;
+        }
+
+        console.error(error);
+
+        if (manager) throw error;
+        return [null, "Error interno"];
+    }
+}
+
+export async function agregarAnexosAClienteService(
+    cliente_id,
+    anexos = [],
+    manager = null
+) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const clienteRepository = transactionManager.getRepository(Cliente);
+
+            const anexoRepository = transactionManager.getRepository(ContratoAnexoSchema);
+
+            const cliente = await clienteRepository.findOne({
+                where: { cliente_id },
+                relations: ["anexos"]
+            });
+
+            if (!cliente)
+                throw [null, createErrorMessage("cliente", "Cliente no encontrado")];
+
+            const anexosIds = Array.isArray(anexos)
+                ? anexos
+                : [anexos];
+
+            if (anexosIds.length === 0)
+                return [cliente, null];
+
+            const anexosEncontrados = await anexoRepository.find({
+                where: {
+                    id_anexo: In(anexosIds)
+                }
+            });
+
+            if (anexosEncontrados.length !== anexosIds.length)
+                throw [null, createErrorMessage("anexo", "Uno o más anexos no existen")];
+
+            const actuales = cliente.anexos || [];
+
+            const mapa = new Map(
+                actuales.map(a => [a.id_anexo, a])
+            );
+
+            for (const anexo of anexosEncontrados) {
+                mapa.set(
+                    anexo.id_anexo,
+                    anexo
+                );
+            }
+
+            cliente.anexos = [...mapa.values()];
+
+            await clienteRepository.save(cliente);
+
+            return [cliente, null];
+        };
+
+        if (manager) return await execute(manager);
+
+        return await AppDataSource.transaction(execute);
+
+    } catch (error) {
+
+        if (Array.isArray(error)) {
+
             if (manager)
                 throw error;
 

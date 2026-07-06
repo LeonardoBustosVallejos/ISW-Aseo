@@ -98,7 +98,12 @@ const ClienteSchema = new EntitySchema({
             type: "many-to-many",
             target: "ContratoComercial",
             inverseSide: "cliente"
-        }
+        },
+        anexos: {
+            type: "many-to-many",
+            target: "ContratoAnexo",
+            inverseSide: "filiales"
+        },
     }
 })
 

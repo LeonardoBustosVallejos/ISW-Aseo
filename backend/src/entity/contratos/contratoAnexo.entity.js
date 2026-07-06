@@ -104,6 +104,14 @@ const ContratoAnexoSchema = new EntitySchema({
             joinTable: { name: "rel_sede_anexo" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
             nullable: true,
             onDelete: "CASCADE",
+        },
+        filiales: {
+            target: "Cliente",
+            type: 'many-to-many',
+            joinTable: { name: "rel_filial_anexo" },
+            nullable: true,
+            onDelete: 'CASCADE',
+            inverseSide: "anexos",
         }
     }
 })

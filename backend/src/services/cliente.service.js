@@ -898,12 +898,24 @@ export async function updateClienteService(cliente_id, data, manager = null) {
  * @param {*} clientePadre_id ID del cliente padre, si se entrega el cliente a crear es filial, sino el ID es nulo
  * @returns 
  */
-async function createCliente(cliente, clientePadre_id = null, manager = null) {
+async function createCliente(cliente, clientePadre_id = null, relaciones = {}, manager = null) {
     try {
+        const contratoRepository = manager ? manager.getRepository(contratoComercialSchema)
+            : AppDataSource.getRepository(ContratoAnexoSchema)
+
+        const anexoRepository = manager ? manager.getRepository(ContratoAnexoSchema)
+            : AppDataSource.getRepository(ContratoAnexoSchema)
+
+        const sedeRepository = manager ? manager.getRepository(Sede)
+            : AppDataSource.getRepository(Sede)
+
         const { nombreCliente } = cliente
         let rutCliente = cliente.rutCliente
         let verificado = false
-
+        const {
+            contratos = [],
+            anexos = []
+        } = relaciones;
         if (!cliente.nombreCliente) {
             if (manager) throw [null, createErrorMessage(clientePadre_id ? "nombreFilial" : "nombreCliente", "Datos incompletos")]
             return [null, createErrorMessage(clientePadre_id ? "nombreFilial" : "nombreCliente", "Datos incompletos")]
@@ -967,12 +979,31 @@ async function createCliente(cliente, clientePadre_id = null, manager = null) {
             //si es tope en jerarquia/raiz y el rut ya existe 1 0 1
             if ((!clientePadre_id) && clientesConRut.length > 0) throw [null, createErrorMessage("rutCliente", "Rut ya en uso")]
         }
+
+        let contratosEntities = []
+        let anexosEntities = []
+
+        if (contratos?.length > 0) {
+            contratosEntities = await contratoRepository.find({
+                where: { id_contrato_comercial: In(contratos) }
+            })
+        }
+
+        if (anexos?.length > 0) {
+            anexosEntities = await anexoRepository.find({
+                where: { id_anexo: In(anexos) }
+            })
+        }
+
         //preparar los datos para crear el nuevo cliente
         const nuevoCliente = clienteRepository.create({
             nombreCliente: nombreCliente,
             rutCliente: rutNuevo,
             tipoCliente: clientePadre_id ? "FILIAL" : "EMPRESA",
-            clientePadre: clientePadre_id //nulo si el cliente padre no fue entregado
+            clientePadre: clientePadre_id, //nulo si el cliente padre no fue entregado
+
+            contratos: contratosEntities,
+            anexos: anexosEntities
         });
 
         const clienteCreado = await clienteRepository.save(nuevoCliente);
@@ -1198,45 +1229,45 @@ export async function getInfoClienteService(clienteData, manager = null) {
                 data.filiales.push({ ...filialData, ...filialData.cliente })
             }
         }
-        let estadoActual = 'TERMINADO'
-        if (clienteFound.contrato.some(contrato => contrato.estado === 'VIGENTE')) {
-            estadoActual = 'VIGENTE'
-        } else if (clienteFound.contrato.some(contrato => contrato.estado === 'SUSPENDIDO')) {
-            estadoActual = 'SUSPENDIDO'
-        } else if (clienteFound.contrato.some(contrato => contrato.estado === 'ESPERA')) {
-            estadoActual = 'ESPERA'
-        }
-        data.estado = estadoActual
+        let estadoActual = "TERMINADO";
 
+        if (data.contratos.some(c => c.estado === "VIGENTE")) {
+            estadoActual = "VIGENTE";
+        }
+        else if (data.contratos.some(c => c.estado === "SUSPENDIDO")) {
+            estadoActual = "SUSPENDIDO";
+        }
+        else if (data.contratos.some(c => c.estado === "ESPERA")) {
+            estadoActual = "ESPERA";
+        }
+
+        data.estado = estadoActual;
         const contratoRepository = manager ? manager.getRepository(contratoComercialSchema)
             : AppDataSource.getRepository(contratoComercialSchema)
 
-        data.contratos = await contratoRepository.find({
-            where: { cliente: { cliente_id: clienteFound.cliente_id } },
-            relations: [
-                "cliente",
-                "sedes",
-                "documentos",
-                "anexos",
-                "anexos.sedes",
-                "anexos.documentos"
-            ],
-            order: {
-                createdAt: "DESC"
-            }
-        });
-        for (const contrato of clienteFound.contrato) {
+        data.contratos = await contratoRepository
+            .createQueryBuilder("contrato")
+            .leftJoinAndSelect("contrato.cliente", "cliente")
+            .leftJoinAndSelect("contrato.sedes", "sedes")
+            .leftJoinAndSelect("contrato.documentos", "documentos")
+            .leftJoinAndSelect("contrato.anexos", "anexos")
+            .leftJoinAndSelect("anexos.sedes", "anexoSedes")
+            .leftJoinAndSelect("anexos.documentos", "anexoDocumentos")
+            .where("cliente.cliente_id = :cliente_id", {
+                cliente_id: clienteFound.cliente_id
+            })
+            .orderBy("contrato.createdAt", "DESC")
+            .getMany();
+        for (const contrato of data.contratos) {
 
-            for (const documento of contrato.documentos) {
-                data.documentos.push(documento)
-            }
+            data.documentos.push(...contrato.documentos);
 
             for (const anexo of contrato.anexos) {
-                data.anexos.push(anexo)
 
-                for (const documento of anexo.documentos) {
-                    data.documentos.push(documento)
-                }
+                data.anexos.push(anexo);
+
+                data.documentos.push(...anexo.documentos);
+
             }
 
         }
@@ -1410,7 +1441,7 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
 
             //registrar jerarquía clientes, sedes, contactos y asignar supervisor/es
 
-            const [clientePadre, errorPadre] = await createCliente(cliente, null, transactionManager)
+            const [clientePadre, errorPadre] = await createCliente(cliente, null, {}, transactionManager)
             if (errorPadre) throw [null, errorPadre]
             console.log('=>Cliente creado');
 
@@ -1436,11 +1467,15 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
                 [anexosCreados, errorAnexos] = await createAnexosYDocumentos(anexos, sedes_ids, contratoCreado.id_contrato_comercial, transactionManager)
                 if (errorAnexos) throw [null, errorAnexos]
             }
-
+            const anexosIds = anexosCreados.map(a => a.id_anexo);
+            const contratosIds = [
+                contratoCreado.id_contrato_comercial
+            ];
             let filialesCreadas = []
             if (filiales || (Array.isArray(filiales) && filiales.length > 0)) {
                 for (const filial of filiales) {
-                    const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, contratoCreado.id_contrato_comercial, clientePadre.cliente_id, transactionManager)
+                    const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, contratosIds,
+                        anexosIds, clientePadre.cliente_id, transactionManager)
                     if (errCliente) throw [null, errCliente]
                     filialesCreadas.push(clienteJerarquico)
                 }
@@ -1479,14 +1514,15 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
  * @param {*} manager espacio temporal en la base de datos
  * @returns Lista de cliente agregado y todos sus componentes
  */
-export async function registerClienteJerarquicoService(cliente, sedes, contrato_id, clientePadre_id = null, manager = null) {
+export async function registerClienteJerarquicoService(cliente, sedes, contratos = [],
+    anexos = [], clientePadre_id = null, manager = null) {
     try {
 
         const execute = async (transactionManager) => {
 
             const { nombreCliente, rutCliente, filiales } = cliente
 
-            const [clientePadre, errorPadre] = await createCliente(cliente, clientePadre_id, transactionManager)
+            const [clientePadre, errorPadre] = await createCliente(cliente, clientePadre_id, { contratos, anexos }, transactionManager)
             if (errorPadre) throw [null, errorPadre]
 
             const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
@@ -1496,7 +1532,10 @@ export async function registerClienteJerarquicoService(cliente, sedes, contrato_
             const filialResponse = []
             if ((Array.isArray(filiales) && filiales.length > 0)) {
                 for (const filial of filiales) {
-                    const [filialesCreadas, errFiliales] = await registerClienteJerarquicoService(filial, filial.sedes, contrato_id, clientePadre.cliente_id, transactionManager)
+                    const [filialesCreadas, errFiliales] = await registerClienteJerarquicoService(filial, filial.sedes, {
+                        contratos,
+                        anexos
+                    }, clientePadre.cliente_id, transactionManager)
                     if (errFiliales) throw [null, errFiliales]
                     filialResponse.push(filialesCreadas)
                 }
