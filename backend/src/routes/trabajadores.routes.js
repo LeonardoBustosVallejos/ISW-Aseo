@@ -1,6 +1,7 @@
 "use strict";
 import { Router } from "express";
 import { uploadFiles } from "../middlewares/multer.middleware.js";
+import { authenticateJwt } from "../middlewares/authentication.middleware.js";
 import {
   createGrupoController,
   createTrabajadoresController,
@@ -19,6 +20,8 @@ import { isAdmin } from "../middlewares/authorization.middleware.js";
 const router = Router();
 
 router
+  .use(authenticateJwt)
+  
   .get("/", isAdmin(["Administrador"]), getTrabajadoresController)
   
   .get("/detail/grupos", isAdmin(["Administrador"]), getGruposController)

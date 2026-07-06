@@ -8,9 +8,20 @@ import { useState } from "react";
 
 export default function Trabajadores() {
 
-  const { trabajadores, loading, error, success } = useTrabajadores(); // Necesario para el getTrabajadores
-  const [selectedId, setSelectedId] = useState(null); // Se guarda el ID del trabajador seleccionado
-  const { detalle, loadingDetalle, errorDetalle } = useDetalleTrabajador(selectedId); // Necesario para el getTrabajador por ID
+  const { trabajadores, 
+          loading, 
+          error, 
+          success,
+          pagina,
+          setPagina,
+          infoPaginacion } = useTrabajadores(); 
+
+  const [selectedId, 
+        setSelectedId] = useState(null); 
+
+  const { detalle, 
+          loadingDetalle, 
+          errorDetalle } = useDetalleTrabajador(selectedId); 
 
   return (
     <div className="contenido-asignacion">
@@ -23,17 +34,37 @@ export default function Trabajadores() {
       <div className="columnas-layout">
         <section className="columna-lista-trabajadores">
           <ul className="lista-trabajadores">
-            {trabajadores.map((trabajadores) => (
-              <li key={trabajadores.id}
-              className={`tarjeta-trabajador ${selectedId === trabajadores.id ? "seleccionado" : ""}`}
-              onClick={() => setSelectedId(trabajadores.id)}
+            {trabajadores.map((trabajador) => (
+              <li key={trabajador.id}
+              className={`tarjeta-trabajador ${selectedId === trabajador.id ? "seleccionado" : ""}`}
+              onClick={() => setSelectedId(trabajador.id)}
               >
-                <p>{`${trabajadores.apellidoPaterno} ${trabajadores.apellidoMaterno} ${trabajadores.nombres} `}</p>
-                <p>{trabajadores.rut}</p>
-                <p>{trabajadores.rol}</p>
+                <p>{`${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno} ${trabajador.nombres} `}</p>
+                <p>{trabajador.rut}</p>
+                <p>{trabajador.rol.nombre}</p>
               </li>
             ))}
           </ul>
+
+<div className="paginacion-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "15px", padding: "10px" }}>
+            <button 
+              onClick={() => setPagina(p => Math.max(p - 1, 1))} 
+              disabled={pagina === 1 || loading}
+              className="btn-paginacion"
+            >
+              Anterior
+            </button>
+            
+            <span>Página {infoPaginacion.currentPage} de {infoPaginacion.totalPages}</span>
+            
+            <button 
+              onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion.totalPages))} 
+              disabled={pagina === infoPaginacion.totalPages || loading}
+              className="btn-paginacion"
+            >
+              Siguiente
+            </button>
+          </div>
         </section>
 
         <section className="columna-detalle">
@@ -79,7 +110,7 @@ export default function Trabajadores() {
               <p>Rut: {detalle.rut}</p>
               <p>Edad: {detalle.edad}</p>
               <p>Sexo: {detalle.sexo}</p>
-              <p>Rol actual: {detalle.rol}</p>
+              <p>Rol: {detalle.rol?.nombre}</p>
               <p>Fecha de nacimiento: {detalle.nacimiento} </p>
               <p>Fecha de Contratación: {detalle.createdAt}</p>
               <div className="campo-editable">

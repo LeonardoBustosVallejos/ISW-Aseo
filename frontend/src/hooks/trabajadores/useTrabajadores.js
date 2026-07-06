@@ -7,6 +7,13 @@ export function useTrabajadores() {
   const [success, setSucces] = useState(""); 
   const [error, setError] = useState("");
 
+  const [pagina, setPagina] = useState(1);
+  const [infoPaginacion, setInfoPaginacion] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0
+  });
+
   const listaTrabajadores = async () => {
     setLoading(true);
     setError("");
@@ -17,8 +24,14 @@ export function useTrabajadores() {
       console.log(result);
 
       if (result.succes) {
-        setTrabajadores(result.data);
-        setSucces(`Se han encontrado todos los trabajadores (${result.data.length})`);
+        const listaTrabajadoresRecuperada = result.data.trabajadores || [];
+        setTrabajadores(listaTrabajadoresRecuperada);
+
+        if (result.data.pagination) {
+          setInfoPaginacion(result.data.pagination);
+        }
+
+        setSucces(`Mostrando trabajadores del ${((pagina - 1) * 10) + 1} al ${Math.min(pagina * 10, result.data.pagination?.totalItems || 10)}`);
       } else {
         setError(result.message);
         setTrabajadores([]);
@@ -34,7 +47,14 @@ export function useTrabajadores() {
 
   useEffect(() => {
     listaTrabajadores();
-  }, []);
+  }, [pagina]);
 
-  return { trabajadores, loading, success, error, refetch: listaTrabajadores };
+  return { trabajadores, 
+          loading, 
+          success, 
+          error, 
+          refetch: listaTrabajadores,
+          pagina,
+          setPagina,
+          infoPaginacion };
 }
