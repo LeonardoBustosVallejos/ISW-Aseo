@@ -10,6 +10,7 @@ import capacitacionesRoutes from "./capacitacion.route.js";
 import clienteRoutes from "./cliente.routes.js";
 import solicitudRoutes from "./solicitud.routes.js";
 import contratoCmercial from "./contratoComercial.routes.js";
+import documentos from "./documento.routes.js";
 const router = Router();
 
 router
@@ -21,6 +22,7 @@ router
     .use("/clientes", clienteRoutes)
     .use("/trabajadores", trabajadoresRoutes)
     .use("/capacitaciones", capacitacionesRoutes)
+    .use('/documentos', documentos)
     .use("/contratos/comercial", contratoCmercial);
 
 export default router;
