@@ -95,7 +95,7 @@ const ClienteSchema = new EntitySchema({
             inverseSide: "clientePadre"
         },
         contrato: {
-            type: "one-to-many",
+            type: "many-to-many",
             target: "ContratoComercial",
             inverseSide: "cliente"
         }

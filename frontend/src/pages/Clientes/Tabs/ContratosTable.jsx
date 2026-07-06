@@ -10,13 +10,16 @@ import { ArrowDownToLine } from "lucide-react";
 import SedesTable from "./SedesTable";
 import { Modal } from "../../../components/Modal";
 import { descargarDocumento } from "../../../services/documentos.service";
+import { AnexosArray } from "../../../components/Contrato/AnexoComercial";
+import ContratoRow from "../../../components/Contrato/ContratoComercialForm";
+import { SedesArray } from "../../../components/Clientes/SedesForm";
 
 export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "ATRASADO"].includes(estado) }
 
 export function puedeCrearContrato(estado) { return estado !== 'VIGENTE' }
 
 
-export default function ContratosTable({ contratos, estado, noTitle = false, title, isGeneral = false }) {
+export default function ContratosTable({ contratos, cliente = null, estado, noTitle = false, title, isGeneral = false }) {
 
     const [openInfo, setOpenInfo] = useState(null)
     const [openDocumentos, setOpenDocumentos] = useState(null)
@@ -25,6 +28,85 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
     const [openDocs, setOpenDocs] = useState(null)
 
 
+    const [openVerifModal, setOpenVerifModal] = useState(false)
+
+    const [modal, setModal] = useState(null); // "contrato" | "anexo" | null
+
+    const [selectedContrato, setSelectedContrato] = useState(null);
+
+    const [newSedes, setNewSedes] = useState([]);
+    const [newAnexos, setNewAnexos] = useState([]);
+
+    const [newContrato, setNewContrato] = useState({
+        contrato: {
+            fechaInicio: '',
+            fechaFinOriginal: '',
+            monto: '',
+            jornada: '',
+            tipoJornada: '',
+            cantidadMinTrabajadores: '',
+            cantidadMaxTrabajadores: '',
+            tamanoInstalacion: '',
+            requiereGuardias: false,
+            detalles: '',
+            observacionesOperativas: '',
+        },
+        metadataDocumentos: [
+            {
+                nombrePersonalizado: '',
+                tipoDocumento: 'CONTRATO',
+                fileKey: "contrato_pdf",
+                file: null
+            }
+        ],
+    })
+
+    const abrirModalContrato = () => {
+        setSelectedContrato(null); // es un contrato nuevo
+        setModal("contrato");
+    };
+
+    const abrirModalAnexo = (contrato) => {
+
+        setSelectedContrato(contrato);
+
+        setNewAnexos([
+            {
+                datos: {
+                    numeroAnexo: "",
+                    fechaInicio: contrato.fechaInicio,
+                    fechaFin: contrato.fechaFinOriginal,
+                    montoNuevo: contrato.monto,
+                    cantidadMinTrabajadores: contrato.cantidadMinTrabajadores,
+                    cantidadMaxTrabajadores: contrato.cantidadMaxTrabajadores,
+                    tipoJornada: contrato.tipoJornada,
+                    tipoAnexo: "",
+                    detalles: "",
+                    observacionesOperativas: "",
+                    requiereGuardias: contrato.requiereGuardias,
+                    tamanoInstalacion: contrato.tamanoInstalacion
+                },
+                documentos: [
+                    {
+                        nombrePersonalizado: "",
+                        tipoDocumento: "ANEXO",
+                        fileKey: "anexo_pdf",
+                        file: null
+                    }
+                ]
+            }
+        ]);
+
+        setModal("anexo");
+    };
+
+
+    const closeModal = () => {
+        setModal(null);
+        setSelectedContrato(null);
+        setNewAnexos([]);
+    };
+
     const handleDownload = async (id_documento) => {
         try {
             const response = await descargarDocumento(id_documento)
@@ -32,13 +114,14 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
 
         }
     }
+    console.log(selectedContrato);
 
     return (
         <>
             <Header title={title ? title : title || 'Contratos'}>
                 {(!isGeneral ? <AddButton
                     text="Nuevo contrato"
-                    onClick={() => setOpenContrato(true)}
+                    onClick={abrirModalContrato}
                     disabled={!puedeCrearContrato(estado)}
                 /> : '')}
             </Header>
@@ -164,9 +247,18 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
                                         <div className="data-line" />
 
                                         <div className="info-label">
-
                                             <strong>Sedes:</strong>
                                             <strong>{row.sedes?.length ?? 0}</strong>
+                                        </div>
+                                        <div className="data-line" />
+                                        <div className="info-label">
+                                            <strong>Agregado:</strong>
+                                            <strong>{formatDateTime(row.createdAt)}</strong>
+                                        </div>
+                                        <div className="data-line" />
+                                        <div className="info-label">
+                                            <strong>Última actualización:</strong>
+                                            <strong>{formatDateTime(row.updatedAt)}</strong>
                                         </div>
                                         <div className="data-line" />
                                     </>
@@ -207,7 +299,7 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
                                             <div style={{ marginBottom: 10 }}>
                                                 <AddButton
                                                     text="Agregar anexo"
-                                                    onClick={() => abrirModalAnexo(contrato)}
+                                                    onClick={() => abrirModalAnexo(row)}
                                                     disabled={!puedeAgregarAnexo(row.estado)}
                                                 />
                                             </div>
@@ -305,6 +397,7 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
                                         title={noTitle ? '' : 'Sedes'}
                                         emptyMessage="No existen sedes"
                                         rowKey="sede_id"
+                                        noExpand
                                         columns={[
                                             {
                                                 field: "nombre_sede",
@@ -337,10 +430,43 @@ export default function ContratosTable({ contratos, estado, noTitle = false, tit
                     </div>
                 )}
             />
+            {/*Nuevo Contrato */}
+            {cliente && !isGeneral && (<Modal
+                title="Nuevo contrato"
+                open={modal === "contrato"}
+                onClose={closeModal}
+                isForm
+            >
+                <form>
 
+                    <ContratoRow
+                        cliente={cliente}
+                        onSuccess={closeModal}
+                    />
+                    <SedesArray
+                        sedes={newSedes}
+                        setFormData={setNewSedes}
+                        contrato
+                    />
+                </form>
+            </Modal>)}
 
-            <Modal title={''}>
+            {/*Agregar Anexo */}
+            <Modal
+                title={`Nuevo Anexo ${selectedContrato ? `- ${selectedContrato.codigoContrato}` : ""}`}
+                open={modal === "anexo"}
+                onClose={closeModal}
+                isForm
+            >
+                <form>
+                    <AnexosArray
+                        anexos={newAnexos}
+                        contrato={selectedContrato}
+                        isUpdate
+                        setFormData={setNewAnexos}
+                    />
 
+                </form>
             </Modal>
         </>
     )

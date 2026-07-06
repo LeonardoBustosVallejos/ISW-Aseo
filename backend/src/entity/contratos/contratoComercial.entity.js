@@ -126,10 +126,11 @@ const contratoComercialSchema = new EntitySchema({
         },
         cliente: {
             target: "Cliente",
-            type: "many-to-one",
-            joinColumn: { name: "cliente_id" },
+            type: "many-to-many",
+            joinTable: { name: "rel_contrato_cliente" },
             nullable: false, //el contrato si o si debe ser dirigido a alguien
             onDelete: "CASCADE",
+            inverseSide: "contrato"
         },
         sedes: {
             target: "Sede",

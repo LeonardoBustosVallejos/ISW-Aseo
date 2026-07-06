@@ -594,3 +594,179 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
 }
 
 //NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente 
+
+
+export async function createContratoClienteExistenteService(data, manager = null) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const {
+                cliente_id,
+                sedesId = [],
+                sedes = [],
+                filialesId = [],
+                filiales = [],
+                contrato,
+                documentosContrato = [],
+                anexos = []
+            } = data;
+
+            const sedeRepository =
+                transactionManager.getRepository(Sedes);
+
+            const clienteRepository =
+                transactionManager.getRepository(Clientes);
+
+            //------------------------------------------------------------------
+            // Validar cliente
+            //------------------------------------------------------------------
+
+            const cliente = await clienteRepository.findOne({
+                where: { cliente_id }
+            });
+
+            if (!cliente)
+                throw [null, createErrorMessage("Cliente", "Cliente no encontrado")];
+
+            //------------------------------------------------------------------
+            // Obtener sedes existentes
+            //------------------------------------------------------------------
+
+            const sedesFinales = [];
+
+            for (const sede_id of sedesId) {
+
+                const sede = await sedeRepository.findOne({
+                    where: {
+                        sede_id,
+                        cliente: {
+                            cliente_id
+                        }
+                    }
+                });
+
+                if (!sede)
+                    throw [null, createErrorMessage("Sede", `La sede ${sede_id} no existe o no pertenece al cliente.`)];
+
+                sedesFinales.push(sede.sede_id);
+            }
+
+            //------------------------------------------------------------------
+            // Crear nuevas sedes
+            //------------------------------------------------------------------
+
+            if (sedes.length > 0) {
+
+                const [sedesCreadas, errSedes] =
+                    await registerSedesJerarquicoService(
+                        sedes,
+                        cliente_id,
+                        transactionManager
+                    );
+
+                if (errSedes)
+                    throw [null, errSedes];
+
+                sedesFinales.push(
+                    ...sedesCreadas.map(s => s.sede_id)
+                );
+            }
+
+            // Crear contrato
+            const [contratoCreado, errContrato] =
+                await createContratoComercialService(
+                    {
+                        ...contrato,
+                        sedes: sedesFinales
+                    },
+                    documentosContrato,
+                    cliente_id,
+                    transactionManager
+                );
+
+            if (errContrato)
+                throw [null, errContrato];
+
+            //------------------------------------------------------------------
+            // Crear anexos
+            //------------------------------------------------------------------
+
+            let anexosCreados = [];
+
+            if (anexos.length > 0) {
+
+                const [resultado, err] =
+                    await createAnexosYDocumentos(
+                        anexos,
+                        contratoCreado.id_contrato_comercial,
+                        transactionManager
+                    );
+
+                if (err)
+                    throw [null, err];
+
+                anexosCreados = resultado;
+            }
+
+            // Asociar filiales existentes
+
+            if (filialesId.length > 0) {
+
+
+
+            }
+
+            // Crear nuevas filiales
+
+            const filialesCreadas = [];
+
+            for (const filial of filiales) {
+
+                const [nuevaFilial, err] =
+                    await registerClienteJerarquicoService(
+                        filial,
+                        filial.sedes,
+                        contratoCreado.id_contrato_comercial,
+                        cliente_id,
+                        transactionManager
+                    );
+
+                if (err)
+                    throw [null, err];
+
+                filialesCreadas.push(nuevaFilial);
+            }
+
+
+            return [{
+                contrato: contratoCreado,
+                sedes: sedesFinales,
+                anexos: anexosCreados,
+                filiales: filialesCreadas
+            }, null];
+
+        };
+
+        if (manager)
+            return await execute(manager);
+
+        return await AppDataSource.transaction(execute);
+
+    } catch (error) {
+
+        if (Array.isArray(error)) {
+            if (manager)
+                throw error;
+
+            return error;
+        }
+
+        console.error(error);
+
+        if (manager)
+            throw error;
+
+        return [null, "Error interno"];
+    }
+}

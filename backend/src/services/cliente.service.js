@@ -1391,46 +1391,7 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
     }
 }
 
-export async function registerSedeSimpleService(sede, contacto, cliente_id, trabajador_id = null, manager = null) {
-    try {
-        const execute = async (transactionManager) => {
-            const { nombre_sede, direccion, rutSecundario, personalSolicitado } = sede
-            if (!nombre_sede || !direccion || !cliente_id) throw [null, createErrorMessage("nombre_sede/direccion", "Datos incompletos")]
 
-            //no se hacen validaciones porque estan dentro de la funcion createSede
-            const [sedeCreada, errSede] = await createSede(sede, cliente_id, transactionManager)
-            if (errSede) throw [null, errSede]
-
-            const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, transactionManager)
-            if (errContacto) throw [null, errContacto]
-
-            let usuarioSupervisor = null, errSupervisor = null
-            if (trabajador_id) {
-                [usuarioSupervisor, errSupervisor] = await asignarSupervisorService({ id: trabajador_id }, sedeCreada.sede_id, transactionManager)
-                if (errSupervisor) throw [null, errSupervisor]
-            }
-
-            return [{
-                ...sedeCreada,
-                contacto: contactoCreado,
-                supervisor: usuarioSupervisor
-            }, null]
-
-        }
-
-        if (manager) return await execute(manager)
-        return await AppDataSource.transaction(execute)
-    } catch (error) {
-        if (Array.isArray(error)) {
-            console.error("Error al registrar un cliente", error[1]);
-            if (manager) throw error
-            return error
-        }
-        console.error("Error al registrar un cliente", error);
-        if (manager) throw error
-        return [null, "Error interno del servidor"]
-    }
-}
 
 
 //Funciones compuestas para registro jerarquico
