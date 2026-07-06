@@ -15,6 +15,7 @@ import Home from "./pages/Home";
 import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
 import SolicitudInfo from '@pages/SolicitudInfo';
+import Solicitudes from '@pages/Solicitudes';
 
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
                 {/* <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                     <Route path="bodega" element={<Bodega />} />
                     <Route path="item/:id" element={<ItemInfo />} />
+                    <Route path="solicitudes" element={<Solicitudes />} />
                     <Route path="solicitud/:id" element={<SolicitudInfo />} />
 
                     <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />

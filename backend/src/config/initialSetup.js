@@ -1,56 +1,37 @@
 "use strict";
 import User from "../entity/user.entity.js";
-import Trabajador from "../entity/trabajador.entity.js"
 import Rol from "../entity/rol.entity.js";
-import { AppDataSource } from "./configDb.js";
-import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import Cliente from "../entity/cliente.entity.js";
 import Contacto from "../entity/contacto.entity.js";
 import Sede from "../entity/sede.entity.js";
+import { AppDataSource } from "./configDb.js";
+import { encryptPassword } from "../helpers/bcrypt.helper.js";
+import { HOST, PORT } from "./configEnv.js";
 
 async function createRoles() {
   try {
-    const rolesRepository = AppDataSource.getRepository(Rol)
+    const rolesRepository = AppDataSource.getRepository(Rol);
 
     const count = await rolesRepository.count();
     if (count > 0) return;
 
     await Promise.all([
-      rolesRepository.save(
-        rolesRepository.create({
-          id: 1,
-          nombre: "Administrador",
-        })
-      ),
-      rolesRepository.save(
-        rolesRepository.create({
-          id: 2,
-          nombre: "Cliente"
-        })
-      ),
-      rolesRepository.save(
-        rolesRepository.create({
-          id: 3,
-          nombre: "Supervisor"
-        })
-      ),
-      rolesRepository.save(
-        rolesRepository.create({
-          id: 4,
-          nombre: "Trabajador"
-        })
-      )
-    ])
+      rolesRepository.save(rolesRepository.create({ id: 1, nombre: "Administrador" })),
+      rolesRepository.save(rolesRepository.create({ id: 2, nombre: "Cliente" })),
+      rolesRepository.save(rolesRepository.create({ id: 3, nombre: "Supervisor" })),
+      rolesRepository.save(rolesRepository.create({ id: 4, nombre: "Trabajador" })),
+    ]);
     console.log("* => Roles creados exitosamente");
   } catch (error) {
     console.error("Error al crear roles:", error);
   }
 }
+
 async function createClientes() {
   try {
-    const clientRepository = AppDataSource.getRepository(Cliente)
+    const clientRepository = AppDataSource.getRepository(Cliente);
 
-    const count = await clientRepository.count()
+    const count = await clientRepository.count();
     if (count > 0) return;
 
     await Promise.all([
@@ -60,19 +41,19 @@ async function createClientes() {
           rutCliente: "98765432-1",
           direccion: "Calle Genérica 111",
         })
-      )
-    ])
+      ),
+    ]);
     console.log("* => Clientes creados exitosamente");
   } catch (error) {
     console.error("Error al crear clientes: ", error);
-
   }
 }
+
 async function createSedes() {
   try {
-    const SedeRepository = AppDataSource.getRepository(Sede)
+    const SedeRepository = AppDataSource.getRepository(Sede);
 
-    const count = await SedeRepository.count()
+    const count = await SedeRepository.count();
     if (count > 0) return;
 
     await Promise.all([
@@ -82,8 +63,8 @@ async function createSedes() {
           direccion: "Calle Genérica 111, Concepción",
           personalSolicitado: 12,
           tipoSede: "PRINCIPAL",
-          cliente: 1
-        }),
+          cliente: 1,
+        })
       ),
       SedeRepository.save(
         SedeRepository.create({
@@ -91,26 +72,24 @@ async function createSedes() {
           direccion: "Calle Genérica 111, Chillán",
           personalSolicitado: 12,
           tipoSede: "SUCURSAL",
-          cliente: 1
+          cliente: 1,
         })
       ),
-    ])
-    console.log("* => Clientes creados exitosamente");
+    ]);
+    console.log("* => Sedes creadas exitosamente");
   } catch (error) {
-    console.error("Error al crear clientes: ", error);
-
+    console.error("Error al crear sedes: ", error);
   }
 }
 
 async function createContactos() {
   try {
-    const ContactoRepository = AppDataSource.getRepository(Contacto)
+    const ContactoRepository = AppDataSource.getRepository(Contacto);
 
-    const count = await ContactoRepository.count()
+    const count = await ContactoRepository.count();
     if (count > 0) return;
 
     await Promise.all([
-
       ContactoRepository.save(
         ContactoRepository.create({
           contacto_rut: "22222222-2",
@@ -119,8 +98,8 @@ async function createContactos() {
           phone: "+56 977777777",
           tipoContacto: "PRINCIPAL",
           cliente: 1,
-          sede: 1
-        }),
+          sede: 1,
+        })
       ),
       ContactoRepository.save(
         ContactoRepository.create({
@@ -130,14 +109,13 @@ async function createContactos() {
           phone: "+56 988888888",
           tipoContacto: "PRINCIPAL",
           cliente: 1,
-          sede: 2
+          sede: 2,
         })
       ),
-    ])
-    console.log("* => contactos creados exitosamente");
+    ]);
+    console.log("* => Contactos creados exitosamente");
   } catch (error) {
     console.error("Error al crear contactos: ", error);
-
   }
 }
 
@@ -156,7 +134,7 @@ async function createUsers() {
           email: "administrador@gmail.com",
           password: await encryptPassword("admin1234"),
           rol: 1,
-        }),
+        })
       ),
       userRepository.save(
         userRepository.create({
@@ -165,7 +143,7 @@ async function createUsers() {
           email: "usuario1@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 2,
-          cliente: 1
+          cliente: 1,
         })
       ),
       userRepository.save(
@@ -176,7 +154,7 @@ async function createUsers() {
           password: await encryptPassword("user1234"),
           rol: 3,
           cliente: 1,
-        }),
+        })
       ),
       userRepository.save(
         userRepository.create({
@@ -185,7 +163,7 @@ async function createUsers() {
           email: "usuario3@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
-        }),
+        })
       ),
       userRepository.save(
         userRepository.create({
@@ -194,7 +172,7 @@ async function createUsers() {
           email: "usuario4@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
-        }),
+        })
       ),
       userRepository.save(
         userRepository.create({
@@ -203,7 +181,7 @@ async function createUsers() {
           email: "usuario5@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
-        }),
+        })
       ),
       userRepository.save(
         userRepository.create({
@@ -212,7 +190,7 @@ async function createUsers() {
           email: "usuario6@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
-        }),
+        })
       ),
     ]);
     console.log("* => Usuarios creados exitosamente");
@@ -228,134 +206,176 @@ async function createTrabajadores() {
     const count = await trabajadoresRepository.count();
     if (count > 0) return;
 
-    const trabajadores = [
+    const trabajadoresData = [
       {
-        nombreCompleto: "Carlos Andrés Muñoz Rojas",
-        rut: "17.345.221-9",
+        nombres: "Carlos Andrés",
+        apellidoPaterno: "Muñoz",
+        apellidoMaterno: "Rojas",
+        rut: "17345221-9",
         nacimiento: "1982-04-15",
+        telefono: "+56299964965",
         email: "carlos.munoz@gmail.cl",
-        rol: "trabajador",
+        rol: 2, 
         sexo: "M",
-        grupo: null,
-        antecedentes: null,
         competencias: "Limpieza de oficinas, manejo de insumos",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Carlos_Andres.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Carlos_Andres.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/ALGO.pdf`,
       },
       {
-        nombreCompleto: "María Fernanda Soto Pérez",
-        rut: "18.765.432-1",
+        nombres: "María Fernanda",
+        apellidoPaterno: "Pérez",
+        apellidoMaterno: "Soto",
+        rut: "18765432-1",
         nacimiento: "1990-11-03",
+        telefono: "+56981411184",
         email: "maria.soto@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "F",
-        grupo: null,
-        antecedentes: null,
         competencias: "Atención al cliente, orden de bodega",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Maria_Fernanda.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Maria_Fernanda.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Maria_Fernanda.pdf`,
       },
       {
-        nombreCompleto: "Luis Alberto González Díaz",
-        rut: "16.543.210-7",
+        nombres: "Luis Alberto",
+        apellidoPaterno: "González",
+        apellidoMaterno: "Díaz",
+        rut: "16543210-7",
         nacimiento: "1978-06-22",
+        telefono: "+56254435101",
         email: "luis.gonzalez@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "M",
-        grupo: null,
-        antecedentes: null,
         competencias: "Manejo de maquinaria, logística",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Luis_Alberto.png`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Luis_Alberto.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Luis_Alberto.pdf`,
       },
       {
-        nombreCompleto: "Camila Andrea Herrera López",
-        rut: "19.876.543-2",
+        nombres: "Camila Andrea",
+        apellidoPaterno: "Herrera",
+        apellidoMaterno: "López",
+        rut: "19876543-2",
         nacimiento: "1995-09-10",
+        telefono: "+56291980379",
         email: "camila.herrera@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "F",
-        grupo: null,
-        antecedentes: null,
         competencias: "Recepción, atención telefónica",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Camila_Andrea.png`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Camila_Andrea.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Camila_Andrea.pdf`,
       },
       {
-        nombreCompleto: "Jorge Luis Araya Morales",
-        rut: "15.234.567-8",
+        nombres: "Jorge Luis",
+        apellidoPaterno: "Araya",
+        apellidoMaterno: "Morales",
+        rut: "15234567-8",
         nacimiento: "1975-02-28",
+        telefono: "+56566647161",
         email: "jorge.araya@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "M",
-        grupo: null,
-        antecedentes: null,
         competencias: "Mantención, electricidad básica",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Jorge_Luis.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Jorge_Luis.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Jorge_Luis.pdf`,
       },
       {
-        nombreCompleto: "Daniela Paz Contreras Silva",
-        rut: "20.123.456-3",
+        nombres: "Daniela Paz",
+        apellidoPaterno: "Contreras",
+        apellidoMaterno: "Silva",
+        rut: "20123456-3",
         nacimiento: "1998-12-01",
+        telefono: "+56739814624",
         email: "daniela.contreras@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "F",
-        grupo: null,
-        antecedentes: null,
         competencias: "Inventario, control de stock",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Daniela_Paz.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Daniela_Paz.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Daniela_Paz.pdf`,
       },
       {
-        nombreCompleto: "Ricardo Antonio Vega Castro",
-        rut: "14.987.654-5",
+        nombres: "Ricardo Antonio",
+        apellidoPaterno: "Vega",
+        apellidoMaterno: "Castro",
+        rut: "14987654-5",
         nacimiento: "1970-07-19",
+        telefono: "+56680393753",
         email: "ricardo.vega@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "M",
-        grupo: null,
-        antecedentes: null,
         competencias: "Seguridad, supervisión",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Ricardo_Antonio.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Ricardo_Antonio.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Ricardo_Antonio.pdf`,
       },
       {
-        nombreCompleto: "Valentina Ignacia Ríos Torres",
-        rut: "21.456.789-6",
+        nombres: "Valentina Ignacia",
+        apellidoPaterno: "Ríos",
+        apellidoMaterno: "Torres",
+        rut: "21456789-6",
         nacimiento: "2000-03-25",
+        telefono: "+56598289467",
         email: "valentina.rios@gmail.cl",
-        rol: "trabajador",
+        rol: 2,
         sexo: "F",
-        grupo: null,
-        antecedentes: null,
         competencias: "Caja, atención de público",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Valentina_Ignacia.png`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Valentina_Ignacia.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Valentina_Ignacia.pdf`,
       },
       {
-        nombreCompleto: "Sebastián Eduardo Fuentes Navarro",
-        rut: "18.222.333-4",
+        nombres: "Sebastián Eduardo",
+        apellidoPaterno: "Fuentes",
+        apellidoMaterno: "Navarro",
+        rut: "18222333-4",
         nacimiento: "1988-05-14",
+        telefono: "+56764254517",
         email: "sebastian.fuentes@gmail.cl",
-        rol: "trabajador",
+        rol: 3,
         sexo: "M",
-        grupo: null,
-        antecedentes: null,
         competencias: "Transporte, distribución",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Sebastian_Eduardo.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Sebastian_Eduardo.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Sebastian_Eduardo.pdf`,
       },
       {
-        nombreCompleto: "Paula Andrea Vargas Espinoza",
-        rut: "19.111.222-5",
+        nombres: "Paula Andrea",
+        apellidoPaterno: "Vargas",
+        apellidoMaterno: "Espinoza",
+        rut: "19111222-5",
         nacimiento: "1992-08-30",
+        telefono: "+56431001287",
         email: "paula.vargas@gmail.cl",
-        rol: "trabajador",
+        rol: 3,
         sexo: "F",
-        grupo: null,
-        antecedentes: null,
         competencias: "Administración, archivo",
         despedido: false,
+        foto_url: `http://${HOST}:${PORT}/uploads/fotos/Paula_Andrea.jpg`,
+        cv_url: `http://${HOST}:${PORT}/uploads/cvs/Paula_Andrea.pdf`,
+        antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Paula_Andrea.pdf`,
       },
     ];
 
-    await trabajadoresRepository.save(trabajadores);
+    const entidadesTrabajadores = trabajadoresData.map(t => trabajadoresRepository.create(t));
+    await trabajadoresRepository.save(entidadesTrabajadores);
 
     console.log("* => Trabajadores creados exitosamente");
   } catch (error) {
     console.error("Error al crear trabajadores:", error);
   }
 }
+
 export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes };

@@ -1,5 +1,5 @@
 "use strict";
-import { EntitySchema, JoinColumn } from "typeorm";
+import { EntitySchema, JoinColumn, JoinTable } from "typeorm";
 
 const TrabajadorSchema = new EntitySchema({
   name: "Trabajador",
@@ -10,9 +10,19 @@ const TrabajadorSchema = new EntitySchema({
       primary: true,
       generated: true,
     },
-    nombreCompleto: {
+    nombres: {
       type: "varchar",
-      length: 225,
+      length: 100,
+      nullable: false,
+    },
+    apellidoPaterno: {
+      type: "varchar",
+      length: 60,
+      nullable: false,
+    },
+    apellidoMaterno: {
+      type: "varchar",
+      length: 60,
       nullable: false,
     },
     rut: {
@@ -25,106 +35,42 @@ const TrabajadorSchema = new EntitySchema({
       type: "date",
       nullable: false,
     },
+    telefono: {
+      type: "varchar",
+      length: 12,
+      nullable: true,
+      unique: true
+    },
     email: {
       type: "varchar",
       length: 255,
       nullable: false,
       unique: true,
     },
-    /*grupo: {
-      type: "varchar",
-      length: 255,
-      nullable: true,
-    },*/
-    rol: {
-      type: "varchar",
-      length: 255,
-      nullable: false,
-    },
     sexo: {
       type: "varchar",
       length: 1,
       nullable: false,
-    },
+    },/*
     competencias: {
       type: "varchar",
       length: 255,
       nullable: true,
-    },
-    // Metadatos de foto
-    fotoNombreOriginal: {
+    },*/
+    foto_url: {
       type: "varchar",
       length: 255,
-      nullable: true
+      nullable: false
     },
-    fotoNombreArchivo: {
+    cv_url: {
       type: "varchar",
       length: 255,
-      nullable: true
+      nullable: false
     },
-    fotoRuta: {
+    antecedentes_url: {
       type: "varchar",
       length: 255,
-      nullable: true
-    },  
-    fotoMimeType: {
-      type: "varchar", 
-      length: 100, 
-      nullable: true,
-    },
-    fotoPeso: {
-      type: "bigint",
-      nullable: true
-    },
-    // Metadatos de CV
-    cvNombreOriginal: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvNombreArchivo: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvRuta: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvMimeType: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    cvPeso: {
-      type: "bigint",
-      nullable: true
-    },
-    // Metadatos de antecedentes
-        antecedentesNombreOriginal: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesNombreArchivo: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesRuta: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesMimeType: {
-      type: "varchar",
-      length: 255,
-      nullable: true
-    },
-    antecedentesPeso: {
-      type: "bigint",
-      nullable: true
+      nullable: false
     },
     despedido: {
       type: "boolean",
@@ -152,15 +98,44 @@ const TrabajadorSchema = new EntitySchema({
       grupoAsignado: {
         type: "many-to-one",
         target: "TrabajadoresGrupos",
-        JoinColumn: { name: "grupo_id" },
+        joinColumn: { name: "grupo_id" },
         nullable: true,
         onDelete: "SET NULL",
         inverseSide: "miembros"
       },
       supervisorDeGrupo: {
-        type: "one-to-any",
+        type: "one-to-many",
         target: "TrabajadoresGrupos",
         inverseSide: "supervisorAsignado"
+      },
+      rol: {
+        type: "many-to-one",
+        target: "Rol",
+        joinColumn: {
+          name: "rol_id"
+        },
+        eager: true //hace que al buscar un trabajador, traiga automáticamente su rol
+      },
+      gruposSupervisados: {
+        type: "one-to-many",
+        target: "TrabajadoresGrupos",
+        inverseSide: "supervisorAsignado",
+        //nullable: true
+      },
+      competencias: {
+        type: "many-to-many",
+        target: "Item",
+        inverseSide: "competenciasTrabajadores",
+        JoinTable: true,
+        nullable: true,
+        joinTable: {
+          name: "trabajadoresCompetencias",
+          referencedColumn: "id"
+        },
+        inverseJoinColumn: {
+          name: "item_id",
+          referencedColumn: "id"
+        }
       }
   },
 });
