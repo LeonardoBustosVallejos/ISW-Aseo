@@ -87,6 +87,10 @@
     background: var(--ubb-azul-hover);
 }
 
+.top-button:focus {
+    background: var(--ubb-azul-hover);
+}
+
 .menu-item {
     padding: 12px 16px;
     cursor: pointer;
@@ -100,7 +104,8 @@
     position: sticky;
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item:focus {
     background: var(--ubb-azul-hover);
 }
 
@@ -126,7 +131,8 @@
     transition: background 0.3s;
 }
 
-.submenu-item:hover {
+.submenu-item:hover,
+.submenu-item:focus {
     background: var(--ubb-azul-hover);
 }
 

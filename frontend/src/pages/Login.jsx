@@ -115,6 +115,17 @@ const LoginForm = () => {
                 >
                     Ingresar
                 </button>
+                <button
+                    type="submit"
+                    className="login-button"
+                    style={{ backgroundColor: 'gold' }}
+                    onClick={() => {
+                        handleChange({ target: { name: 'email', value: 'administrador@gmail.com' } })
+                        handleChange({ target: { name: 'password', value: 'admin1234' } })
+                    }}
+                >
+                    Ingresar como Administrador
+                </button>
             </form>
         </main>
     );

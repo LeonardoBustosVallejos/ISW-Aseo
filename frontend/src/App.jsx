@@ -12,6 +12,7 @@ import ListaClientes from "@pages/Clientes/ListaClientes";
 import DetallesCliente from "@components/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
 import Home from "./pages/Home";
+import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
 import SolicitudInfo from '@pages/SolicitudInfo';
 import Solicitudes from '@pages/Solicitudes';
@@ -41,6 +42,7 @@ export default function App() {
 
                     <Route path="clientes"  >
                         <Route path="" element={<ListaClientes />} />
+                        <Route path="documentos+comerciales" element={<VistaDocumentosComerciales />} />
                         <Route path="registrar" element={<RegisterClienteForm />} />
 
                     </Route>

@@ -15,6 +15,7 @@ const SedeSchema = new EntitySchema({
             length: 15,
             nullable: true,
             unique: false,
+            default: 'Sin rut'
         },
         nombre_sede: {
             type: "varchar",
