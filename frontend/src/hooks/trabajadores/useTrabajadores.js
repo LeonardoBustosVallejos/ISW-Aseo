@@ -1,18 +1,32 @@
 import { useState, useEffect } from "react";
 import { getTrabajadores } from "@services/trabajador.service.js";
+import Search from "../../components/Search";
 
-export function useTrabajadores() {
-  const [trabajadores, setTrabajadores] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [success, setSucces] = useState(""); 
-  const [error, setError] = useState("");
+export function useTrabajadores(searchTerm = "") {
+  const [trabajadores, 
+        setTrabajadores] = useState([]);
 
-  const [pagina, setPagina] = useState(1);
-  const [infoPaginacion, setInfoPaginacion] = useState({
+  const [loading, 
+        setLoading] = useState(false);
+
+  const [success, 
+        setSucces] = useState(""); 
+
+  const [error, 
+        setError] = useState("");
+
+    const [pagina, 
+        setPagina] = useState(1);
+
+    const [infoPaginacion, setInfoPaginacion] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0
   });
+
+  useEffect(() => {
+    setPagina(1);
+  }, [searchTerm]);
 
   const listaTrabajadores = async () => {
     setLoading(true);
@@ -20,7 +34,7 @@ export function useTrabajadores() {
     setSucces("");
 
     try {
-      const result = await getTrabajadores(pagina);
+      const result = await getTrabajadores(pagina, searchTerm);
       console.log(result);
 
       if (result.succes) {
@@ -47,7 +61,7 @@ export function useTrabajadores() {
 
   useEffect(() => {
     listaTrabajadores();
-  }, [pagina]);
+  }, [pagina, searchTerm]);
 
   return { trabajadores, 
           loading, 

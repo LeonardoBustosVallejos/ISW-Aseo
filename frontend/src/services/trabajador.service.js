@@ -5,9 +5,20 @@ import axios from "./root.service.js";
  * @returns { Promise } Lista de trabajadores
  */
 
-export const getTrabajadores = async (page = 1, limit = 10) => {
+export const getTrabajadores = async (page = 1, search = "", limit = 10) => {
   try {
-    const response = await axios.get(`/trabajadores/?page=${page}&limit=${limit}`);
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit)
+    });
+
+    const terminoBusqueda = search.trim();
+    if (terminoBusqueda !== "") {
+      params.set("search", terminoBusqueda);
+    }
+
+    const response = await axios.get(`/trabajadores?${params.toString()}`);
+
     return {
       succes: true,
       data: response.data.data,

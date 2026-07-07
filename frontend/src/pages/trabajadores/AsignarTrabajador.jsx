@@ -1,22 +1,15 @@
 import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.js";
 import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.js"
-import Search from "@components/Search.jsx";
-import Table from "@components/Table.jsx";
 import { showErrorAlert } from "@helpers/sweetAlert.js";
+import { useState } from "react";
+import Acordeon from "@components/acordeon";
+import Search from "@components/Search.jsx";
+/*import Table from "@components/Table.jsx";*/
 import "@styles/asignarTrabajador.css";
 import "@styles/acordeon.css"
-import { useState } from "react";
-import Acordeon from '@components/acordeon';
+import "@styles/Search.css"
 
 export default function Trabajadores() {
-
-  const { trabajadores, 
-          loading, 
-          error, 
-          success,
-          pagina,
-          setPagina,
-          infoPaginacion } = useTrabajadores(); 
 
   const [selectedId, 
         setSelectedId] = useState(null); 
@@ -28,71 +21,98 @@ export default function Trabajadores() {
           loadingDetalle, 
           errorDetalle } = useDetalleTrabajador(selectedId); 
 
+  const [searchTerm, 
+        setSearchTerm] = useState("");
+
+  const { trabajadores, 
+          loading, 
+          error, 
+          success,
+          pagina,
+          setPagina,
+          infoPaginacion } = useTrabajadores(searchTerm); 
+
+  const trabajadoresFiltrados = trabajadores
+    .filter(trabajadoresFiltrados => !trabajadoresFiltrados.despedido) // Solo activos
+    .filter(trabajadoresFiltrados => {
+      const termino = searchTerm.toLowerCase();
+      const nombreCompleto = `${trabajadoresFiltrados.nombres} ${trabajadoresFiltrados.apellidoPaterno} ${trabajadoresFiltrados.apellidoMaterno}`.toLowerCase();
+      const rut = trabajadoresFiltrados.rut ? trabajadoresFiltrados.rut.toLowerCase() : "";
+      const email = trabajadoresFiltrados.email ? trabajadoresFiltrados.email.toLowerCase() : "";
+      
+      return nombreCompleto.includes(termino) || rut.includes(termino) || email.includes(termino);
+    });
+
   return (
     <div className="contenido-asignacion">
       <h2>Trabajadores</h2>
 
-      {loading && <p>Cargando trabajadores...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
+      <div style={{ marginBottom: "20px" }}>
+        <Search 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+          placeholder="Buscar por nombre, RUT o email..." 
+        />
+      </div>
 
       <div className="columnas-layout">
         <section className="columna-lista-trabajadores">
           <ul className="lista-trabajadores">
 
-  <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
+        <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
 
 
-    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-      <button 
-        onClick={() => setPagina(p => Math.max(p - 1, 1))} 
-        disabled={pagina === 1 || loading}
-        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
-      >
-        &lt;
-      </button>
-      
-      {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
-        const numeroPagina = index + 1;
-        const esActiva = numeroPagina === pagina;
-        
-        return (
-          <button
-            key={numeroPagina}
-            onClick={() => setPagina(numeroPagina)}
-            disabled={loading}
-            style={{
-              border: "none",
-              borderRadius: "50%",
-              width: "30px",
-              height: "30px",
-              cursor: "pointer",
-              backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
-              color: "#333",
-              fontWeight: esActiva ? "bold" : "normal",
-              transition: "all 0.2s ease"
-            }}
-          >
-            {numeroPagina}
-          </button>
-        );
-      })}
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <button 
+              onClick={() => setPagina(p => Math.max(p - 1, 1))} 
+              disabled={pagina === 1 || loading}
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
+            >
+              &lt;
+            </button>
+            
+            {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
+              const numeroPagina = index + 1;
+              const esActiva = numeroPagina === pagina;
+              
+              return (
+                <button
+                  key={numeroPagina}
+                  onClick={() => setPagina(numeroPagina)}
+                  disabled={loading}
+                  style={{
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "30px",
+                    height: "30px",
+                    cursor: "pointer",
+                    backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
+                    color: "#333",
+                    fontWeight: esActiva ? "bold" : "normal",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  {numeroPagina}
+                </button>
+              );
+            })}
 
-      {/* Flecha Siguiente (>) */}
-      <button 
-        onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
-        disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
-        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
-      >
-        &gt;
-      </button>
-    </div>
-  </div>
-            {trabajadores.map((trabajador) => (
-              <li key={trabajador.id}
-              className={`tarjeta-trabajador ${selectedId === trabajador.id ? "seleccionado" : ""}`}
-              onClick={() => setSelectedId(trabajador.id)}
-              >
+            {/* Flecha Siguiente (>) */}
+            <button 
+              onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
+              disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+            {trabajadoresFiltrados
+              .map((trabajador) => (
+                <li key={trabajador.id}
+                className={`tarjeta-trabajador ${selectedId === trabajador.id ? "seleccionado" : ""}`}
+                onClick={() => setSelectedId(trabajador.id)}
+                >
                 <p>{`${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno} ${trabajador.nombres} `}</p>
                 <p>{trabajador.rut}</p>
                 <p>{trabajador.rol.nombre}</p>
@@ -112,57 +132,57 @@ export default function Trabajadores() {
                     }
                   </p>
                   )}
-              </li>
+                </li>
             ))}
           </ul>
 
-  <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
+          <div className="paginacion-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "15px", padding: "10px" }}>
 
-    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-      <button 
-        onClick={() => setPagina(p => Math.max(p - 1, 1))} 
-        disabled={pagina === 1 || loading}
-        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
-      >
-        &lt;
-      </button>
-      
-      {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
-        const numeroPagina = index + 1;
-        const esActiva = numeroPagina === pagina;
-        
-        return (
-          <button
-            key={numeroPagina}
-            onClick={() => setPagina(numeroPagina)}
-            disabled={loading}
-            style={{
-              border: "none",
-              borderRadius: "50%",
-              width: "30px",
-              height: "30px",
-              cursor: "pointer",
-              backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
-              color: "#333",
-              fontWeight: esActiva ? "bold" : "normal",
-              transition: "all 0.2s ease"
-            }}
-          >
-            {numeroPagina}
-          </button>
-        );
-      })}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <button 
+                onClick={() => setPagina(p => Math.max(p - 1, 1))} 
+                disabled={pagina === 1 || loading}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === 1 ? "#ccc" : "#333", fontSize: "1.1em" }}
+              >
+                &lt;
+              </button>
+              
+              {Array.from({ length: infoPaginacion?.totalPages || 1 }, (_, index) => {
+                const numeroPagina = index + 1;
+                const esActiva = numeroPagina === pagina;
+                
+                return (
+                  <button
+                    key={numeroPagina}
+                    onClick={() => setPagina(numeroPagina)}
+                    disabled={loading}
+                    style={{
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "30px",
+                      height: "30px",
+                      cursor: "pointer",
+                      backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
+                      color: "#333",
+                      fontWeight: esActiva ? "bold" : "normal",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {numeroPagina}
+                  </button>
+                );
+              })}
 
-      {/* Flecha Siguiente (>) */}
-      <button 
-        onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
-        disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
-        style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
-      >
-        &gt;
-      </button>
-    </div>
-  </div>
+              {/* Flecha Siguiente (>) */}
+              <button 
+                onClick={() => setPagina(p => Math.min(p + 1, infoPaginacion?.totalPages || 1))} 
+                disabled={pagina === (infoPaginacion?.totalPages || 1) || loading}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: "5px 8px", color: pagina === (infoPaginacion?.totalPages || 1) ? "#ccc" : "#333", fontSize: "1.1em" }}
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
         </section>
 
         <section className="columna-detalle">
@@ -219,6 +239,7 @@ export default function Trabajadores() {
                                         <p>Fecha de Contratación: {detalle.createdAt}</p>
                                     </div>
                                 } />
+ 
             <Acordeon title={"Contacto"} level={0} isOpen={openSection === "infoContacto"}
                                 required={false}
                                 onToggle={() => {
@@ -231,7 +252,7 @@ export default function Trabajadores() {
                                         <p>Correo: {detalle.email}</p>
                                     </div>
                                 } />
-<Acordeon title={"Documentos del empleado"} level={0} isOpen={openSection === "infoDocumentos"}
+              <Acordeon title={"Documentos del empleado"} level={0} isOpen={openSection === "infoDocumentos"}
                                 required={false}
                                 onToggle={() => {
                                     setOpenSection(openSection === "infoDocumentos" ? null : "infoDocumentos")
@@ -280,24 +301,24 @@ export default function Trabajadores() {
                                     <div className="">
                                         <p>Rol: {detalle.rol?.nombre}</p>
                                         {detalle.rol?.nombre === "Trabajador" && (
-                  <p>
-                    Grupo asignado: {
-                      detalle.grupoAsignado?.nombre || "Ninguno asignado."
-                    }
-                  </p>
-                  )}
-                {detalle.rol?.nombre === "Supervisor" && (
-                  <p>
-                    Grupo(s) supervisado(s): {
-                      detalle.gruposSupervisados && detalle.gruposSupervisados.length > 0
-                        ? detalle.gruposSupervisados.map(grupo => grupo.nombre).join(", ")
-                        : "Ninguno supervisado."
-                    }
-                  </p>
-                  )}
+                                          <p>
+                                            Grupo asignado: {
+                                              detalle.grupoAsignado?.nombre || "Ninguno asignado."
+                                            }
+                                          </p>
+                                          )}
+                                        {detalle.rol?.nombre === "Supervisor" && (
+                                          <p>
+                                            Grupo(s) supervisado(s): {
+                                              detalle.gruposSupervisados && detalle.gruposSupervisados.length > 0
+                                                ? detalle.gruposSupervisados.map(grupo => grupo.nombre).join(", ")
+                                                : "Ninguno supervisado."
+                                            }
+                                          </p>
+                                          )}
                                     </div>
                                 } />
-
+                                
           </div>
           ): (
             !loadingDetalle && <p className="sin-seleccion">Haz clic en un trabajador para ver los detalles</p>

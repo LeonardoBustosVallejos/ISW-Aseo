@@ -1,5 +1,5 @@
 "use strict";
-import { Repository } from "typeorm";
+import { ILike, Repository } from "typeorm";
 import Rut from "rutjs";
 import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
@@ -9,15 +9,26 @@ import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 import Sede from "../entity/sede.entity.js"
 import TrabajadoresGruposSchema from "../entity/trabajadoresGrupos.entity.js";
 
-export async function getTrabajadoresService({ page, limit }) {
+export async function getTrabajadoresService({ page, limit, search = "" }) {
     try {
 
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const skip = (page - 1) * limit;
+        const terminoBusqueda = search.trim();
+
+        const where = terminoBusqueda
+            ? [
+                { nombres: ILike(`%${terminoBusqueda}%`) },
+                { apellidoPaterno: ILike(`%${terminoBusqueda}%`) },
+                { apellidoMaterno: ILike(`%${terminoBusqueda}%`) },
+                { rut: ILike(`%${terminoBusqueda}%`) },
+                { email: ILike(`%${terminoBusqueda}%`) }
+            ]
+            : undefined;
+
         const [trabajadores, totalItems] = await TrabajadoresRepository.findAndCount({
-            where: {
-                despedido: false
-            },
+            where,
+
             relations: ["rol", 
                         "competencias", 
                         "grupoAsignado", 

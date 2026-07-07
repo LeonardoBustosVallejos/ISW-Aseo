@@ -155,6 +155,10 @@ export const getTrabajadoresQueryValidation = Joi.object({
         .min(1)
         .max(100)
         .default(10)
+        .optional(),
+    search: Joi.string()
+        .trim()
+        .allow("")
         .optional()
 });
 
