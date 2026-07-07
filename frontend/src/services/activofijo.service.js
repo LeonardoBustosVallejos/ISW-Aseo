@@ -8,7 +8,6 @@ export const getResumen = async(cliente_id) => {
         return error.response.data;
     }
 }
-
 export const getDetalles = async(sede_id) => {
     try{
         const response = await axios.get(`/activos/sede/${sede_id}`);
@@ -17,7 +16,6 @@ export const getDetalles = async(sede_id) => {
         return error.response.data;
     }
 }
-
 export const getHistorialSede = async(sede_id) => {
     try {
         const response = await axios.get(`/activos/sede/${sede_id}/historial`);
@@ -27,3 +25,12 @@ export const getHistorialSede = async(sede_id) => {
         return []; 
     }
 }
+export const getFechaContrato = async (cliente_id) => {
+    try {
+        const response = await axios.get(`/activos/fecha/${cliente_id}`);
+        return response.data; 
+    } catch (error) {
+        console.error("Error obteniendo fecha de contrato:", error);
+        return error.response?.data || null; 
+    }
+};

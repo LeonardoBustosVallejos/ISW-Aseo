@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
@@ -8,6 +8,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
     const [openMenu, setOpenMenu] = useState(null);
     const location = useLocation();
+
+    useEffect(() => {
+        const comprobarTamañoPantalla = () => {
+            if (window.innerWidth <= 450) {
+                setIsOpen(false);
+            }
+        };
+        comprobarTamañoPantalla();
+        window.addEventListener("resize", comprobarTamañoPantalla);
+        return () => window.removeEventListener("resize", comprobarTamañoPantalla);
+    }, []);
 
     let rolUsuario = null;
     try {
@@ -32,14 +43,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             symbol: <NotebookPen />,
             title: "Solicitudes",
             path: "/solicitudes",
-        },
-        {
-            symbol: <ShelvingUnit />,
-            title: "Recursos",
-            children: [
-                ...(rolUsuario == 1 ? [{ symbol: <TableProperties />, title: "Resumen", path: "/recursos/resumen" }] : []),
-                { symbol: <Info />, title: "Detalles", path: "/recursos/detalles" },
-            ],
         },
         {
             symbol: <BookUser />,

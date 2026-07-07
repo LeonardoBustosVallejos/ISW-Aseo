@@ -16,7 +16,8 @@
         height: 20%;
     }
 
-    button:hover {
+    button:hover,
+    button:focus {
         background-color: var(--ubb-azul-hover);
     }
 
@@ -35,4 +36,6 @@
 
 .tabs-content {
     margin-top: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
 }

@@ -1,6 +1,7 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
 import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega, obtenerActivosPorSede } from "../services/activofijo.service.js";
 import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
+import { getFechaContratodeCliente } from "../services/contrato.service.js";
 import { AppDataSource } from "../config/configDb.js";
 import UserSchema from "../entity/user.entity.js";
 
@@ -118,3 +119,14 @@ export const devolverActivos = async (req, res) => {
         return handleErrorServer(res, 500, "Error interno del servidor", error.message);
      }
 };
+
+export const getFechaContratoCliente = async (req, res) => {
+    try {
+        const { cliente_id } = req.params;
+        const fecha = await getFechaContratodeCliente(cliente_id);
+
+        return handleSuccess(res, 200, "Fecha obtenida con éxito", fecha);
+    } catch (error) {
+        return handleErrorServer(res, 500, error.message);
+    }
+}

@@ -294,7 +294,12 @@ export default function ContratoRow({ contrato, documentos, setFormData, level =
 
                     <Documentos
                         documentos={documentos}
-                        setFormData={setFormData}
+                        setDocumentos={(updater) =>
+                            setFormData(prev => ({
+                                ...prev,
+                                metadataDocumentos: updater(prev.metadataDocumentos)
+                            }))
+                        }
                         path="metadataDocumentos"
                         tipo="CONTRATO"
                     />

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     Plus,
     Trash2,
@@ -8,10 +8,10 @@ import {
 import "@styles/components/Documentos.css"
 import AddButton from "../misc/add-button"
 
-export default function Documentos({ documentos, setFormData, path, tipo, }) {
+export default function Documentos({ documentos, setDocumentos, tipo, }) {
 
     const [openIndex, setOpenIndex] = useState(null)
-    // navegar objeto usando path
+
     const [nombreIgual, setNombreIgual] = useState({})
 
     const tiposDocumento = {
@@ -29,88 +29,43 @@ export default function Documentos({ documentos, setFormData, path, tipo, }) {
         ]
     }
 
-    const getReference = (obj) => {
-
-        let ref = obj
-
-        const keys = path.split(".")
-
-        for (const key of keys) {
-
-            if (!isNaN(key)) {
-                ref = ref[Number(key)]
-            } else {
-                ref = ref[key]
-            }
-        }
-
-        return ref
-    }
-
 
     // agregar contrato/anexo
     const addDocumento = () => {
-
-        setFormData(prev => {
-
-            const copia = structuredClone(prev)
-            const ref = getReference(copia)
-            ref.push({
-
-                nombrePersonalizado: '',
-                tipoDocumento: '',
-                fileKey: tipo === "ANEXO" ? "anexo_pdf" : "contrato_pdf",
+        setDocumentos(prev => [
+            ...prev,
+            {
+                nombrePersonalizado: "",
+                tipoDocumento: "",
+                fileKey: "anexo_pdf",
                 file: null
-
-            })
-
-            return copia
-        })
-    }
+            }
+        ]);
+    };
 
     // eliminar contrato/anexo
-    const removeDocumento = (index) => {
-
-        setFormData(prev => {
-
-            const copia = structuredClone(prev)
-            const ref = getReference(copia)
-            ref.splice(index, 1)
-
-            return copia
-        })
-    }
 
 
     // actualizar archivo
-    const updateArchivo = (fileIndex, field, value) => {
+    const updateArchivo = (index, field, value) => {
+        setDocumentos(prev => {
+            const copia = structuredClone(prev);
 
-        setFormData(prev => {
+            copia[index][field] = value;
 
-            const copia = structuredClone(prev)
-
-            const ref = getReference(copia)
-
-            ref[fileIndex][field] = value
-
-            return copia
-        })
-    }
-
+            return copia;
+        });
+    };
     // eliminar archivo
-    const removeArchivo = (fileIndex) => {
+    const removeArchivo = (index) => {
+        setDocumentos(prev => {
+            const copia = [...prev];
 
-        setFormData(prev => {
+            copia.splice(index, 1);
 
-            const copia = structuredClone(prev)
-
-            const ref = getReference(copia)
-
-            ref.splice(fileIndex, 1)
-
-            return copia
-        })
-    }
+            return copia;
+        });
+    };
 
     return (
 
