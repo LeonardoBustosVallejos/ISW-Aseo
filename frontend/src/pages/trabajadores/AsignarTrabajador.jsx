@@ -1,13 +1,19 @@
 import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.js";
 import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.js"
-import { showErrorAlert } from "@helpers/sweetAlert.js";
 import { useState } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
-/*import Table from "@components/Table.jsx";*/
+import TrabajadorFilters from "@components/trabajadores/TrabajadorFilters.jsx";
 import "@styles/asignarTrabajador.css";
-import "@styles/acordeon.css"
-import "@styles/Search.css"
+
+
+const filtrosPorDefecto = {
+  sexo: "",
+  edadMin: "",
+  edadMax: "",
+  rol: "",
+  estado: "activos"
+};
 
 export default function Trabajadores() {
 
@@ -24,34 +30,38 @@ export default function Trabajadores() {
   const [searchTerm, 
         setSearchTerm] = useState("");
 
+  const [filtros, 
+        setFiltros] = useState(filtrosPorDefecto);
+
   const { trabajadores, 
           loading, 
           error, 
           success,
           pagina,
           setPagina,
-          infoPaginacion } = useTrabajadores(searchTerm); 
+      infoPaginacion } = useTrabajadores(searchTerm, filtros); 
 
-  const trabajadoresFiltrados = trabajadores
-    .filter(trabajadoresFiltrados => !trabajadoresFiltrados.despedido) // Solo activos
-    .filter(trabajadoresFiltrados => {
-      const termino = searchTerm.toLowerCase();
-      const nombreCompleto = `${trabajadoresFiltrados.nombres} ${trabajadoresFiltrados.apellidoPaterno} ${trabajadoresFiltrados.apellidoMaterno}`.toLowerCase();
-      const rut = trabajadoresFiltrados.rut ? trabajadoresFiltrados.rut.toLowerCase() : "";
-      const email = trabajadoresFiltrados.email ? trabajadoresFiltrados.email.toLowerCase() : "";
-      
-      return nombreCompleto.includes(termino) || rut.includes(termino) || email.includes(termino);
-    });
+  const handleFiltrosChange = (nextFiltros) => {
+    setFiltros(nextFiltros);
+  };
 
   return (
     <div className="contenido-asignacion">
       <h2>Trabajadores</h2>
 
-      <div style={{ marginBottom: "20px" }}>
-        <Search 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
-          placeholder="Buscar por nombre, RUT o email..." 
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: "280px" }}>
+          <Search 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            placeholder="Buscar por nombre, RUT o email..." 
+          />
+        </div>
+
+        <TrabajadorFilters
+          value={filtros}
+          onChange={handleFiltrosChange}
+          onClear={setFiltros}
         />
       </div>
 
@@ -107,13 +117,13 @@ export default function Trabajadores() {
             </button>
           </div>
         </div>
-            {trabajadoresFiltrados
+            {trabajadores
               .map((trabajador) => (
                 <li key={trabajador.id}
                 className={`tarjeta-trabajador ${selectedId === trabajador.id ? "seleccionado" : ""}`}
                 onClick={() => setSelectedId(trabajador.id)}
                 >
-                <p>{`${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno} ${trabajador.nombres} `}</p>
+                <p>{`${trabajador.nombres} ${trabajador.apellidoPaterno} ${trabajador.apellidoMaterno} `}</p>
                 <p>{trabajador.rut}</p>
                 <p>{trabajador.rol.nombre}</p>
                 {trabajador.rol?.nombre === "Trabajador" && (
@@ -162,7 +172,7 @@ export default function Trabajadores() {
                       width: "30px",
                       height: "30px",
                       cursor: "pointer",
-                      backgroundColor: esActiva ? "#dbdbdb" : "transparent", // Círculo gris para identificar la página actual
+                      backgroundColor: esActiva ? "#dbdbdb" : "transparent",
                       color: "#333",
                       fontWeight: esActiva ? "bold" : "normal",
                       transition: "all 0.2s ease"
@@ -236,7 +246,8 @@ export default function Trabajadores() {
                                         <p>Edad: {detalle.edad}</p>
                                         <p>Sexo: {detalle.sexo}</p>
                                         <p>Fecha de nacimiento: {detalle.nacimiento} </p>
-                                        <p>Fecha de Contratación: {detalle.createdAt}</p>
+                                        {detalle.despedido === false && (
+                                        <p>Fecha de Contratación: {detalle.createdAt}</p>)}
                                     </div>
                                 } />
  
@@ -252,7 +263,8 @@ export default function Trabajadores() {
                                         <p>Correo: {detalle.email}</p>
                                     </div>
                                 } />
-              <Acordeon title={"Documentos del empleado"} level={0} isOpen={openSection === "infoDocumentos"}
+            {detalle.despedido === false && (
+            <Acordeon title={"Documentos del empleado"} level={0} isOpen={openSection === "infoDocumentos"}
                                 required={false}
                                 onToggle={() => {
                                     setOpenSection(openSection === "infoDocumentos" ? null : "infoDocumentos")
@@ -291,7 +303,51 @@ export default function Trabajadores() {
                                         className="btn-documento">Ver o descargar</a>
                                     </div>
                                   </div>
-                                } />
+                                } />)}
+                
+            {detalle.despedido === false && (
+            <Acordeon title={"Documentos del ex empleado"} level={0} isOpen={openSection === "infoExempleado"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoExempleado" ? null : "infoExempleado")
+                                }}
+                                content={
+                                <div className="documentosAdjuntos"
+                                      style={{ 
+                                        padding: '10px', 
+                                        background: '#f9f9f9', 
+                                        borderRadius: '5px' }}>
+                                    <div style={{
+                                      marginBottom: "5px"
+                                    }}>
+                                      <label style={{ 
+                                                    fontWeight: 'bold', 
+                                                    display: 'block' }}> 
+                                        Curriculum Vitae 
+                                      </label>
+                                      <a href= {detalle.cv_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="btn-documento">Ver o descargar</a>
+                                    </div>
+                                
+                                    <div style={{
+                                      marginBottom: "10px"
+                                    }}>
+                                      <label style={{ 
+                                                    fontWeight: 'bold', 
+                                                    display: 'block' }}> 
+                                        Antecedentes 
+                                      </label>
+                                      <a href= {detalle.antecedentes_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="btn-documento">Ver o descargar</a>
+                                    </div>
+                                  </div>
+                                } />)}
+
+            {detalle.despedido === false && (
             <Acordeon title={"Rol y grupos"} level={0} isOpen={openSection === "infoRYG"}
                                 required={false}
                                 onToggle={() => {
@@ -317,7 +373,77 @@ export default function Trabajadores() {
                                           </p>
                                           )}
                                     </div>
-                                } />
+                                } />)}
+
+            {detalle.despedido === true && (
+            <Acordeon title={"Historial desvinculaciones"} level={0} isOpen={openSection === "infoRYG"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoRYG" ? null : "infoRYG")
+                                }}
+                                content={
+                                  <div className="historial-container" style={{ padding: '10px' }}>
+                                          
+
+                                          {/* 2. HISTORIAL DE DESVINCULACIONES EXTRAÍDO DE TU POSTMAN */}
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                                            
+                                            {detalle.historialDesvinculaciones && detalle.historialDesvinculaciones.length > 0 ? (
+                                              detalle.historialDesvinculaciones.map((historial, index) => (
+                                                <div 
+                                                  key={historial.trabajadorHistorial_id || index} 
+                                                  style={{
+                                                    padding: '12px',
+                                                    background: '#f9f9f9',
+                                                    borderRadius: '6px',
+                                                    borderLeft: '4px solid #0011ff',
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                                  }}
+                                                >
+                                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                    <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#4b5563' }}>
+                                                      Registro #{index + 1}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                                      {new Date(historial.fechaDesvinculacion).toLocaleDateString("es-CL", {
+                                                        year: 'numeric', month: 'long', day: 'numeric'
+                                                      })}
+                                                    </span>
+                                                  </div>
+
+                                                  <p style={{ margin: '4px 0', fontSize: '0.9rem' }}>
+                                                    <strong>Motivo:</strong> {historial.motivo}
+                                                  </p>
+
+                                                  {historial.archivo_url && (
+                                                    <div style={{ marginTop: '8px' }}>
+                                                      <a 
+                                                        href={historial.archivo_url} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="btn-documento"
+                                                        style={{
+                                                          fontSize: '0.85rem',
+                                                          color: '#162a55',
+                                                          textDecoration: 'underline'
+                                                        }}
+                                                      >
+                                                       Ver documento de desvinculación
+                                                      </a>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))
+                                            ) : (
+                                              <p style={{ color: '#6b7280', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                                                No se registran detalles históricos.
+                                              </p>
+                                            )}
+                                          </div>
+
+                                        </div>
+                                } />)}
                                 
           </div>
           ): (

@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getTrabajadores } from "@services/trabajador.service.js";
-import Search from "../../components/Search";
 
-export function useTrabajadores(searchTerm = "") {
+export function useTrabajadores(searchTerm = "", filtros = {}) {
   const [trabajadores, 
         setTrabajadores] = useState([]);
 
@@ -24,9 +23,12 @@ export function useTrabajadores(searchTerm = "") {
     totalItems: 0
   });
 
-  useEffect(() => {
-    setPagina(1);
-  }, [searchTerm]);
+  const queryKeyRef = useRef("");
+
+  const queryKey = JSON.stringify({
+    searchTerm,
+    filtros
+  });
 
   const listaTrabajadores = async () => {
     setLoading(true);
@@ -34,8 +36,11 @@ export function useTrabajadores(searchTerm = "") {
     setSucces("");
 
     try {
-      const result = await getTrabajadores(pagina, searchTerm);
-      console.log(result);
+        const result = await getTrabajadores({
+          page: pagina,
+          search: searchTerm,
+          ...filtros
+        });
 
       if (result.succes) {
         const listaTrabajadoresRecuperada = result.data.trabajadores || [];
@@ -49,19 +54,37 @@ export function useTrabajadores(searchTerm = "") {
       } else {
         setError(result.message);
         setTrabajadores([]);
+        setInfoPaginacion({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0
+        });
       }
     } catch (error) {
       setError("Error inesperado al obtener trabajadores");
       console.error("Get trabajadores error:", error);
       setTrabajadores([]);
+      setInfoPaginacion({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (queryKeyRef.current !== queryKey) {
+      queryKeyRef.current = queryKey;
+      if (pagina !== 1) {
+        setPagina(1);
+        return;
+      }
+    }
+
     listaTrabajadores();
-  }, [pagina, searchTerm]);
+  }, [pagina, queryKey]);
 
   return { trabajadores, 
           loading, 

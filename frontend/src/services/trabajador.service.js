@@ -5,7 +5,16 @@ import axios from "./root.service.js";
  * @returns { Promise } Lista de trabajadores
  */
 
-export const getTrabajadores = async (page = 1, search = "", limit = 10) => {
+export const getTrabajadores = async ({
+  page = 1,
+  search = "",
+  limit = 10,
+  sexo = "",
+  edadMin = "",
+  edadMax = "",
+  rol = "",
+  estado = "activos"
+} = {}) => {
   try {
     const params = new URLSearchParams({
       page: String(page),
@@ -15,6 +24,26 @@ export const getTrabajadores = async (page = 1, search = "", limit = 10) => {
     const terminoBusqueda = search.trim();
     if (terminoBusqueda !== "") {
       params.set("search", terminoBusqueda);
+    }
+
+    if (sexo !== "") {
+      params.set("sexo", sexo);
+    }
+
+    if (edadMin !== "" && edadMin !== null && edadMin !== undefined) {
+      params.set("edadMin", String(edadMin));
+    }
+
+    if (edadMax !== "" && edadMax !== null && edadMax !== undefined) {
+      params.set("edadMax", String(edadMax));
+    }
+
+    if (rol !== "") {
+      params.set("rol", rol);
+    }
+
+    if (estado !== "") {
+      params.set("estado", estado);
     }
 
     const response = await axios.get(`/trabajadores?${params.toString()}`);
