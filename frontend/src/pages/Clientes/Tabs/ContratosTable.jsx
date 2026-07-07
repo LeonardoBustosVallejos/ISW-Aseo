@@ -13,6 +13,10 @@ import { descargarDocumento } from "../../../services/documentos.service";
 import { AnexosArray } from "../../../components/Contrato/AnexoComercial";
 import ContratoRow from "../../../components/Contrato/ContratoComercialForm";
 import { SedesArray } from "../../../components/Clientes/SedesForm";
+import { useNavigate } from "react-router-dom";
+
+import SedesSelector from "../../../components/Clientes/SedesSelector";
+import FilialesSelector from "../../../components/Clientes/FilialesSelector";
 
 export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "ATRASADO"].includes(estado) }
 
@@ -20,13 +24,15 @@ export function puedeCrearContrato(estado) { return estado !== 'VIGENTE' }
 
 
 export default function ContratosTable({ contratos, cliente = null, estado, noTitle = false, title, isGeneral = false }) {
-
+    const navigate = useNavigate();
     const [openInfo, setOpenInfo] = useState(null)
     const [openDocumentos, setOpenDocumentos] = useState(null)
     const [openAnexos, setOpenAnexos] = useState(null)
     const [openSedes, setOpenSedes] = useState(null)
     const [openDocs, setOpenDocs] = useState(null)
 
+    const [selectedSedes, setSelectedSedes] = useState([]);
+    const [selectedFiliales, setSelectedFiliales] = useState([]);
 
     const [openVerifModal, setOpenVerifModal] = useState(false)
 
@@ -37,34 +43,53 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
     const [newSedes, setNewSedes] = useState([]);
     const [newAnexos, setNewAnexos] = useState([]);
 
-    const [newContrato, setNewContrato] = useState({
+    const [data, setData] = useState({
+        cliente_id: null,
+
         contrato: {
-            fechaInicio: '',
-            fechaFinOriginal: '',
-            monto: '',
-            jornada: '',
-            tipoJornada: '',
-            cantidadMinTrabajadores: '',
-            cantidadMaxTrabajadores: '',
-            tamanoInstalacion: '',
+            fechaInicio: "",
+            fechaFinOriginal: "",
+            monto: "",
+            jornada: "",
+            tipoJornada: "",
+            cantidadMinTrabajadores: "",
+            cantidadMaxTrabajadores: "",
+            tamanoInstalacion: "",
             requiereGuardias: false,
-            detalles: '',
-            observacionesOperativas: '',
+            detalles: "",
+            observacionesOperativas: ""
         },
-        metadataDocumentos: [
+
+        metadataDocumentosContrato: [
             {
-                nombrePersonalizado: '',
-                tipoDocumento: 'CONTRATO',
+                nombrePersonalizado: "",
+                tipoDocumento: "CONTRATO",
                 fileKey: "contrato_pdf",
                 file: null
             }
         ],
-    })
 
+        sedesId: [],
+        sedes: [],
+
+        filialesId: [],
+        filiales: [],
+
+        anexos: []
+    });
+    const handleView = (rut, cliente_id) => {
+        navigate(`/cliente/rut/${rut}/id/${cliente_id}`)
+    }
     const abrirModalContrato = () => {
-        setSelectedContrato(null); // es un contrato nuevo
+
+        setSelectedContrato(null);
+
+        setSelectedSedes([]);
+
+        setSelectedFiliales([]);
+
         setModal("contrato");
-    };
+    }
 
     const abrirModalAnexo = (contrato) => {
 
@@ -261,6 +286,10 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                                             <strong>{formatDateTime(row.updatedAt)}</strong>
                                         </div>
                                         <div className="data-line" />
+                                        <br />
+                                        <button className="action-button" onClick={() => handleView(row.rutCliente, row.cliente_id)}>
+                                            <strong>Ir a informacion del cliente</strong>
+                                        </button>
                                     </>
                                 }
                             />
@@ -306,79 +335,7 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                                         )}
 
                                         {/* TABLA DE ANEXOS */}
-                                        <Table
-                                            rowKey="id_anexo"
-                                            title={null}
-                                            emptyMessage={'No hay anexos'}
-                                            columns={[
-                                                { field: "numeroAnexo", header: "N° Anexo" },
-                                                { field: "tipoAnexo", header: "Tipo" },
-                                                { field: "fechaInicio", header: "Inicio" },
-                                                { field: "fechaFin", header: "Fin" },
-                                            ]}
-                                            data={row.anexos}
-                                            renderExpanded={(anexo) => (
-                                                <div className="info-card">
-
-                                                    {/* INFO ANEXO */}
-                                                    <Acordeon
-                                                        title="Información del anexo"
-                                                        content={
-                                                            <>
-
-                                                                <p><strong>Número:</strong> {anexo.numeroAnexo}</p>
-                                                                <p><strong>Tipo:</strong> {anexo.tipoAnexo}</p>
-                                                                <p><strong>Monto:</strong> {anexo.montoNuevo}</p>
-
-                                                                <p>
-                                                                    <strong>Trabajadores:</strong>{" "}
-                                                                    {anexo.cantidadMinTrabajadores} - {anexo.cantidadMaxTrabajadores}
-                                                                </p>
-
-                                                                <p>
-                                                                    <strong>Jornada:</strong> {anexo.tipoJornada}
-                                                                </p>
-
-                                                                <p>
-                                                                    <strong>Sedes:</strong>{" "}
-                                                                    {anexo.sedes?.length ?? 0}
-                                                                </p>
-                                                            </>
-                                                        }
-                                                    />
-
-                                                    {/* DOCUMENTOS DEL ANEXO */}
-                                                    <Acordeon
-                                                        title={`Documentos (${anexo.documentos?.length ?? 0})`}
-                                                        content={
-                                                            anexo.documentos?.length ? (
-                                                                <TablaDocumentos documentos={anexo.documentos} />
-                                                            ) : (
-                                                                <p>No hay documentos</p>
-                                                            )
-                                                        }
-                                                    />
-
-                                                    {/* SEDES DEL ANEXO */}
-                                                    <Acordeon
-                                                        title={`Sedes (${anexo.sedes?.length ?? 0})`}
-                                                        content={
-                                                            anexo.sedes?.length ? (
-                                                                <ul>
-                                                                    {anexo.sedes.map((s) => (
-                                                                        <li key={s.sede_id}>
-                                                                            {s.nombre_sede} - {s.direccion}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            ) : (
-                                                                <p>No hay sedes asociadas</p>
-                                                            )
-                                                        }
-                                                    />
-
-                                                </div>
-                                            )}
+                                        <TablaAnexos anexos={row.anexos}
                                         />
 
                                     </div>
@@ -438,16 +395,25 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                 isForm
             >
                 <form>
+                    <SedesSelector
+                        sedes={cliente?.sedes ?? []}
+                        selected={selectedSedes}
+                        setSelected={setSelectedSedes}
+                    />
+
+                    <FilialesSelector
+                        filiales={cliente?.filiales ?? []}
+                        selected={selectedFiliales}
+                        setSelected={setSelectedFiliales}
+                    />
 
                     <ContratoRow
                         cliente={cliente}
+                        selectedSedes={selectedSedes}
+                        selectedFiliales={selectedFiliales}
                         onSuccess={closeModal}
                     />
-                    <SedesArray
-                        sedes={newSedes}
-                        setFormData={setNewSedes}
-                        contrato
-                    />
+
                 </form>
             </Modal>)}
 
@@ -524,6 +490,91 @@ export function TablaDocumentos({ documentos }) {
 
 
 
+
+                </div>
+            )}
+        />
+    )
+}
+
+
+export function TablaAnexos({ anexos }) {
+
+    const [openInfo, setOpenInfo] = useState(null)
+    const [openSedes, setOpenSedes] = useState(null)
+    const [openDocs, setOpenDocs] = useState(null)
+
+    return (
+        <Table
+            rowKey="id_anexo"
+            title={null}
+            emptyMessage={'No hay anexos'}
+            columns={[
+                { field: "numeroAnexo", header: "N° Anexo" },
+                { field: "tipoAnexo", header: "Tipo" },
+                { field: "fechaInicio", header: "Inicio" },
+                { field: "fechaFin", header: "Fin" },
+            ]}
+            data={anexos}
+            renderExpanded={(row) => (
+                <div className="info-card">
+
+                    {/* INFO ANEXO */}
+                    <Acordeon
+                        title="Información del anexo"
+                        isOpen={openInfo === row.id_anexo}
+                        onToggle={() => setOpenInfo(openInfo === row.id_anexo ? null : row.id_anexo)}
+                        content={
+                            <>
+
+                                <p><strong>Número:</strong> {row.numeroAnexo}</p>
+                                <p><strong>Tipo:</strong> {row.tipoAnexo}</p>
+                                <p><strong>Monto:</strong> {row.montoNuevo}</p>
+
+                                <p>
+                                    <strong>Trabajadores:</strong>{" "}
+                                    {row.cantidadMinTrabajadores} - {row.cantidadMaxTrabajadores}
+                                </p>
+
+                                <p>
+                                    <strong>Jornada:</strong> {row.tipoJornada}
+                                </p>
+
+                                <p>
+                                    <strong>Sedes:</strong>{" "}
+                                    {row.sedes?.length ?? 0}
+                                </p>
+                            </>
+                        }
+                    />
+
+                    {/* DOCUMENTOS DEL ANEXO */}
+                    <Acordeon
+                        title={`Documentos (${row.documentos?.length ?? 0})`}
+                        isOpen={openDocs === row.id_anexo}
+                        onToggle={() => setOpenDocs(openDocs === row.id_anexo ? null : row.id_anexo)}
+                        content={
+                            row.documentos?.length ? (
+                                <TablaDocumentos documentos={row.documentos} />
+                            ) : (
+                                <p>No hay documentos</p>
+                            )
+                        }
+                    />
+
+                    {/* SEDES DEL ANEXO */}
+                    <Acordeon
+                        title={`Sedes (${row.sedes?.length ?? 0})`}
+                        isOpen={openSedes === row.id_anexo}
+                        onToggle={() => setOpenSedes(openSedes === row.id_anexo ? null : row.id_anexo)}
+                        content={
+                            row.sedes?.length ? (
+                                < SedesSelector sedes={row.sedes} noSelect />
+                            ) : (
+                                <p>No hay sedes asociadas</p>
+                            )
+                        }
+                    />
 
                 </div>
             )}

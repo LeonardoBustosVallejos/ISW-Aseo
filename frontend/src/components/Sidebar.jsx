@@ -92,7 +92,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <div className={`sidebar-header `}>
 
                 <div className={`${isOpen ? '' : 'oculto'}`}>
-                    Sidebar
+
                 </div>
             </div>
             <div className={`menudata `}>
