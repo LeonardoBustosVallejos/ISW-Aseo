@@ -2,6 +2,7 @@ import { useState } from 'react';
 import useActivos from '@hooks/activos/useActivos';
 import { useNavigate } from 'react-router-dom';
 import '@styles/resumen.css';
+import Header from '../../components/misc/Header.jsx';
 
 const IconoCirculo = ({color}) => <svg width="22" height="22"><circle cx="11" cy="11" r="9" fill={color} stroke="#001F3F" strokeWidth="1" /></svg>;
 const IconoTriangulo = ({color}) => <svg width="24" height="22"><polygon points="12,2 22,19 2,19" fill={color} stroke="#001F3F" strokeWidth="1" strokeLinejoin="round" /></svg>;
@@ -29,9 +30,7 @@ const ResumenRecursos = () => {
 
     return (
         <div className="gestion-clientes">
-            <div className="gestion-header">
-                <h1>Resumen de Recursos</h1>
-            </div>
+            <Header title="Resumen de Recursos" />
 
             <div className="filtros-clientes">
                 <input

@@ -80,7 +80,7 @@ export const resumenActivosAdmin = async () => {
                     compania: cliente.nombreCliente || "Sin Nombre",
                     ubicacion: "Sin Dirección",
                     estadoSuministros: ['rojo', 'naranja', 'verde'], 
-                    alerta: true 
+                    alerta: true,
                 }];
             }
             return cliente.sede.map(sede => {
@@ -90,7 +90,7 @@ export const resumenActivosAdmin = async () => {
                     compania: cliente.nombreCliente || "Sin Nombre",
                     ubicacion: sede.direccion || "Sin Dirección",
                     estadoSuministros: ['rojo', 'naranja', 'verde'], 
-                    alerta: true 
+                    alerta: true,
                 };
             });
         });
