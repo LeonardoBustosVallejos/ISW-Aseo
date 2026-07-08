@@ -20,10 +20,13 @@
         display: flex;
         flex-direction: column-reverse;
         gap: 30px;
-        margin-left: calc(var(--sidebar-width-close)/2);
+
+        width: var(--sidebar-width-close);
+        align-items: center;
+        margin-left: 0;
 
         .top-button {
-            width: var(--sidebar-width-close);
+            width: calc(var(--sidebar-width-close) - 24px);
         }
     }
 

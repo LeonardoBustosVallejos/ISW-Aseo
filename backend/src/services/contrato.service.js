@@ -979,3 +979,18 @@ export async function agregarAnexosAClienteService(
         return [null, "Error interno"];
     }
 }
+
+export const getFechaContratodeCliente = async (clienteId) => {
+    try {
+        const contratoRepository = AppDataSource.getRepository("ContratoComercial");
+        const contrato = await contratoRepository.findOne({
+            where: { cliente: { id: clienteId } },
+            select: ["fechaFinReal"]
+        });
+
+        return contrato ? contrato.fechaFinReal : null;
+    } catch (error) {
+        console.error(`Error al obtener la fecha del contrato para el cliente ${clienteId}:`, error);
+        throw error;
+    }
+};

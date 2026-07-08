@@ -11,7 +11,6 @@ import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
 import DetallesCliente from "@components/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
-import Home from "./pages/Home";
 import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
 import SolicitudInfo from '@pages/SolicitudInfo';
@@ -26,8 +25,7 @@ export default function App() {
                 <Route path="/" element={<LoginForm />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/" element={<Root />}>
-                    <Route path="home" element={<Home />} />
-                    <Route path="recursos/resumen" element={<ResumenRecursos />} />
+                    <Route path="home" element={<ResumenRecursos />} />
                     <Route path="recursos/detalles/:sede_id" element={<DetallesCliente />} />
                 {/* <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                     <Route path="bodega" element={<Bodega />} />

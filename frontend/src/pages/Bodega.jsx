@@ -17,6 +17,8 @@ const Bodega = () => {
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [searchByName, setSearchByName] = useState('');
+  const [searchByCode, setSearchByCode] = useState('');
 
   //tabla que muestra los datos de los items que existen en bodega
   const columns = [
@@ -203,6 +205,18 @@ const Bodega = () => {
     setDataItems(selectedItems);
   }, [setDataItems]);
 
+  const filteredItems = items.filter((item) => {
+    const name = item?.nombre?.toLowerCase?.() ?? '';
+    const code = item?.codigo?.toString().toLowerCase() ?? '';
+    const normalizedName = searchByName.trim().toLowerCase();
+    const normalizedCode = searchByCode.trim().toLowerCase();
+
+    const matchesName = !normalizedName || name.includes(normalizedName);
+    const matchesCode = !normalizedCode || code.includes(normalizedCode);
+
+    return matchesName && matchesCode;
+  });
+
   return (
     <div className='main-container'>     
       <div className='table-container'>       
@@ -216,8 +230,24 @@ const Bodega = () => {
         <button onClick= {() => handleDeleteItem() }>
           Borrar Item
         </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '12px 0' }}>
+          <input
+            type='text'
+            value={searchByName}
+            onChange={(e) => setSearchByName(e.target.value)}
+            placeholder='Buscar por nombre'
+            style={{ minWidth: '220px', padding: '8px 10px' }}
+          />
+          <input
+            type='text'
+            value={searchByCode}
+            onChange={(e) => setSearchByCode(e.target.value)}
+            placeholder='Buscar por código'
+            style={{ minWidth: '220px', padding: '8px 10px' }}
+          />
+        </div>
         <Table
-          data={items}
+          data={filteredItems}
           columns={columns}
           initialSortName='id'
           onSelectionChange={handleSelectionChange}
