@@ -1,17 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getTrabajadores } from "@services/trabajador.service.js";
 
-export function useTrabajadores() {
-  const [trabajadores, setTrabajadores] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [success, setSucces] = useState(""); 
-  const [error, setError] = useState("");
+export function useTrabajadores(searchTerm = "", filtros = {}) {
+  const [trabajadores, 
+        setTrabajadores] = useState([]);
 
-  const [pagina, setPagina] = useState(1);
-  const [infoPaginacion, setInfoPaginacion] = useState({
+  const [loading, 
+        setLoading] = useState(false);
+
+  const [success, 
+        setSucces] = useState(""); 
+
+  const [error, 
+        setError] = useState("");
+
+    const [pagina, 
+        setPagina] = useState(1);
+
+    const [infoPaginacion, setInfoPaginacion] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0
+  });
+
+  const queryKeyRef = useRef("");
+
+  const queryKey = JSON.stringify({
+    searchTerm,
+    filtros
   });
 
   const listaTrabajadores = async () => {
@@ -20,8 +36,11 @@ export function useTrabajadores() {
     setSucces("");
 
     try {
-      const result = await getTrabajadores();
-      console.log(result);
+        const result = await getTrabajadores({
+          page: pagina,
+          search: searchTerm,
+          ...filtros
+        });
 
       if (result.succes) {
         const listaTrabajadoresRecuperada = result.data.trabajadores || [];
@@ -31,23 +50,41 @@ export function useTrabajadores() {
           setInfoPaginacion(result.data.pagination);
         }
 
-        setSucces(`Mostrando trabajadores del ${((pagina - 1) * 10) + 1} al ${Math.min(pagina * 10, result.data.pagination?.totalItems || 10)}`);
+        //setSucces(`Mostrando trabajadores del ${((pagina - 1) * 10) + 1} al ${Math.min(pagina * 10, result.data.pagination?.totalItems || 10)}`);
       } else {
         setError(result.message);
         setTrabajadores([]);
+        setInfoPaginacion({
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0
+        });
       }
     } catch (error) {
       setError("Error inesperado al obtener trabajadores");
       console.error("Get trabajadores error:", error);
       setTrabajadores([]);
+      setInfoPaginacion({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (queryKeyRef.current !== queryKey) {
+      queryKeyRef.current = queryKey;
+      if (pagina !== 1) {
+        setPagina(1);
+        return;
+      }
+    }
+
     listaTrabajadores();
-  }, [pagina]);
+  }, [pagina, queryKey]);
 
   return { trabajadores, 
           loading, 

@@ -103,11 +103,6 @@ const TrabajadorSchema = new EntitySchema({
         onDelete: "SET NULL",
         inverseSide: "miembros"
       },
-      supervisorDeGrupo: {
-        type: "one-to-many",
-        target: "TrabajadoresGrupos",
-        inverseSide: "supervisorAsignado"
-      },
       rol: {
         type: "many-to-one",
         target: "Rol",
@@ -120,7 +115,7 @@ const TrabajadorSchema = new EntitySchema({
         type: "one-to-many",
         target: "TrabajadoresGrupos",
         inverseSide: "supervisorAsignado",
-        //nullable: true
+        eager: true
       },
       competencias: {
         type: "many-to-many",

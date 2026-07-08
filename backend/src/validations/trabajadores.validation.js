@@ -155,7 +155,35 @@ export const getTrabajadoresQueryValidation = Joi.object({
         .min(1)
         .max(100)
         .default(10)
+        .optional(),
+    search: Joi.string()
+        .trim()
+        .allow("")
+        .optional(),
+    sexo: Joi.string()
+        .valid("M", "F")
+        .optional(),
+    rol: Joi.string()
+        .valid("Administrador", "Supervisor", "Trabajador")
+        .optional(),
+    estado: Joi.string()
+        .valid("activos", "despedidos", "todos")
+        .default("activos")
+        .optional(),
+    edadMin: Joi.number()
+        .integer()
+        .min(18)
+        .optional(),
+    edadMax: Joi.number()
+        .integer()
+        .max(70)
         .optional()
+}).custom((value, helpers) => {
+            if (value.edadMin !== undefined && value.edadMax !== undefined && value.edadMin > value.edadMax) {
+                return helpers.message("La edad mínima no puede ser mayor que la edad máxima.");
+            }
+
+    return value;
 });
 
 export const getTrabajadorParamValidation = Joi.object({

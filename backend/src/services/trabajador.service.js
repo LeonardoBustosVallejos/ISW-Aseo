@@ -1,5 +1,5 @@
 "use strict";
-import { Repository } from "typeorm";
+import { Brackets } from "typeorm";
 import Rut from "rutjs";
 import { AppDataSource } from "../config/configDb.js";
 import Trabajador from "../entity/trabajador.entity.js";
@@ -9,27 +9,90 @@ import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 import Sede from "../entity/sede.entity.js"
 import TrabajadoresGruposSchema from "../entity/trabajadoresGrupos.entity.js";
 
-export async function getTrabajadoresService({ page, limit }) {
+const formatDateOnly = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+const getDateYearsAgo = (years) => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - Number(years));
+    return formatDateOnly(date);
+};
+
+export async function getTrabajadoresService({
+    page,
+    limit,
+    search = "",
+    sexo = "",
+    edadMin,
+    edadMax,
+    rol = "",
+    estado = "activos"
+}) {
     try {
 
         const TrabajadoresRepository = AppDataSource.getRepository(Trabajador);
         const skip = (page - 1) * limit;
-        const [trabajadores, totalItems] = await TrabajadoresRepository.findAndCount({
-            where: {
-                despedido: false
-            },
-            relations: ["rol", 
-                        "competencias", 
-                        "grupoAsignado", 
-                        "supervisorDeGrupo", 
-                        "gruposSupervisados"],
-            skip: skip,
-            take: limit
+        const terminoBusqueda = search.trim();
 
-        });
-        if (!trabajadores || trabajadores.length === 0) return [null, "No hay trabajadores"];
+        if (edadMin !== undefined && edadMax !== undefined && Number(edadMin) > Number(edadMax)) {
+            return [null, "El rango etario no es válido: la edad mínima no puede ser mayor que la edad máxima."];
+        }
 
-        const totalPages = Math.ceil(totalItems / limit);
+        const query = TrabajadoresRepository.createQueryBuilder("trabajador")
+            .leftJoinAndSelect("trabajador.rol", "rol")
+            .leftJoinAndSelect("trabajador.competencias", "competencias")
+            .leftJoinAndSelect("trabajador.grupoAsignado", "grupoAsignado")
+            .leftJoinAndSelect("trabajador.gruposSupervisados", "gruposSupervisados")
+            .leftJoinAndSelect("trabajador.historialDesvinculaciones", "historialDesvinculaciones")
+            .distinct(true)
+            .orderBy("trabajador.id", "ASC")
+            .skip(skip)
+            .take(limit);
+
+        if (estado !== "todos") {
+            query.andWhere("trabajador.despedido = :despedido", {
+                despedido: estado === "despedidos"
+            });
+        }
+
+        if (terminoBusqueda) {
+            const searchValue = `%${terminoBusqueda}%`;
+            query.andWhere(new Brackets((qb) => {
+                qb.where("trabajador.nombres ILIKE :search", { search: searchValue })
+                    .orWhere("trabajador.apellidoPaterno ILIKE :search", { search: searchValue })
+                    .orWhere("trabajador.apellidoMaterno ILIKE :search", { search: searchValue })
+                    .orWhere("trabajador.rut ILIKE :search", { search: searchValue })
+                    .orWhere("trabajador.email ILIKE :search", { search: searchValue });
+            }));
+        }
+
+        if (sexo) {
+            query.andWhere("trabajador.sexo = :sexo", { sexo });
+        }
+
+        if (rol) {
+            query.andWhere("rol.nombre = :rol", { rol });
+        }
+
+        if (edadMin !== undefined && edadMin !== "") {
+            query.andWhere("trabajador.nacimiento <= :fechaMax", {
+                fechaMax: getDateYearsAgo(edadMin)
+            });
+        }
+
+        if (edadMax !== undefined && edadMax !== "") {
+            query.andWhere("trabajador.nacimiento >= :fechaMin", {
+                fechaMin: getDateYearsAgo(edadMax)
+            });
+        }
+
+        const [trabajadores, totalItems] = await query.getManyAndCount();
+
+        const totalPages = Math.max(1, Math.ceil(totalItems / limit));
 
         const payload = {
             trabajadores,
@@ -58,7 +121,7 @@ export async function getTrabajadorService(id) {
                 relations: ["rol", 
                             "competencias", 
                             "grupoAsignado", 
-                            "supervisorDeGrupo", 
+                            "gruposSupervisados", 
                             "gruposSupervisados",
                             "historialDesvinculaciones"],
         });
