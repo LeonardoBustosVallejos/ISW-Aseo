@@ -8,7 +8,6 @@ export const getResumen = async(cliente_id) => {
         return error.response.data;
     }
 }
-
 export const getDetalles = async(sede_id) => {
     try{
         const response = await axios.get(`/activos/sede/${sede_id}`);
@@ -17,7 +16,6 @@ export const getDetalles = async(sede_id) => {
         return error.response.data;
     }
 }
-
 export const getHistorialSede = async(sede_id) => {
     try {
         const response = await axios.get(`/activos/sede/${sede_id}/historial`);
@@ -25,5 +23,24 @@ export const getHistorialSede = async(sede_id) => {
     } catch(error) {
         console.error("Error obteniendo historial:", error);
         return []; 
+    }
+}
+export const getFechaContrato = async (cliente_id) => {
+    try {
+        const response = await axios.get(`/activos/fecha/${cliente_id}`);
+        return response.data; 
+    } catch (error) {
+        console.error("Error obteniendo fecha de contrato:", error);
+        return error.response?.data || null; 
+    }
+};
+
+export const getStockBodega = async () => {
+    try {
+        const response = await axios.get(`/activos/bodega/stock`);
+        return response.data.data || response.data; 
+    } catch (error) {
+        console.error("Error obteniendo stock de bodega:", error);
+        return error.response?.data || [];
     }
 }

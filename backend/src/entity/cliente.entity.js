@@ -77,6 +77,11 @@ const ClienteSchema = new EntitySchema({
          *      └── sedes[]
          *              └── contactos[]
          */
+        contactos: {
+            type: "one-to-many",
+            target: 'Contacto',
+            inverseSide: "cliente"
+        },
         clientePadre: {
             type: "many-to-one",
             target: "Cliente",

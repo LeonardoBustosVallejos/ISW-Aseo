@@ -1,8 +1,10 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega, obtenerActivosPorSede } from "../services/activofijo.service.js";
+import { registrarNuevoActivo, resumenActivosAdmin, asignarActivosCliente, devolverActivosBodega, obtenerActivosPorSede, obtenerStockBodegaService } from "../services/activofijo.service.js";
 import { asignarActivosValidation, devolverActivosValidation, confirmarRecepcionValidation } from "../validations/activofijo.validation.js";
+import { getFechaContratodeCliente } from "../services/contrato.service.js";
 import { AppDataSource } from "../config/configDb.js";
 import UserSchema from "../entity/user.entity.js";
+
 
 export const getResumenActivos = async (req, res) => {
     try {
@@ -29,6 +31,31 @@ export const getResumenActivos = async (req, res) => {
         return res.status(500).json({ status: "Error", message: "Error interno del servidor", error: error.message });
     }
 };
+
+export async function getStockBodega(req, res) {
+    try {
+        const [stock, error] = await obtenerStockBodegaService();
+
+        if (error) {
+            return res.status(400).json({
+                status: "Client error",
+                message: error
+            });
+        }
+
+        return res.status(200).json({
+            status: "Success",
+            message: "Stock de bodega obtenido correctamente",
+            data: stock
+        });
+    } catch (error) {
+        console.error("Error en getStockBodega controller:", error);
+        return res.status(500).json({
+            status: "Server error",
+            message: "Error interno del servidor"
+        });
+    }
+}
 
 export const getActivosPorSede = async (req, res) => {
     try {
@@ -118,3 +145,14 @@ export const devolverActivos = async (req, res) => {
         return handleErrorServer(res, 500, "Error interno del servidor", error.message);
      }
 };
+
+export const getFechaContratoCliente = async (req, res) => {
+    try {
+        const { cliente_id } = req.params;
+        const fecha = await getFechaContratodeCliente(cliente_id);
+
+        return handleSuccess(res, 200, "Fecha obtenida con éxito", fecha);
+    } catch (error) {
+        return handleErrorServer(res, 500, error.message);
+    }
+}

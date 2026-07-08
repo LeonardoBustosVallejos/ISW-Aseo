@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import useDetallesActivos from "@hooks/activos/useDetalles.jsx";
-import '../styles/detalles.css';
+import '@styles/detalles.css';
+import Header from '@components/misc/Header.jsx';
 
 const DetallesCliente = () => {
     const { sede_id } = useParams();
@@ -9,10 +10,8 @@ const DetallesCliente = () => {
     const location = useLocation();
     
     const [activoSeleccionado, setActivoSeleccionado] = useState(null);
-
     const datosSucursal = location.state?.datosSucursal || {};
-    const { activosFijos, historial, loading, error } = useDetallesActivos(sede_id);
-
+    const { activosFijos, historial, fechaContrato, loading, error } = useDetallesActivos(sede_id, datosSucursal.id);
     const agruparActivos = (activos) => {
         const grupos = {};
         activos.forEach(activo => {
@@ -44,16 +43,15 @@ const DetallesCliente = () => {
 
     return (
         <div className="detalles-container">
-            <button className="btn-volver" onClick={() => navigate(-1)}>
-                ← Volver al Resumen
-            </button>
-            <div className="cliente-header-bar">
-                <span>{datosSucursal.compania || "Compañía Desconocida"}</span>
-                <span>|</span>
-                <span>RUT: {datosSucursal.id || datosSucursal.rut || "Sin RUT"}</span> 
-                <span>|</span>
-                <span>{datosSucursal.ubicacion || datosSucursal.direccion || "Ubicación no registrada"}</span>
-            </div>
+            <Header title={datosSucursal.compania || "Compañía Desconocida"} subtitle={
+                <>
+                    <strong>{'RUT: '}</strong>
+                    {datosSucursal.id || datosSucursal.rut || "Sin RUT"}
+                    <strong>{' | '}</strong>
+                    <strong>{'Ubicación: '}</strong>
+                    {datosSucursal.ubicacion || datosSucursal.direccion || "Ubicación no registrada"}
+                </>}>
+            </Header>
 
             <div className="detalles-grid">
                 
@@ -112,8 +110,6 @@ const DetallesCliente = () => {
                                         <li key={mov.movimiento_id} style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #f0f0f0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                                                 <span className="fecha-etiqueta">{formatearFecha(mov.fecha)}</span>
-                                                
-                                                {/* 👇 Renderizamos "Último" de forma fija para el primer elemento */}
                                                 {index === 0 && (
                                                     <span className="badge-ultimo">Último</span>
                                                 )}
@@ -125,10 +121,12 @@ const DetallesCliente = () => {
                             </div>
                         )}
                     </div>
-
+                    
                     <div className="info-card">
-                        <h3>Duración Contrato</h3>
-                        <p style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Indefinido</p>
+                        <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: "10px", marginBottom: "15px", color: "#333", fontSize: "1rem", fontWeight: "normal" }}>Duración Contrato</h3>
+                        <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#002b5e' }}>
+                            {fechaContrato || "Indefinido"}
+                        </p>
                     </div>
                 </div>
 

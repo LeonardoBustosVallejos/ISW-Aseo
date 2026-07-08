@@ -6,7 +6,7 @@ export default function AddButton({ text, onClick }) {
         <button
             type="button"
             onClick={onClick}
-            className="add-button">
+            className="action-button">
             <CirclePlus size={18} />
             {text}
         </button>

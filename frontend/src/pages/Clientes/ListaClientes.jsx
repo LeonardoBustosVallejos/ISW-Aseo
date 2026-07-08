@@ -7,6 +7,7 @@ const ListaClientes = () => {
     const [lista, setLista] = useState([])
     const [busqueda, setBusqueda] = useState("");
     const [estadoFiltro, setEstadoFiltro] = useState("");
+    const [tipoCliente, setTipoCliente] = useState(null)
     const [orden, setOrden] = useState("");
     useEffect(() => {
         const obtenerClientes = async () => {
@@ -20,7 +21,7 @@ const ListaClientes = () => {
     const clientesFiltrados = [...lista].filter((cliente) => {
 
         const texto = busqueda.toLowerCase();
-
+        const coincideTipo = !tipoCliente || tipoCliente === cliente.tipoCliente
         const coincideBusqueda =
             cliente.nombreCliente?.toLowerCase().includes(texto) ||
             cliente.rutCliente?.toLowerCase().includes(texto) ||
@@ -33,7 +34,7 @@ const ListaClientes = () => {
             !estadoFiltro ||
             cliente.contrato === estadoFiltro;
 
-        return coincideBusqueda && coincideEstado;
+        return coincideBusqueda && coincideEstado && coincideTipo;
     })
         .sort((a, b) => {
 
@@ -69,11 +70,17 @@ const ListaClientes = () => {
 
                 <input
                     type="text"
-                    placeholder="Buscar por nombre, dirección o contacto..."
+                    placeholder="Buscar por nombre/dirección/contacto..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                 />
-
+                <select value={tipoCliente}
+                    onChange={(e) => setTipoCliente(e.target.value)}
+                >
+                    <option value="">Todos los tipos</option>
+                    <option value="EMPRESA">EMPRESA</option>
+                    <option value="FILIAL">FILIAL</option>
+                </select>
                 <select
                     value={estadoFiltro}
                     onChange={(e) => setEstadoFiltro(e.target.value)}
