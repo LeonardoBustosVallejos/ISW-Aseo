@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
-import { BookUser, CircleChevronDown, FileUser, House, Info, LogOut, Network, NotebookPen, PanelLeftClose, PanelLeftOpen, ShelvingUnit, TableProperties, Trash2, UserRound, UserRoundCheck, UserRoundPlus, UsersRound, Warehouse } from "lucide-react";
+import { BookUser, CircleChevronDown, FileText, FileUser, House, Info, LogOut, Network, NotebookPen, PanelLeftClose, PanelLeftOpen, ShelvingUnit, TableProperties, Trash2, UserRound, UserRoundCheck, UserRoundPlus, UsersRound, Warehouse } from "lucide-react";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
@@ -58,6 +58,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             title: "Clientes",
             children: [
                 { symbol: <UsersRound />, title: "Lista de Clientes", path: "/clientes" },
+                { symbol: <FileText />, title: 'Documentos Comerciales', path: '/clientes/documentos+comerciales' },
                 { symbol: <UserRoundPlus />, title: "Agregar", path: "/clientes/registrar" },
             ],
 
