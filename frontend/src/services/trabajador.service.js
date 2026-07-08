@@ -95,3 +95,25 @@ export async function updateTrabajador (id, body) {
     };
   }
 }
+
+
+/**
+ * Registra un nuevo trabajador enviando texto y archivos binarios
+ * @param {FormData} formData 
+ */
+export async function createTrabajador(formData) {
+  try {
+    const res = await axios.post("/trabajadores/create", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    return { 
+          success: true, 
+          data: res.data };
+  } catch (error) {
+    console.error("Error en servicio createTrabajador:", error);
+    return { 
+      success: false, 
+      message: error.response?.data?.message || "Error al intentar crear el trabajador." 
+    };
+  }
+}

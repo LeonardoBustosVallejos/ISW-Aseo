@@ -11,7 +11,7 @@ export default function ListaCompania({ index, compania, rut, ubicacion, onClick
 
             <div>
                 <div>
-                    <strong>{compania || "CompWañía sin nombre"}</strong>
+                    <strong>{compania || "Compañía sin nombre"}</strong>
                 </div>
                 <div>
                     {rut || "Sin RUT"}

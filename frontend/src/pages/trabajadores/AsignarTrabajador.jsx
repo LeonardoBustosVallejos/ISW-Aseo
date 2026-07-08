@@ -1,7 +1,7 @@
 import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.jsx";
 import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.jsx";
 import { useUpdateTrabajador } from "@hooks/trabajadores/useUpdateTrabajadores";
-import { useUpdateTrabajadorForm } from "../../hooks/trabajadores/useUpdateForm";
+import { useUpdateTrabajadorForm } from "@components/trabajadores/useUpdateForm";
 import { useState } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
