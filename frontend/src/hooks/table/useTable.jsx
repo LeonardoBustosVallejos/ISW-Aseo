@@ -30,6 +30,12 @@ function useTable({ data, columns, filter, dataToFilter, initialSortName, onSele
                 pagination: true,
                 paginationSize: 6,
                 selectable: 1,
+                // allow selecting a row by clicking anywhere on the row
+                //rowClick: function(e, row) {
+                    // clicking on buttons inside cells should already call e.stopPropagation()
+                    // so this will only toggle selection when the row itself is clicked
+                    //row.toggleSelect();
+                //},
                 rowHeight: 46,
                 langs: {
                     "default": {
