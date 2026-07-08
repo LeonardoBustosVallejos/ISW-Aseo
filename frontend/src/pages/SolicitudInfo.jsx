@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getSolicitudById } from '@services/solicitud.service';
+import { getSolicitudById, updateSolicitud } from '@services/solicitud.service';
 
 export default function SolicitudInfo() {
     const { id } = useParams();
     const [solicitud, setSolicitud] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const cargarInformacion = async () => {
@@ -40,13 +42,73 @@ export default function SolicitudInfo() {
 
     const camposSolicitud = Object.entries(solicitud || {}).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key));
 
+    const handleAcceptSolicitud = async () => {
+        if (!solicitud?.id_solicitud && !solicitud?.id) {
+            setActionMessage({ type: 'error', text: 'No hay una solicitud válida para aceptar.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        setActionMessage({ type: '', text: '' });
+
+        try {
+            const solicitudId = solicitud.id_solicitud ?? solicitud.id;
+            const response = await updateSolicitud(solicitudId, {
+                ...solicitud,
+                estado_solicitud: 'Aceptada'
+            });
+
+            if (!response?.success) {
+                throw new Error(response?.message || 'No se pudo aceptar la solicitud');
+            }
+
+            setSolicitud((prev) => prev ? { ...prev, estado_solicitud: 'Aceptada' } : prev);
+            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.message || 'Ocurrió un error al aceptar la solicitud.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
             <h1 style={{ marginBottom: '0.5rem' }}>Información de la solicitud</h1>
             <p style={{ marginTop: 0, color: '#4b5563' }}>Detalle de la solicitud seleccionada.</p>
 
             <section style={{ background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Datos de la solicitud</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                    <h2 style={{ margin: 0 }}>Datos de la solicitud</h2>
+                    <button
+                        type="button"
+                        onClick={handleAcceptSolicitud}
+                        disabled={isSubmitting || solicitud?.estado_solicitud === 'Aceptada'}
+                        style={{
+                            padding: '0.7rem 1rem',
+                            border: 'none',
+                            borderRadius: '6px',
+                            backgroundColor: solicitud?.estado_solicitud === 'Aceptada' ? '#16a34a' : '#2563eb',
+                            color: '#fff',
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                            opacity: isSubmitting ? 0.7 : 1,
+                            fontWeight: 600
+                        }}
+                    >
+                        {isSubmitting ? 'Aceptando...' : solicitud?.estado_solicitud === 'Aceptada' ? 'Aceptada' : 'Aceptar'}
+                    </button>
+                </div>
+
+                {actionMessage.text && (
+                    <div style={{
+                        marginBottom: '1rem',
+                        padding: '0.75rem',
+                        borderRadius: '6px',
+                        backgroundColor: actionMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
+                        color: actionMessage.type === 'success' ? '#166534' : '#991b1b'
+                    }}>
+                        {actionMessage.text}
+                    </div>
+                )}
                 {camposSolicitud.length > 0 ? (
                     <div style={{ display: 'grid', gap: '0.75rem' }}>
                         {camposSolicitud.map(([key, value]) => (
