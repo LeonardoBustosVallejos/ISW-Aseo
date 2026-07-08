@@ -75,6 +75,35 @@ const ResolverSolicitud = () => {
         setModalActivosOpen(false);
     };
 
+    const handleAcceptSolicitud = async () => {
+        if (!solicitud?.id_solicitud && !solicitud?.id) {
+            setActionMessage({ type: 'error', text: 'No hay una solicitud válida para aceptar.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        setActionMessage({ type: '', text: '' });
+
+        try {
+            const solicitudId = solicitud.id_solicitud ?? solicitud.id;
+            const response = await updateSolicitud(solicitudId, {
+                ...solicitud,
+                estado_solicitud: 'Aceptada'
+            });
+
+            if (!response?.success) {
+                throw new Error(response?.message || 'No se pudo aceptar la solicitud');
+            }
+
+            setSolicitud((prev) => prev ? { ...prev, estado_solicitud: 'Aceptada' } : prev);
+            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.message || 'Ocurrió un error al aceptar la solicitud.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="resolver-container">
             <Header title={`Resolver Solicitud`} subtitle={
