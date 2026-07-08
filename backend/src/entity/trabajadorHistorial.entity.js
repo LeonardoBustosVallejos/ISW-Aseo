@@ -15,29 +15,9 @@ const TrabajadorHistorialSchema = new EntitySchema({
             length: 500,
             nullable: false,
         },
-        // posible archivo adjunto
-        archivoNombreOriginal: {
+        archivo_url: {
             type: "varchar",
-            length: 255,
-            nullable: true
-        },
-        archivoNombreArchivo: {
-            type: "varchar",
-            length: 255,
-            nullable: true
-        },  
-        archivoRuta: {
-            type: "varchar",
-            length: 255,
-            nullable: true
-        },
-        archivoMimeType: {
-            type: "varchar", 
-            length: 100, 
-            nullable: true,
-        },
-        archivoPeso: {
-            type: "bigint",
+            length: 500,
             nullable: true
         },
         fechaDesvinculacion: {

@@ -3,7 +3,7 @@ import {
     handleErrorServer,
 } from "../handlers/responseHandlers.js";
 
-export const isAdmin = (allowedRoles) => {
+export const authorizeRoles = (allowedRoles) => {
     return (req, res, next) => {
 
         if (!req.user || !req.user.rol) {
