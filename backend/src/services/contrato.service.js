@@ -401,3 +401,18 @@ export async function getAnexoComercialService(anexo_id = null, sede_id = null, 
 }
 
 //NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente o trabajador
+
+export const getFechaContratodeCliente = async (clienteId) => {
+    try {
+        const contratoRepository = AppDataSource.getRepository("ContratoComercial");
+        const contrato = await contratoRepository.findOne({
+            where: { cliente: { id: clienteId } },
+            select: ["fechaFinReal"] 
+        });
+
+        return contrato ? contrato.fechaFinReal : null;
+    } catch (error) {
+        console.error(`Error al obtener la fecha del contrato para el cliente ${clienteId}:`, error);
+        throw error;
+    }
+};
