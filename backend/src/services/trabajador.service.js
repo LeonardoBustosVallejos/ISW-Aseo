@@ -30,6 +30,7 @@ export async function getTrabajadoresService({
     edadMin,
     edadMax,
     rol = "",
+    competencias,
     estado = "activos"
 }) {
     try {
@@ -76,6 +77,14 @@ export async function getTrabajadoresService({
 
         if (rol) {
             query.andWhere("rol.nombre = :rol", { rol });
+        }
+
+        if (competencias) {
+            if (Array.isArray(competencias)) {
+                query.andWhere("competencias.id IN (:...competencias)", { competencias });
+            } else {
+                query.andWhere("competencias.id = :competencias", { competencias });
+            }
         }
 
         if (edadMin !== undefined && edadMin !== "") {
@@ -195,20 +204,27 @@ export async function updateTrabajadorService(id, body) {
 
             trabajadorFound.email = body.email;
         }
-        
+     
         // Verifica que si era supervisor no puede ser un Trabajador mientras tenga grupos asignados
         if (body.rol) {
             const rolObj = await rolRepository.findOne({ where: { id: Number(body.rol) } });
             if (!rolObj) return [null, "El rol especificado no es válido"];
 
             const esSupervisorActual = trabajadorFound.rol && trabajadorFound.rol.id === 3;
-            const vaASerTrabajador = rolObj.id === 2;
+            const vaASerTrabajador = rolObj.id === 4;
             const tieneGruposACargo = trabajadorFound.gruposSupervisados && trabajadorFound.gruposSupervisados.length > 0;
 
             if (esSupervisorActual && vaASerTrabajador && tieneGruposACargo) {
                 return [
                     null, 
                     `No se puede cambiar el rol a Trabajador porque actualmente es supervisor de ${trabajadorFound.gruposSupervisados.length} grupo(s). Primero debes asignar otro supervisor a esos grupos.`
+                ];
+            }
+
+            if (rolObj.id === 1 || rolObj.id === 2){
+                return [
+                    null,
+                    `Un empleado no puede cambiar su rol a Administrador o Cliente.`
                 ];
             }
 
@@ -237,9 +253,9 @@ export async function updateTrabajadorService(id, body) {
             const nuevosItems = await itemRepository.findByIds(body.competenciasIds);
             trabajadorFound.competencias = nuevosItems;
         }
-
-        if (body.foto_url) trabajadorFound.foto_url = body.foto_url;
+        //if (body.foto_url) trabajadorFound.foto_url = body.foto_url;
         if (body.antecedentes_url) trabajadorFound.antecedentes_url = body.antecedentes_url;
+        if (body.cv_url) trabajadorFound.cv_url = body.cv_url;
 
         trabajadorFound.updatedAt = new Date();
 

@@ -1,11 +1,15 @@
-import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.js";
-import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.js"
+import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.jsx";
+import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.jsx";
+import { useUpdateTrabajador } from "@hooks/trabajadores/useUpdateTrabajadores";
+import { useUpdateTrabajadorForm } from "../../hooks/trabajadores/useUpdateForm";
 import { useState } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
-import Header from "@components/misc/Header.jsx"
+import Header from "@components/misc/Header.jsx";
 import TrabajadorFilters from "@components/trabajadores/TrabajadorFilters.jsx";
+import { Modal }  from "@components/Modal.jsx";
 import "@styles/asignarTrabajador.css";
+import "@styles/modal.css"
 
 
 const filtrosPorDefecto = {
@@ -23,6 +27,7 @@ export default function Trabajadores() {
 
   const [openSection,
         setOpenSection] = useState(null);
+  
         
   const { detalle, 
           loadingDetalle, 
@@ -40,7 +45,23 @@ export default function Trabajadores() {
           success,
           pagina,
           setPagina,
-      infoPaginacion } = useTrabajadores(searchTerm, filtros); 
+          infoPaginacion } = useTrabajadores(searchTerm, filtros); 
+
+  const {
+        executeUpdate,
+        loadingUpdate,
+        errorUpdate,
+        successUpdate,
+        setErrorUpdate,
+        setSuccessUpdate } = useUpdateTrabajador();
+  
+  const {
+        isModalOpen,
+        setIsModalOpen,
+        formData,
+        setFormData,
+        handleOpenEditModal,
+        handleSubmitUpdate  } = useUpdateTrabajadorForm(detalle, executeUpdate, selectedId);
 
   const handleFiltrosChange = (nextFiltros) => {
     setFiltros(nextFiltros);
@@ -221,6 +242,7 @@ export default function Trabajadores() {
                             justifyContent: "center", 
                             border: "2px solid #ccc" }}
                   />
+                  
                 ) : (
                   <div style={{ 
                             width: "120px", 
@@ -235,6 +257,16 @@ export default function Trabajadores() {
                   </div>
                 )}
             </div>
+            <div style={{ textAlign: "center", marginBottom: "15px" }}>
+              <button 
+                onClick={handleOpenEditModal} 
+                className="btn-editar-trabajador" // Puedes darle estilos en asignarTrabajador.css
+                style={{ padding: "8px 16px", backgroundColor: "#0011ff", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+                >
+                  Editar Datos
+                 </button>
+              </div>
+
             <Acordeon title={"Información Personal"} level={0} isOpen={openSection === "infoPersonal"}
                                 required={false}
                                 onToggle={() => {
@@ -251,7 +283,7 @@ export default function Trabajadores() {
                                         <p>Fecha de Contratación: {detalle.createdAt}</p>)}
                                     </div>
                                 } />
- 
+
             <Acordeon title={"Contacto"} level={0} isOpen={openSection === "infoContacto"}
                                 required={false}
                                 onToggle={() => {
@@ -262,6 +294,23 @@ export default function Trabajadores() {
 
                                         <p>Teléfono: {detalle.telefono}</p>
                                         <p>Correo: {detalle.email}</p>
+                                    </div>
+                                } />
+
+              <Acordeon title={"Competencias"} level={0} isOpen={openSection === "infoCompetencias"}
+                                required={false}
+                                onToggle={() => {
+                                    setOpenSection(openSection === "infoCompetencias" ? null : "infoCompetencias")
+                                }}
+                                content={
+                                    <div className="">
+                                          <p>
+                                            Competencia(s): {
+                                            detalle.competencias && detalle.competencias.length > 0
+                                              ? detalle.competencias.map(comp => comp.nombre).join(", ")
+                                              : "Sin competencias registradas."
+                                          }
+                                          </p>
                                     </div>
                                 } />
             {detalle.despedido === false && (
@@ -445,7 +494,87 @@ export default function Trabajadores() {
 
                                         </div>
                                 } />)}
-                                
+                        <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Modificar Trabajador">
+                          <form onSubmit={handleSubmitUpdate} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "10px" }}>
+                            
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>Correo Electrónico</label>
+                              <input 
+                                type="email" 
+                                value={formData.email} 
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                                required 
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>Teléfono</label>
+                              <input 
+                                type="text" 
+                                value={formData.telefono} 
+                                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>Rol</label>
+                              <select 
+                                value={formData.rol} 
+                                onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                              >
+                                <option value="4">Trabajador</option>
+                                <option value="3">Supervisor</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>ID de Grupo</label>
+                              <input 
+                                type="text" 
+                                value={formData.grupo_id} 
+                                onChange={(e) => setFormData({ ...formData, grupo_id: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                                placeholder="ID del grupo a asignar"
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>URL Currículum Vitae (CV)</label>
+                              <input 
+                                type="url" 
+                                value={formData.cv_url} 
+                                onChange={(e) => setFormData({ ...formData, cv_url: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontWeight: "bold", display: "block" }}>URL Antecedentes</label>
+                              <input 
+                                type="url" 
+                                value={formData.antecedentes_url} 
+                                onChange={(e) => setFormData({ ...formData, antecedentes_url: e.target.value })}
+                                style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                              />
+                            </div>
+
+                            {/* Gestión de Errores y Carga del Hook */}
+                            {errorUpdate && <p style={{ color: "red", margin: 0 }}>{errorUpdate}</p>}
+                            {successUpdate && <p style={{ color: "green", margin: 0 }}>{successUpdate}</p>}
+
+                            <div style={{ display: "flex", justifyContent: "end", gap: "10px", marginTop: "10px" }}>
+                              <button type="button" onClick={() => setIsModalOpen(false)} disabled={loadingUpdate} style={{ padding: "6px 12px" }}>
+                                Cancelar
+                              </button>
+                              <button type="submit" disabled={loadingUpdate} style={{ padding: "6px 12px", backgroundColor: "#0011ff", color: "white", border: "none", borderRadius: "4px" }}>
+                                {loadingUpdate ? "Guardando..." : "Guardar Cambios"}
+                              </button>
+                            </div>
+                          </form>
+                        </Modal>       
           </div>
           ): (
             !loadingDetalle && <p className="sin-seleccion">Haz clic en un trabajador para ver los detalles</p>

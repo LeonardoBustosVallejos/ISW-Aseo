@@ -48,24 +48,57 @@ import {
 
 export async function getTrabajadoresController(req, res) {
   try {
+    // 1. Primero validamos con Joi para asegurar que la estructura base es correcta
     const { error, value } = getTrabajadoresQueryValidation.validate(req.query);
     if (error) return handleErrorClient(res, 400, "Parámetros de paginación inválidos", error.message);
-    
+
+    // 2. Tomamos el parámetro competencias de donde sea que venga para procesarlo rigurosamente
+    let rawCompetencias = value.competencias || req.query.competencias;
+    let competenciasFiltradas = null;
+
+    if (rawCompetencias) {
+      if (typeof rawCompetencias === 'string') {
+        if (rawCompetencias.includes(',')) {
+          // "1,4" -> [1, 4]
+          competenciasFiltradas = rawCompetencias.split(',').map(id => parseInt(id, 10)).filter(num => !isNaN(num));
+        } else if (rawCompetencias.trim() !== "") {
+          // "1" -> [1]
+          const parsed = parseInt(rawCompetencias, 10);
+          if (!isNaN(parsed)) competenciasFiltradas = [parsed];
+        }
+      } else if (Array.isArray(rawCompetencias)) {
+        // Por si llega como array nativo de Express ['1', '4'] -> [1, 4]
+        competenciasFiltradas = rawCompetencias.map(id => parseInt(id, 10)).filter(num => !isNaN(num));
+      } else if (typeof rawCompetencias === 'number') {
+        competenciasFiltradas = [rawCompetencias];
+      }
+    }
+
+    // 3. BLINDAJE CRUCIAL: Modificamos tanto 'value' como 'req.query' 
+    // para asegurarnos de que no importe cuál lea tu "getTrabajadoresService", reciba el Array de enteros limpios.
+    if (competenciasFiltradas) {
+      value.competencias = competenciasFiltradas;
+      req.query.competencias = competenciasFiltradas;
+    } else {
+      // Si está vacío o es inválido, lo removemos para evitar enviar basura a la BD
+      delete value.competencias;
+      delete req.query.competencias;
+    }
+
+    // 4. Llamamos al servicio pasando el objeto blindado
     const [result, errorTrabajadores] = await getTrabajadoresService(value);
     if (errorTrabajadores) return handleErrorClient(res, 404, errorTrabajadores);
     
     const responseData = result.trabajadores.map(trabajador => {
-      return {
-        ...trabajador
-      };
-    })
+      return { ...trabajador };
+    });
 
     const finalResponse = {
         trabajadores: responseData,
         pagination: result.pagination
     };
 
-    return (handleSuccess(res, 200, "Trabajadores encontrados", finalResponse));
+    return handleSuccess(res, 200, "Trabajadores encontrados", finalResponse);
   }
   catch (error) {
     handleErrorServer(res, 500, error.message);
@@ -180,11 +213,13 @@ export async function updateTrabajadorController(req, res) {
     const { body } = req;
 
     const files = req.files || {};
-    if (files.foto?.[0]) {
-      body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
-    }
+
     if (files.antecedentes?.[0]) {
       body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
+    }
+
+    if (files.cv?.[0]) {
+      body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
     }
 
     if (body.competenciasIds) {

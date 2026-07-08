@@ -1,23 +1,34 @@
 import { useState } from "react";
 import "@styles/trabajadorFilters.css"; 
+import useItems from "@hooks/items/useGetItems.jsx";
+import Acordeon from "../acordeon";
+import { handleCompetenciaToggle } from "@helpers/CompetenciaToggle";
 
 const filtrosPorDefecto = {
   sexo: "",
   edadMin: "",
   edadMax: "",
   rol: "",
-  estado: "activos"
+  estado: "activos",
+  competencias: []
 };
 
 export default function TrabajadorFilters({ value, onChange, onClear }) {
   const [open, setOpen] = useState(false);
+  const [openSection, setOpenSection] = useState(false);
+
+  const [listaCompetenciasDisponibles, setListaCompetenciasDisponibles] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const { items } = useItems();
 
   const filtrosActivos = [
     value?.sexo,
     value?.edadMin,
     value?.edadMax,
     value?.rol,
-    value?.estado && value.estado !== "activos" ? value.estado : ""
+    value?.estado && value.estado !== "activos" ? value.estado : "",
+    Array.isArray(value?.competencias) && value.competencias.length > 0 ? true : ""
   ].filter(Boolean).length;
 
   const updateFilter = (key, nextValue) => {
@@ -26,7 +37,8 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
       [key]: nextValue
     });
   };
-
+  const onCompetenciaToggle = handleCompetenciaToggle(value, updateFilter);
+  
   const MIN_EDAD_PERMITIDA = 18;
   const MAX_EDAD_PERMITIDA = 70;
 
@@ -149,6 +161,42 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
                 <option value="todos">Todos</option>
               </select>
             </label>
+
+            {/* FILTRO: COMPETENCIAS */}
+            <div className="filter-label-group">
+              Competencias
+              <Acordeon
+              title= {"Competencias"}
+              level= {1}
+              isOpen = {openSection === "competenciasFiltro"}
+                  required={false}
+                  onToggle={() => {
+                      setOpenSection(openSection === "competenciasFiltro" ? null : "competenciasFiltro")
+                  }}
+                content={
+                <div className="accordion-content-list" style={{ display: 'flex', flexDirection: 'column', maxHeight: '150px', overflowY: 'auto', gap: '6px', paddingTop: '8px' }}>
+                    {/* 3. Mapeamos directamente "items" del Hook */}
+                    {!items || items.length === 0 ? (
+                      <span style={{ fontSize: '0.85rem', color: '#666', padding: '0 12px' }}>No hay competencias disponibles</span>
+                    ) : (
+                      items.map((comp) => {
+                        const isChecked = Array.isArray(value?.competencias) && value.competencias.includes(comp.id);
+                        return (
+                          <label key={comp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => onCompetenciaToggle(comp.id)}
+                            />
+                            <span>{comp.nombre}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>}
+                
+              />
+            </div>
 
             {/* ACCIONES EN EL FOOTER */}
             <div className="filters-actions-footer">
