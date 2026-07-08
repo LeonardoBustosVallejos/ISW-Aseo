@@ -27,6 +27,31 @@ const generarCodigo = async (prefijo) => {
     return `${prefijo}-${ultimo_texto}`;
 };
 
+export const obtenerStockBodegaService = async () => {
+    try {
+        const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
+        
+        const stock = await activoFijoRepositorio
+            .createQueryBuilder("activo")
+            .select("activo.nombre", "nombre")
+            .addSelect("COUNT(activo.activo_id)", "cantidad_disponible")
+            .where("activo.sede_id IS NULL")
+            .andWhere("activo.cliente_id IS NULL")
+            .groupBy("activo.nombre")
+            .getRawMany();
+            
+        const stockFormateado = stock.map(item => ({
+            nombre: item.nombre,
+            cantidad_disponible: parseInt(item.cantidad_disponible, 10)
+        }));
+
+        return [stockFormateado, null];
+    } catch (error) {
+        console.error("Error al obtener stock de bodega:", error);
+        return [null, "Error al cargar el inventario"];
+    }
+};
+
 export const registrarNuevoActivo = async (datos_activo) => {
     try{
         const activoFijoRepositorio = AppDataSource.getRepository(ActivoFijo);
