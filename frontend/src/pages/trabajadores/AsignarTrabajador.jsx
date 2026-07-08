@@ -3,6 +3,7 @@ import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores
 import { useState } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
+import Header from "@components/misc/Header.jsx"
 import TrabajadorFilters from "@components/trabajadores/TrabajadorFilters.jsx";
 import "@styles/asignarTrabajador.css";
 
@@ -47,7 +48,7 @@ export default function Trabajadores() {
 
   return (
     <div className="contenido-asignacion">
-      <h2>Trabajadores</h2>
+      <Header title = "Trabajadores"/>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: "280px" }}>
@@ -304,8 +305,8 @@ export default function Trabajadores() {
                                     </div>
                                   </div>
                                 } />)}
-                
-            {detalle.despedido === false && (
+
+            {detalle.despedido === true && (
             <Acordeon title={"Documentos del ex empleado"} level={0} isOpen={openSection === "infoExempleado"}
                                 required={false}
                                 onToggle={() => {
@@ -385,7 +386,7 @@ export default function Trabajadores() {
                                   <div className="historial-container" style={{ padding: '10px' }}>
                                           
 
-                                          {/* 2. HISTORIAL DE DESVINCULACIONES EXTRAÍDO DE TU POSTMAN */}
+                                          {/*HISTORIAL DE DESVINCULACIONES*/}
                                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
                                             

@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import api from "@services/root.service.js";
 import "@styles/ingresarTrabajador.css";
 import { showSuccessAlert, showErrorAlert } from "../../helpers/sweetAlert";
+import Header from "@components/misc/Header.jsx";
 
 export default function IngresarTrabajador(){
   const fotoRef = useRef();
@@ -71,7 +72,7 @@ for (const pair of fd.entries()) {
 
     return (
     <div>
-    <h1>Ingresar Trabajador</h1>
+    <Header title= "Ingresar Trabajador"/>
     <div className="formIngresarTrabajador">
       <form onSubmit={handleSubmit}>
         <label 
