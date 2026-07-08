@@ -21,7 +21,8 @@ export default function TabFiliales({ filiales, noTitle = false }) {
             columns={[
                 {
                     field: "nombreCliente",
-                    header: "Nombre"
+                    header: "Nombre",
+                    render: (_, row) => row.nombreCliente
                 },
                 {
                     field: "rutCliente",
@@ -68,6 +69,16 @@ export default function TabFiliales({ filiales, noTitle = false }) {
                         <div className="info-label">
                             <strong>Teléfono de contacto:</strong>
                             <strong>{row.phone || 'Sin Datos'}</strong>
+                        </div>
+                        <div className="data-line" />
+                        <div className="info-label">
+                            <strong>Contratos asociados:</strong>
+                            <strong>{row.contratos.length || row.contratos}</strong>
+                        </div>
+                        <div className="data-line" />
+                        <div className="info-label">
+                            <strong>Anexos asociados:</strong>
+                            <strong>{row.anexos.length || row.anexos}</strong>
                         </div>
                         <div className="data-line" />
 

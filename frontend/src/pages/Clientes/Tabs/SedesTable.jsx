@@ -170,7 +170,8 @@ export default function SedesTable({ sedes, noTitle = false, noActions = false }
                 columns={[
                     {
                         field: "nombre_sede",
-                        header: "Nombre"
+                        header: "Nombre",
+                        render: (_, row) => row.nombre_sede
                     },
                     {
                         field: "tipoSede",
@@ -179,7 +180,13 @@ export default function SedesTable({ sedes, noTitle = false, noActions = false }
                     },
                     {
                         field: "direccion",
-                        header: "Dirección"
+                        header: "Dirección",
+                        render: (_, row) => row.direccion
+                    },
+                    {
+                        field: "nombreCliente",
+                        header: "Perteneciente",
+                        render: (_, row) => (row.cliente.nombreCliente + ' - ' + row.cliente.tipoCliente)
                     },
                     {
                         field: "personalSolicitado",

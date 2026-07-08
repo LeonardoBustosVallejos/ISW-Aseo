@@ -79,6 +79,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
 
         anexos: []
     });
+    /*
     const [nuevosAnexos, setNuevosAnexos] = useState({
         cliente_id: cliente.cliente_id,
 
@@ -112,7 +113,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
 
         anexos: []
     });
-
+*/
     const MAPA_COLORES_ESTADO = {
         ESPERA: "azul-gris",
         ATRASADO: "naranja",
@@ -186,6 +187,8 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
     const handleOpenVerif = () => {
         setOpenVerifModal(true)
     }
+    console.log(contratos);
+
     return (
         <>
             <Header title={title ? title : title || 'Contratos'}>
@@ -332,9 +335,10 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                                         </div>
                                         <div className="data-line" />
                                         <br />
+                                        {/*
                                         <button className="action-button" onClick={() => handleView(row.cliente[0].rutCliente, row.cliente[0].cliente_id)}>
                                             <strong>Ir a informacion del cliente</strong>
-                                        </button>
+                                        </button>*/}
                                     </>
                                 }
                             />
@@ -398,21 +402,32 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                                     <Table
                                         title={noTitle ? '' : 'Sedes'}
                                         emptyMessage="No existen sedes"
-                                        rowKey="sede_id"
+                                        rowKey={"sede_id"}
                                         noExpand
                                         columns={[
                                             {
                                                 field: "nombre_sede",
-                                                header: "Nombre"
+                                                header: "Nombre",
+                                                render: (_, row) => row.nombre_sede
+
                                             },
                                             {
                                                 field: "tipoSede",
                                                 header: "Tipo",
 
+
+                                            },
+                                            {
+                                                field: "nombreCliente",
+                                                header: "Propietario",
+                                                render: (_, row) => row.cliente.nombreCliente + '-' + row.cliente.tipoCliente
+
                                             },
                                             {
                                                 field: "direccion",
-                                                header: "Dirección"
+                                                header: "Dirección",
+                                                render: (_, row) => row.direccion
+
                                             },
                                             {
                                                 field: "personalSolicitado",

@@ -110,3 +110,16 @@ export async function getVistaContratosComerciales(req, res) {
         return handleErrorServer(res, 500, error.message);
     }
 }
+
+export async function createNuevoContratoExistente(req, res) {
+    try {
+        const { cliente_id } = req.params
+
+        const { contrato, metadataDocumentos, } = req.body
+
+
+    } catch (error) {
+        console.error("Error en crear un contrato en cliente existente:", error);
+        return handleErrorServer(res, 500, error.message);
+    }
+}

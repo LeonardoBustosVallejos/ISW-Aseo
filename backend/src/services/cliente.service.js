@@ -8,14 +8,13 @@ import User from "../entity/user.entity.js";
 import { asignarPersonalService, asignarSupervisorJerarquicoService, asignarSupervisorService, getAsignadosService, getUserService } from "./user.service.js";
 
 import Sede from "../entity/sede.entity.js";
-import { getRolByNameService } from "./rol.service.js";
 import { getORTrabajadorService } from "./trabajador.service.js";
 import { createAnexosYDocumentos, createContratoAnexoService, createContratoComercialService, getAnexoComercialService, getContratoComercialService, getVistaContratosService } from "./contrato.service.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
 import TrabajadoresAsignados from "../entity/trabajadoresAsignados.entity.js";
 import { calcularPersonalTotal, obtenerLimitePersonalContrato } from "../helpers/personal.helper.js";
-import contratoComercialSchema from "../entity/contratos/contratoComercial.entity.js";
-import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
+import Contratos from "../entity/contratos/contratoComercial.entity.js";
+import Anexos from "../entity/contratos/contratoAnexo.entity.js";
 /**
  * get...s() lista de todos
  * get...By(params) estricta para un único elemento con findOne AND
@@ -900,11 +899,11 @@ export async function updateClienteService(cliente_id, data, manager = null) {
  */
 async function createCliente(cliente, clientePadre_id = null, relaciones = {}, manager = null) {
     try {
-        const contratoRepository = manager ? manager.getRepository(contratoComercialSchema)
-            : AppDataSource.getRepository(ContratoAnexoSchema)
+        const contratoRepository = manager ? manager.getRepository(Contratos)
+            : AppDataSource.getRepository(Anexos)
 
-        const anexoRepository = manager ? manager.getRepository(ContratoAnexoSchema)
-            : AppDataSource.getRepository(ContratoAnexoSchema)
+        const anexoRepository = manager ? manager.getRepository(Anexos)
+            : AppDataSource.getRepository(Anexos)
 
         const sedeRepository = manager ? manager.getRepository(Sede)
             : AppDataSource.getRepository(Sede)
@@ -1057,7 +1056,7 @@ export async function getInfoSedeService(cliente, sede_id = null, manager = null
         const { rutCliente, cliente_id } = cliente
 
         const where = {}
-        if (cliente_id) where.cliente = { cliente_id }
+        if (cliente_id) { where.cliente = { cliente_id } }
         if (rutCliente) where.cliente = { rutCliente }
         if (sede_id) where.sede_id = sede_id
 
@@ -1203,6 +1202,7 @@ export async function getInfoClienteService(clienteData, manager = null) {
 
         // 2. Obtener las sedes
         const [sedes, errSedes] = await getInfoSedeService({ cliente_id: clienteFound.cliente_id }, null, manager);
+        if (errSedes) throw [null, errSedes]
         data.sedes = sedes;
 
         const [contactos, errContactos] = await getInfoContactos(clienteFound.cliente_id, manager);
@@ -1219,21 +1219,24 @@ export async function getInfoClienteService(clienteData, manager = null) {
                 const [filialData, errFilial] = await getInfoClienteService({ cliente_id: filial.cliente_id, rutCliente: filial.rutCliente }, manager);
                 if (errFilial) return [null, errFilial];
                 data.filiales.push({ ...filialData, ...filialData.cliente });
+                data.sedes.push(...filialData.sedes)
             }
         }
 
         // 4. Obtener Contratos y Relaciones Complejas M2M mediante QueryBuilder
-        const contratoRepository = manager ? manager.getRepository(contratoComercialSchema) :
-            AppDataSource.getRepository(contratoComercialSchema);
+        const contratoRepository = manager ? manager.getRepository(Contratos) :
+            AppDataSource.getRepository(Contratos);
 
 
         data.contratos = await contratoRepository
             .createQueryBuilder("contrato")
             .leftJoinAndSelect("contrato.cliente", "cliente")
             .leftJoinAndSelect("contrato.sedes", "sedes")
+            .leftJoinAndSelect("sedes.cliente", "clienteSede")
             .leftJoinAndSelect("contrato.documentos", "documentos")
             .leftJoinAndSelect("contrato.anexos", "anexos")
             .leftJoinAndSelect("anexos.sedes", "anexoSedes")
+            .leftJoinAndSelect("anexoSedes.cliente", "clienteAnexoSede")
             .leftJoinAndSelect("anexos.documentos", "anexoDocumentos")
             .where("cliente.cliente_id = :cliente_id", { cliente_id: clienteFound.cliente_id })
             .orderBy("contrato.createdAt", "DESC")
@@ -1346,21 +1349,6 @@ export async function registerClienteSimpleService(data, trabajador_id = null) {
             }
             console.log("\t=> Sede registrada");
 
-            /*
-            const [rolCliente, errRol] = await getRolByNameService("Cliente")
-            const [perfilCreado, errPerfil] = await registerService(
-                {
-                    nombreCompleto: nombreCompleto,
-                    rut: rut,
-                    email: email,
-                    password: password,
-                    rol_id: rolCliente.id
-                })
-            if (errPerfil) {
-                return [null, errPerfil]
-            }
-            */
-
             //registrar el contacto
             const [contactoCreado, errContacto] = await createContactoService(contacto, sedeCreada.sede_id, manager)
             if (errContacto) {
@@ -1427,25 +1415,41 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
 
             if (limitePersonal > 0 && totalPersonal > limitePersonal) throw [null, createErrorMessage("contrato", `La cantidad total de personal solicitada (${totalPersonal}) excede el límite permitido (${limitePersonal})`)]
 
-            //registrar jerarquía clientes, sedes, contactos y asignar supervisor/es
+            //registrar jerarquía clientes, sedes, contactos 
 
+
+            //crear cliente principal
             const [clientePadre, errorPadre] = await createCliente(cliente, null, {}, transactionManager)
             if (errorPadre) throw [null, errorPadre]
             console.log('=>Cliente creado');
 
+
+            //crear sedes
             const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(sedes, clientePadre.cliente_id, transactionManager)
             if (errSedes) throw [null, errSedes]
             console.log("=>Sedes Creadas");
 
+            //reunir Ids de las sedes recien creadas
             const sedes_ids = []
             for (const sede of sedesCreadas) {
                 const { sede_id, ...sedeSeparada } = sede
                 sedes_ids.push(sede_id)
             }
+            let filialesCreadas = []
+            if (filiales || (Array.isArray(filiales) && filiales.length > 0)) {
+                for (const filial of filiales) {
+                    const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, [],
+                        [], clientePadre.cliente_id, transactionManager)
+                    if (errCliente) throw [null, errCliente]
+                    filialesCreadas.push(clienteJerarquico)
+                    sedes_ids.push(...clienteJerarquico.sedes.map(a => a.sede_id))
+                }
+                console.log("=>Filiales Creadas");
+            }
 
-            const [contratoCreado, errContrato] = await createContratoComercialService({ ...contrato, sedes: sedes_ids }, documentosContrato, clientePadre.cliente_id, transactionManager)
+            const [contratoCreado, errContrato] = await createContratoComercialService(contrato, documentosContrato, clientePadre.cliente_id, transactionManager)
             if (errContrato) throw [null, errContrato]
-            console.log("=>Contrato Creado");
+            console.log("=>Contratos Creado");
 
 
 
@@ -1454,21 +1458,44 @@ export async function registerClienteJerarquicoYArchivoService(data, manager = n
             if (Array.isArray(anexos) && anexos.length > 0) {
                 [anexosCreados, errorAnexos] = await createAnexosYDocumentos(anexos, sedes_ids, contratoCreado.id_contrato_comercial, transactionManager)
                 if (errorAnexos) throw [null, errorAnexos]
+                console.log('=>Anexo(s) agregados con éxito');
+
             }
             const anexosIds = anexosCreados.map(a => a.id_anexo);
-            const contratosIds = [
-                contratoCreado.id_contrato_comercial
-            ];
-            let filialesCreadas = []
-            if (filiales || (Array.isArray(filiales) && filiales.length > 0)) {
-                for (const filial of filiales) {
-                    const [clienteJerarquico, errCliente] = await registerClienteJerarquicoService(filial, filial.sedes, contratosIds,
-                        anexosIds, clientePadre.cliente_id, transactionManager)
-                    if (errCliente) throw [null, errCliente]
-                    filialesCreadas.push(clienteJerarquico)
-                }
-                console.log("=>Filiales Creadas");
+            const contratosIds = [contratoCreado.id_contrato_comercial];
+            const res = await updateClienteRelacionesService(
+                clientePadre.cliente_id,
+                {
+                    contratos: contratosIds,
+                    anexos: anexosIds
+                },
+                transactionManager
+            );
+            //console.log(res);
+
+            for (const filial of filialesCreadas) {
+                await updateClienteRelacionesService(
+                    filial.cliente_id,
+                    {
+                        contratos: contratosIds,
+                        anexos: anexosIds
+                    },
+                    transactionManager
+                );
             }
+
+            const [, errRelacionesContrato] =
+                await updateRelacionesContratoYAnexoService(
+                    contratoCreado.id_contrato_comercial,
+                    anexosIds,
+                    sedes_ids,
+                    transactionManager
+                );
+
+            if (errRelacionesContrato) throw [null, errRelacionesContrato];
+
+
+            //throw [null, 'intencional'] //utilizado en pruebas
 
             return [{
                 cliente: clientePadre,
@@ -1673,5 +1700,176 @@ export async function uptadeContactosArrayService(contactos = [], manager = null
         console.error("Error al actualizar contacto:", error);
         if (manager) throw error
         return [null, "Error interno del servidor"]
+    }
+}
+
+export async function updateClienteRelacionesService(
+    cliente_id,
+    relaciones = {},
+    manager = null
+) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const clienteRepository = transactionManager.getRepository(Cliente);
+            const contratoRepository = transactionManager.getRepository(Contratos);
+            const anexoRepository = transactionManager.getRepository(Anexos);
+
+            const {
+                contratos = [],
+                anexos = []
+            } = relaciones;
+
+            const cliente = await clienteRepository.findOne({
+                where: { cliente_id },
+                relations: ["contrato", "anexos"]
+            });
+
+            if (!cliente) {
+                throw [null, createErrorMessage("cliente", "Cliente no encontrado")];
+            }
+
+            // Obtener entidades de contratos
+            let contratosEntity = [];
+            if (contratos.length > 0) {
+                contratosEntity = await contratoRepository.find({
+                    where: {
+                        id_contrato_comercial: In(contratos)
+                    }
+                });
+
+                if (contratosEntity.length !== contratos.length) {
+                    throw [null, createErrorMessage("contrato", "Uno o más contratos no existen")];
+                }
+            }
+
+            // Obtener entidades de anexos
+            let anexosEntity = [];
+            if (anexos.length > 0) {
+                anexosEntity = await anexoRepository.find({
+                    where: {
+                        id_anexo: In(anexos)
+                    }
+                });
+
+                if (anexosEntity.length !== anexos.length) {
+                    throw [null, createErrorMessage("anexo", "Uno o más anexos no existen")];
+                }
+            }
+
+            // Mantener relaciones existentes y evitar duplicados
+            cliente.contrato = [
+                ...(cliente.contrato || []),
+                ...contratosEntity.filter(c =>
+                    !(cliente.contrato || []).some(x => x.id_contrato_comercial === c.id_contrato_comercial)
+                )
+            ];
+
+            cliente.anexos = [...(cliente.anexos || []),
+            ...anexosEntity.filter(a => !(cliente.anexos || []).some(x => x.id_anexo === a.id_anexo)
+            )];
+
+            const clienteActualizado = await clienteRepository.save(cliente);
+            console.log('=>Cliente/Filiales actualizados');
+
+            console.log(clienteActualizado.anexos);
+
+            return [clienteActualizado, null];
+        };
+
+        if (manager) return await execute(manager);
+
+        return await AppDataSource.transaction(execute);
+
+    } catch (error) {
+
+        console.error("Error actualizando relaciones del cliente", error);
+
+        if (Array.isArray(error)) {
+            if (manager) throw error;
+            return error;
+        }
+
+        if (manager) throw error;
+
+        return [null, "Error interno del servidor"];
+    }
+}
+
+export async function updateRelacionesContratoYAnexoService(
+    contrato_id,
+    anexos_ids = [],
+    sedes_ids = [],
+    manager = null
+) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const contratoRepository = transactionManager.getRepository(Contratos);
+            const anexoRepository = transactionManager.getRepository(Anexos);
+            const sedeRepository = transactionManager.getRepository(Sede);
+
+            const contrato = await contratoRepository.findOne({
+                where: { id_contrato_comercial: contrato_id },
+                relations: ["sedes", "anexos", "anexos.sedes"]
+            });
+
+            if (!contrato) throw [null, createErrorMessage("contrato", "Contratos no encontrado")];
+
+
+            const sedes = await sedeRepository.find({
+                where: {
+                    sede_id: In(sedes_ids)
+                }
+            });
+
+            if (sedes.length !== sedes_ids.length) {
+                throw [null, createErrorMessage("sede", "Una o más sedes no existen")];
+            }
+
+            // Relacionar sedes al contrato
+            contrato.sedes = sedes;
+            await contratoRepository.save(contrato);
+            console.log('=>Contrato actualizado');
+
+            // Relacionar sedes a cada anexo
+            if (anexos_ids.length > 0) {
+
+                const anexos = await anexoRepository.find({
+                    where: {
+                        id_anexo: In(anexos_ids)
+                    },
+                    relations: ["sedes"]
+                });
+
+                for (const anexo of anexos) {
+                    anexo.sedes = sedes;
+                }
+
+                const res = await anexoRepository.save(anexos);
+                console.log('=>Anexos actualizadas');
+                console.log(res);
+
+            }
+
+            return [true, null];
+        };
+
+        if (manager) return await execute(manager);
+
+        return await AppDataSource.transaction(execute);
+
+    } catch (error) {
+
+        if (Array.isArray(error)) {
+            if (manager) throw error;
+            return error;
+        }
+
+        if (manager) throw error;
+
+        return [null, "Error interno"];
     }
 }

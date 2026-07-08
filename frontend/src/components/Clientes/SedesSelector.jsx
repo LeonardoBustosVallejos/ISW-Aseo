@@ -7,6 +7,7 @@ export default function SedesSelector({
     noSelect = false,
     title = "Seleccionar sedes"
 }) {
+    console.log(sedes);
 
     return (
         <Table
@@ -20,11 +21,18 @@ export default function SedesSelector({
             columns={[
                 {
                     field: "nombre_sede",
-                    header: "Nombre"
+                    header: "Nombre",
+                    render: (_, row) => row.nombre_sede
+                },
+                {
+                    field: "nombreCliente",
+                    header: "Propietario",
+                    render: (_, row) => row.cliente.nombreCliente + '-' + row.cliente.tipoCliente
                 },
                 {
                     field: "direccion",
-                    header: "Dirección"
+                    header: "Dirección",
+                    render: (_, row) => row.direccion
                 },
                 {
                     field: "tipoSede",

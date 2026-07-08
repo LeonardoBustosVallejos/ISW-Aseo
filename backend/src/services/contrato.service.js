@@ -63,11 +63,11 @@ export async function createContratoComercialService(data, documentos, cliente_i
             if (errRep) throw [null, errRep]
 
             let sedesEntities = []
-
+            /*
             if (sedes?.length > 0) {
 
                 sedesEntities = await sedeRepository.findBy({
-                    sede_id: In(sedes)
+                    sede_id: sedes
                 })
 
                 if (sedesEntities.length !== sedes.length) {
@@ -88,7 +88,7 @@ export async function createContratoComercialService(data, documentos, cliente_i
 
                 sedesEntities = [sedePrincipal]
             }
-
+            */
             const fechaActual = new Date()
             const estado = fechaActual >= new Date(fechaInicio) ? "VIGENTE" : "ESPERA"
 
@@ -187,18 +187,18 @@ export async function createContratoAnexoService(data, contrato_id, manager = nu
                 throw [null, createErrorMessage("Contrato", "Contrato no encontrado")]
 
             let sedesEntities = []
-
-            if (sedes?.length > 0) {
-
-                sedesEntities = await sedeRepository.findBy({
-                    sede_id: In(sedes)
-                })
-
-                if (sedesEntities.length !== sedes.length) {
-                    throw [null, createErrorMessage("Sede", "Sede no encontrada")]
-                }
-            }
-
+            /*
+                        if (sedes?.length > 0) {
+            
+                            sedesEntities = await sedeRepository.findBy({
+                                sede_id: In(sedes)
+                            })
+            
+                            if (sedesEntities.length !== sedes.length) {
+                                throw [null, createErrorMessage("Sede", "Sede no encontrada")]
+                            }
+                        }
+            */
             const existe = await anexoRepository.findOne({
                 where: {
                     numeroAnexo,
@@ -552,10 +552,12 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
                 .createQueryBuilder("contrato")
                 .leftJoinAndSelect("contrato.cliente", "cliente")
                 .leftJoinAndSelect("contrato.sedes", "sede")
+                .leftJoinAndSelect("sede.cliente", "clienteSede")
                 .leftJoinAndSelect("contrato.documentos", "documento")
                 .leftJoinAndSelect("contrato.anexos", "anexo")
                 .leftJoinAndSelect("anexo.sedes", "anexoSede")
                 .leftJoinAndSelect("anexo.documentos", "anexoDocumento")
+                .where("cliente.tipoCliente <> :tipoCliente", { tipoCliente: "FILIAL" })
                 .orderBy("contrato.createdAt", "DESC");
 
             if (contrato_id) {

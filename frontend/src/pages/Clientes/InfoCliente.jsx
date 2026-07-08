@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getInfoCliente } from "../../services/clientes.service";
 import '../../styles/infoCliente.css'
-import { Archive, Briefcase, Building2, FileText, MapPin, Info, Badge } from "lucide-react";
+import { Archive, Briefcase, Building2, FileText, MapPin, Info, Badge, Eye } from "lucide-react";
 import { formatDateTime } from "../../helpers/formatDate";
 import Error404 from "../Error404.jsx";
 import { Tab, Tabs } from "../../components/Tabs.jsx";
@@ -18,7 +18,7 @@ import ContratosTable from "./Tabs/ContratosTable.jsx";
 export default function InfoCliente() {
     const [error, setError] = useState(null)
     const [loading, setLoading] = useState(true);
-
+    const navigate = useNavigate()
     const { cliente_id, rutCliente } = useParams();
     const [dataGeneral, setDataGeneral] = useState({
         cliente: {},
@@ -29,6 +29,17 @@ export default function InfoCliente() {
         documentos: []
     })
 
+    const MAPA_COLORES_ESTADO = {
+        ESPERA: "azul-gris",
+        ATRASADO: "naranja",
+        VIGENTE: "verde",
+        SUSPENDIDO: "amarillo",
+        TERMINADO: "gris",
+        CANCELADO: "rojo"
+    };
+    const handleView = (rut, cliente_id) => {
+        navigate(`/cliente/rut/${rut}/id/${cliente_id}`)
+    }
     useEffect(() => {
         const obtenerInfo = async () => {
             try {
@@ -57,6 +68,7 @@ export default function InfoCliente() {
             <Error404 error={error.message} status={error.status} />
         );
     }
+    console.log(dataGeneral);
 
     return (
         <div className="info-cliente">
@@ -68,10 +80,17 @@ export default function InfoCliente() {
                     <strong>{'TIPO: '}</strong>
                     {dataGeneral.cliente.tipoCliente}
                 </>}>
+                <div>
 
-                <div className={`estado ${dataGeneral.estado === "ESPERA" ? "amarillo" :
-                    dataGeneral.estado === "VIGENTE" ? "verde" : "rojo"}`}>
-                    {dataGeneral.estado}
+                    <div className={`estado ${MAPA_COLORES_ESTADO[dataGeneral.estado] || "gris"}`}>
+                        {dataGeneral.estado}
+                    </div>
+                    {dataGeneral.cliente.tipoCliente === 'FILIAL' &&
+                        <button className="action-button" onClick={() => handleView(dataGeneral.cliente.clientePadre?.rutCliente, dataGeneral.cliente.clientePadre?.cliente_id)}>
+                            <Eye />
+                            Representante
+                        </button>
+                    }
                 </div>
             </Header>
             {/*

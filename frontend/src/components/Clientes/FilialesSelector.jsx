@@ -1,10 +1,14 @@
 import { Table } from "../Tabla2";
+import SedesSelector from "./SedesSelector";
 
 
 export default function FilialesSelector({
     filiales = [],
+    filialesSelected = [],
+    setSelectedFiliales = [],
     selected = [],
     setSelected,
+    selectable = false,
     title = "Seleccionar filiales"
 }) {
 
@@ -13,10 +17,8 @@ export default function FilialesSelector({
             title={title}
             data={filiales}
             rowKey="cliente_id"
-            selectable
-            noExpand
-            selectedRows={selected}
-            onSelectionChange={setSelected}
+            selectable={selectable}
+            selectedRows={filialesSelected}
             columns={[
                 {
                     field: "nombreCliente",
@@ -25,8 +27,15 @@ export default function FilialesSelector({
                 {
                     field: "rutCliente",
                     header: "RUT"
+                },
+                {
+                    field: "tipoCliente",
+                    header: "Tipo"
                 }
             ]}
+            renderExpanded={(row) => (
+                <SedesSelector sedes={row.sedes} selected={selected} setSelected={setSelected} />
+            )}
         />
     );
 }

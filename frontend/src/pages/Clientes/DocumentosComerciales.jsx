@@ -79,8 +79,8 @@ export default function VistaDocumentosComerciales() {
                 },
                 {
                     field: "cliente",
-                    header: "Cliente",
-                    render: (_, row) => row.cliente[0]?.nombreCliente || 'Error obteniendo'
+                    header: "Cliente Representante",
+                    render: (_, row) => row.cliente[0].nombreCliente || 'Error obteniendo'
                 },
                 {
                     field: "estado",
@@ -250,22 +250,35 @@ export default function VistaDocumentosComerciales() {
                             onToggle={() => setOpenSedes(openSedes === row.id_contrato_comercial ? null : row.id_contrato_comercial)}
                             content={
                                 <Table
+
                                     emptyMessage="No existen sedes"
                                     rowKey="sede_id"
                                     noExpand
                                     columns={[
                                         {
                                             field: "nombre_sede",
-                                            header: "Nombre"
+                                            header: "Nombre",
+                                            render: (_, row) => row.nombre_sede
+
                                         },
                                         {
                                             field: "tipoSede",
                                             header: "Tipo",
 
+
                                         },
                                         {
                                             field: "direccion",
-                                            header: "Dirección"
+                                            header: "Dirección",
+                                            render: (_, row) => row.direccion
+
+                                        },
+                                        {
+                                            field: "nombreCliente",
+                                            header: "Propietario",
+                                            render: (_, row) => row.cliente.nombreCliente + '-' + row.cliente.tipoCliente
+
+
                                         },
                                         {
                                             field: "personalSolicitado",
