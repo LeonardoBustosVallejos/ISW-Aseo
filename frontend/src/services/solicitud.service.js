@@ -27,6 +27,23 @@ export async function getSolicitudes() {
   }
 }
 
+export async function updateSolicitud(id, solicitudData) {
+  try {
+    const { data } = await axios.put(`/solicitud/update/${id}`, solicitudData);
+    return {
+      success: true,
+      data: data?.data || data,
+      message: data?.message || 'Solicitud actualizada correctamente'
+    };
+  } catch (error) {
+    console.error('Error updating solicitud', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Error al actualizar la solicitud'
+    };
+  }
+}
+
 export async function getSolicitudById(id) {
   try {
     const solicitudes = await getSolicitudes();
