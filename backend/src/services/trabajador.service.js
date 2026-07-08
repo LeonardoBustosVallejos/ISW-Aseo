@@ -238,14 +238,31 @@ export async function updateTrabajadorService(id, body) {
                 return [null, "El teléfono ya se encuentra en uso"];}
             trabajadorFound.telefono = body.telefono;
         }
-
+   
         if (Object.prototype.hasOwnProperty.call(body, "grupo_id")) {
+            const sedeRepository = AppDataSource.getRepository(Sede);
+
+            // 1. Si el trabajador YA tenía un grupo y una sede, le RESTAMOS 1 a esa sede vieja porque se va
+            if (trabajadorFound.grupoAsignado && trabajadorFound.grupoAsignado.sedeAsignada) {
+                const sedeVieja = trabajadorFound.grupoAsignado.sedeAsignada;
+                sedeVieja.personalAsignado = Math.max(0, sedeVieja.personalAsignado - 1);
+                await sedeRepository.save(sedeVieja);
+            }
+
             if (body.grupo_id === null || body.grupo_id === "null" || body.grupo_id === "") {
                 trabajadorFound.grupoAsignado = null;
             } else {
                 const grupoObj = await gruposRepository.findOneBy({ grupo_id: Number(body.grupo_id) });
                 if (!grupoObj) return [null, "Grupo no encontrado"];
+                
                 trabajadorFound.grupoAsignado = grupoObj;
+
+                // 2. Si el NUEVO grupo tiene una sede asignada, le SUMAMOS 1 al contador de esa sede nueva
+                if (grupoObj.sedeAsignada) {
+                    const sedeNueva = grupoObj.sedeAsignada;
+                    sedeNueva.personalAsignado = (sedeNueva.personalAsignado || 0) + 1;
+                    await sedeRepository.save(sedeNueva);
+                }
             }
         }
 

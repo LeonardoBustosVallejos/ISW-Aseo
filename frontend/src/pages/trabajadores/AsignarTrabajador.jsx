@@ -2,14 +2,16 @@ import { useTrabajadores } from "@hooks/trabajadores/useTrabajadores.jsx";
 import { useDetalleTrabajador } from "@hooks/trabajadores/useDetalleTrabajadores.jsx";
 import { useUpdateTrabajador } from "@hooks/trabajadores/useUpdateTrabajadores";
 import { useUpdateTrabajadorForm } from "@components/trabajadores/useUpdateForm";
-import { useState } from "react";
+import { useDespedirTrabajador } from "@hooks/trabajadores/useDespedirTrabajador";
+import { useState, useRef } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
 import Header from "@components/misc/Header.jsx";
 import TrabajadorFilters from "@components/trabajadores/TrabajadorFilters.jsx";
 import { Modal }  from "@components/Modal.jsx";
+import { Trash2, RotateCcwKey  } from "lucide-react";
 import "@styles/asignarTrabajador.css";
-import "@styles/modal.css"
+import "@styles/modal.css";
 
 
 const filtrosPorDefecto = {
@@ -22,39 +24,21 @@ const filtrosPorDefecto = {
 
 export default function Trabajadores() {
 
-  const [selectedId, 
-        setSelectedId] = useState(null); 
+  const [selectedId, setSelectedId] = useState(null); 
+  const [openSection, setOpenSection] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtros, setFiltros] = useState(filtrosPorDefecto);
 
-  const [openSection,
-        setOpenSection] = useState(null);
+  const [isDespedirModalOpen, setIsDespedirModalOpen] = useState(false);
+  const [motivoDespido, setMotivoDespido] = useState("");
+  const evidenciaRef = useRef(null);
+
+  const { detalle, loadingDetalle, errorDetalle } = useDetalleTrabajador(selectedId); 
+  const { trabajadores, loading, pagina, setPagina, infoPaginacion } = useTrabajadores(searchTerm, filtros); 
+  const { executeUpdate, loadingUpdate, errorUpdate, successUpdate } = useUpdateTrabajador();
   
-        
-  const { detalle, 
-          loadingDetalle, 
-          errorDetalle } = useDetalleTrabajador(selectedId); 
+  const { executeDespedir, executeRecontratar, loadingDespedir} = useDespedirTrabajador();
 
-  const [searchTerm, 
-        setSearchTerm] = useState("");
-
-  const [filtros, 
-        setFiltros] = useState(filtrosPorDefecto);
-
-  const { trabajadores, 
-          loading, 
-          error, 
-          success,
-          pagina,
-          setPagina,
-          infoPaginacion } = useTrabajadores(searchTerm, filtros); 
-
-  const {
-        executeUpdate,
-        loadingUpdate,
-        errorUpdate,
-        successUpdate,
-        setErrorUpdate,
-        setSuccessUpdate } = useUpdateTrabajador();
-  
   const {
         isModalOpen,
         setIsModalOpen,
@@ -66,6 +50,30 @@ export default function Trabajadores() {
   const handleFiltrosChange = (nextFiltros) => {
     setFiltros(nextFiltros);
   };
+
+  const handleDespedirSubmit = async (e) => {
+    e.preventDefault();
+    
+    const fd = new FormData();
+    fd.append("motivo", motivoDespido);
+    if (evidenciaRef.current?.files[0]) {
+      fd.append("evidencia", evidenciaRef.current.files[0]);
+    }
+
+    const exito = await executeDespedir(selectedId, fd, () => {
+      setIsDespedirModalOpen(false);
+      setMotivoDespido("");
+    })
+  };
+
+
+    const handleReingreso = async () => {
+      const seguro = window.confirm(`¿Estás seguro de que deseas recontratar a ${detalle.nombres}?`)
+      if (seguro) {
+        await executeRecontratar(selectedId, () => {
+        });
+      }
+    }; 
 
   return (
     <div className="contenido-asignacion">
@@ -493,8 +501,49 @@ export default function Trabajadores() {
                                           </div>
 
                                         </div>
-                                } />)}
-                        <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Modificar Trabajador">
+                                } />
+              
+                                )}
+                  <div style={{
+                    position: "absolute",
+                    bottom: "15px",
+                    right: "20px",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center"
+                  }}>
+                    {detalle.despedido === false ? (
+                      <button type="button"
+                              title="Despedir Trabajador"
+                              onClick={() => setIsDespedirModalOpen(true)}
+                              style={{ background: "transparent",
+                                      border: "nore",
+                                      color: "dc2626",
+                                      cursor: "pointer",
+                                      transition: "transform 0.2s"}}
+                              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.15)"}
+                              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+                                <Trash2 size={24}/>
+                              </button>
+                    ): (<button
+                        type="button" 
+                    title="Recontratar Trabajador"
+                    onClick={handleReingreso}
+                    disabled={loadingDespedir}
+                    style={{ background: "transparent", border: "none", color: "#16a34a", cursor: "pointer", transition: "transform 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}>
+                      <RotateCcwKey size={24}/>
+                    </button>
+                  )}
+                  </div>
+          </div>
+          ): (
+            !loadingDetalle && <p className="sin-seleccion">Haz clic en un trabajador para ver los detalles</p>
+          )}
+        </section>
+      </div>
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Modificar Trabajador">
                           <form onSubmit={handleSubmitUpdate} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "10px" }}>
                             
                             <div>
@@ -574,13 +623,35 @@ export default function Trabajadores() {
                               </button>
                             </div>
                           </form>
-                        </Modal>       
+                        </Modal>
+              <Modal open={isDespedirModalOpen} onClose={() => setIsDespedirModalOpen(false)} title="Desvincular Trabajador">
+        <form onSubmit={handleDespedirSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "15px" }}>
+          <div>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: "6px" }}>Motivo de la desvinculación</label>
+            <textarea 
+              value={motivoDespido}
+              onChange={(e) => setMotivoDespido(e.target.value)}
+              placeholder="Escriba detalladamente la razón del despido..."
+              style={{ width: "100%", height: "100px", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", resize: "none" }}
+              required
+            />
           </div>
-          ): (
-            !loadingDetalle && <p className="sin-seleccion">Haz clic en un trabajador para ver los detalles</p>
-          )}
-        </section>
-      </div>
+
+          <div>
+            <label style={{ fontWeight: "bold", display: "block", marginBottom: "6px" }}>Subir evidencias adjuntas</label>
+            <input type="file" ref={evidenciaRef} style={{ width: "100%", padding: "4px" }} />
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "end", gap: "10px", marginTop: "10px" }}>
+            <button type="button" onClick={() => setIsDespedirModalOpen(false)} style={{ padding: "6px 12px", borderRadius: "4px", border: "1px solid #ccc", cursor: "pointer" }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={loadingDespedir} style={{ padding: "6px 12px", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+              {loadingDespedir ? "Procesando..." : "Confirmar Despido"}
+            </button>
+          </div>
+        </form>
+      </Modal>      
     </div>
   );
 }

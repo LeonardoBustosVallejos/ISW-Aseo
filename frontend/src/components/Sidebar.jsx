@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/sidebar.css"
 import { logout } from "../services/auth.service.js";
-import { BookUser, CircleChevronDown, FileUser, House, Info, LogOut, Network, NotebookPen, PanelLeftClose, PanelLeftOpen, ShelvingUnit, TableProperties, Trash2, UserRound, UserRoundCheck, UserRoundPlus, UsersRound, Warehouse } from "lucide-react";
+import { BookUser, CircleChevronDown, FileUser, House, Info, LogOut, Network, NotebookPen, PanelLeftClose, PanelLeftOpen, ShelvingUnit, TableProperties, Trash2, UserRound, UserRoundCheck, UserRoundPlus, UsersRound, Warehouse, Users } from "lucide-react";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const navigate = useNavigate();
@@ -49,8 +49,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             title: "Trabajadores",
             children: [
                 { symbol: <UserRoundPlus />, title: "Ingresar Trabajador", path: "/trabajadores/ingresar" },
-                { symbol: <UserRoundCheck />, title: "Asignar Trabajador", path: "/trabajadores/asignar" },
-                { symbol: <Trash2 />, title: "Eliminar Trabajador", path: "/trabajadores/eliminar" },
+                { symbol: <UserRoundCheck />, title: "Editar Trabajadores", path: "/trabajadores/asignar" },
+                { symbol: <Users />, title: "Editar Grupos", path: "/trabajadores/eliminar" },
             ],
         },
         {
