@@ -23,10 +23,10 @@ const Bodega = () => {
   //tabla que muestra los datos de los items que existen en bodega
   const columns = [
     { title: 'ID', field: 'id', width: 50, responsive: 0 },
-    { title: 'Nombre', field: 'nombre', width: 70, responsive: 0 },
-    { title : 'Codigo', field: 'codigo', width: 70, responsive: 0 },
+    { title: 'Nombre', field: 'nombre', width: 150, responsive: 0 },
+    { title : 'Codigo', field: 'codigo', width: 100, responsive: 0 },
     { title: 'Tipo', field: 'tipo', width: 70, responsive: 0 },
-    { title: 'Descripción', field: 'descripcion', width: 70, responsive: 1 },
+    //{ title: 'Descripción', field: 'descripcion', width: 70, responsive: 1 },
     { title: 'Disponibles', field: 'disponibilidadActual', width: 70, responsive: 2 },
     { title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
     {
@@ -250,7 +250,7 @@ const Bodega = () => {
           data={filteredItems}
           columns={columns}
           initialSortName='id'
-          onSelectionChange={handleSelectionChange}
+          //onSelectionChange={handleSelectionChange}
         />
       </div>
       {/*puede q acá esté mi problema, pues la data con la q trabajo no son users */}

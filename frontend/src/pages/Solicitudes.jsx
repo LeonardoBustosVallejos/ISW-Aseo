@@ -5,13 +5,13 @@ const Solicitudes = () => {
   const { solicitudes } = useSolicitudes();
 
   const columns = [
-    { title: 'ID', field: 'id_solicitud', width: 35, responsive: 0 },
-    { title: 'Cantidad', field: 'cantidad_solicitud', width: 35, responsive: 0 },
-    { title: 'Item', field: 'id_item_solicitud', width: 35, responsive: 0 },
-    { title: 'Solicitante', field: 'id_solicitante', width: 35, responsive: 1 },
-    { title: 'Administrador', field: 'id_administrador_solicitud', width: 35, responsive: 1 },
-    { title: 'Sede', field: 'id_sede_solicitud', width: 100, responsive: 1 },
-    { title: 'Detalle', field: 'detalle_solicitud', width: 120, responsive: 2 },
+    { title: 'ID', field: 'id_solicitud', width: 50, responsive: 0 },
+    { title: 'Cantidad', field: 'cantidad_solicitud', width: 150, responsive: 0 },
+    { title: 'Item', field: 'id_item_solicitud', width: 150, responsive: 0 },
+    //{ title: 'Solicitante', field: 'id_solicitante', width: 35, responsive: 1 },
+    //{ title: 'Administrador', field: 'id_administrador_solicitud', width: 35, responsive: 1 },
+    //{ title: 'Sede', field: 'id_sede_solicitud', width: 100, responsive: 1 },
+    //{ title: 'Detalle', field: 'detalle_solicitud', width: 120, responsive: 2 },
     { title: 'Estado', field: 'estado_solicitud', width: 100, responsive: 2 },
     {
       title: 'Ver',
