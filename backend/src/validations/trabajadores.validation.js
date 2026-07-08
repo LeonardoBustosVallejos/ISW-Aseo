@@ -166,6 +166,20 @@ export const getTrabajadoresQueryValidation = Joi.object({
     rol: Joi.string()
         .valid("Administrador", "Supervisor", "Trabajador")
         .optional(),
+    competencias: Joi.alternatives()
+    .try(
+        Joi.number()
+            .integer()
+            .positive(),
+        Joi.array()
+            .items(
+                Joi.number()
+                .integer()
+                .positive()),
+        Joi.string()
+            .trim()
+            .allow("")
+        ).optional(),
     estado: Joi.string()
         .valid("activos", "despedidos", "todos")
         .default("activos")
