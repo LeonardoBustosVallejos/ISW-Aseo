@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import useDetallesActivos from "@hooks/activos/useDetalles.jsx";
-import '../styles/detalles.css';
+import '@styles/detalles.css';
 import Header from '@components/misc/Header.jsx';
 
 const DetallesCliente = () => {
@@ -110,8 +110,6 @@ const DetallesCliente = () => {
                                         <li key={mov.movimiento_id} style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #f0f0f0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                                                 <span className="fecha-etiqueta">{formatearFecha(mov.fecha)}</span>
-                                                
-                                                {/* 👇 Renderizamos "Último" de forma fija para el primer elemento */}
                                                 {index === 0 && (
                                                     <span className="badge-ultimo">Último</span>
                                                 )}

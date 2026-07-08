@@ -9,7 +9,7 @@ import ResumenRecursos from "@pages/Recursos/resumen.jsx";
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
 import ListaClientes from "@pages/Clientes/ListaClientes";
-import DetallesCliente from "@components/detalles.jsx";
+import DetallesCliente from "@pages/Recursos/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
 import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
