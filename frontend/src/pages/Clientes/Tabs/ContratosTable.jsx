@@ -23,7 +23,7 @@ export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "AT
 export function puedeCrearContrato(estado) { return estado !== 'VIGENTE' }
 
 
-export default function ContratosTable({ contratos, cliente = null, estado, noTitle = false, title, isGeneral = false }) {
+export default function ContratosTable({ contratos, cliente = null, sedes = null, filiales = null, estado, noTitle = false, title, isGeneral = false }) {
     const navigate = useNavigate();
     const [openInfo, setOpenInfo] = useState(null)
     const [openDocumentos, setOpenDocumentos] = useState(null)
@@ -32,7 +32,10 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
     const [openDocs, setOpenDocs] = useState(null)
 
     const [selectedSedes, setSelectedSedes] = useState([]);
+    const [openSelectSedes, setOpenSelecSedes] = useState(false)
+
     const [selectedFiliales, setSelectedFiliales] = useState([]);
+    const [openSelectFiliales, setOpenSelectFiliales] = useState(false);
 
     const [openVerifModal, setOpenVerifModal] = useState(false)
 
@@ -43,40 +46,82 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
     const [newSedes, setNewSedes] = useState([]);
     const [newAnexos, setNewAnexos] = useState([]);
 
-    const [data, setData] = useState({
-        cliente_id: null,
+    const [nuevoContrato, setNuevoContrato] = useState({
+        cliente_id: cliente.cliente_id,
 
         contrato: {
-            fechaInicio: "",
-            fechaFinOriginal: "",
-            monto: "",
-            jornada: "",
-            tipoJornada: "",
-            cantidadMinTrabajadores: "",
-            cantidadMaxTrabajadores: "",
-            tamanoInstalacion: "",
+            fechaInicio: '',
+            fechaFinOriginal: '',
+            monto: '',
+            jornada: '',
+            tipoJornada: '',
+            cantidadMinTrabajadores: '',
+            cantidadMaxTrabajadores: '',
+            tamanoInstalacion: '',
             requiereGuardias: false,
-            detalles: "",
-            observacionesOperativas: ""
+            detalles: '',
+            observacionesOperativas: '',
         },
-
-        metadataDocumentosContrato: [
+        metadataDocumentos: [
             {
-                nombrePersonalizado: "",
-                tipoDocumento: "CONTRATO",
+                nombrePersonalizado: '',
+                tipoDocumento: 'CONTRATO',
                 fileKey: "contrato_pdf",
                 file: null
             }
         ],
 
-        sedesId: [],
-        sedes: [],
+        sedesSeleccionadas: [],
+        nuevasSedes: [],
 
-        filialesId: [],
-        filiales: [],
+        filialesSeleccionadas: [],
+        nuevasFiliales: [],
 
         anexos: []
     });
+    const [nuevosAnexos, setNuevosAnexos] = useState({
+        cliente_id: cliente.cliente_id,
+
+        anexos: {
+            fechaInicio: '',
+            fechaFinOriginal: '',
+            monto: '',
+            jornada: '',
+            tipoJornada: '',
+            cantidadMinTrabajadores: '',
+            cantidadMaxTrabajadores: '',
+            tamanoInstalacion: '',
+            requiereGuardias: false,
+            detalles: '',
+            observacionesOperativas: '',
+        },
+        metadataDocumentos: [
+            {
+                nombrePersonalizado: '',
+                tipoDocumento: 'CONTRATO',
+                fileKey: "contrato_pdf",
+                file: null
+            }
+        ],
+
+        sedesSeleccionadas: [],
+        nuevasSedes: [],
+
+        filialesSeleccionadas: [],
+        nuevasFiliales: [],
+
+        anexos: []
+    });
+
+    const MAPA_COLORES_ESTADO = {
+        ESPERA: "azul-gris",
+        ATRASADO: "naranja",
+        VIGENTE: "verde",
+        SUSPENDIDO: "amarillo",
+        TERMINADO: "gris",
+        CANCELADO: "rojo"
+    };
+
     const handleView = (rut, cliente_id) => {
         navigate(`/cliente/rut/${rut}/id/${cliente_id}`)
     }
@@ -129,18 +174,18 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
     const closeModal = () => {
         setModal(null);
         setSelectedContrato(null);
-        setNewAnexos([]);
     };
 
     const handleDownload = async (id_documento) => {
         try {
             const response = await descargarDocumento(id_documento)
         } catch (error) {
-
+            console.log(error);
         }
     }
-    console.log(selectedContrato);
-
+    const handleOpenVerif = () => {
+        setOpenVerifModal(true)
+    }
     return (
         <>
             <Header title={title ? title : title || 'Contratos'}>
@@ -168,10 +213,10 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                         field: "estado",
                         header: "Estado",
                         render: (_, row) => (
-                            <div className={`estado ${row.estado === "ESPERA" ? "amarillo" :
-                                row.estado === "VIGENTE" ? "verde" : "rojo"}`}>
+                            <div className={`estado ${MAPA_COLORES_ESTADO[row.estado] || "gris"}`}>
                                 {row.estado}
-                            </div>)
+                            </div>
+                        )
                     },
                     {
                         field: "fechaInicio",
@@ -287,7 +332,7 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                                         </div>
                                         <div className="data-line" />
                                         <br />
-                                        <button className="action-button" onClick={() => handleView(row.rutCliente, row.cliente_id)}>
+                                        <button className="action-button" onClick={() => handleView(row.cliente[0].rutCliente, row.cliente[0].cliente_id)}>
                                             <strong>Ir a informacion del cliente</strong>
                                         </button>
                                     </>
@@ -395,24 +440,54 @@ export default function ContratosTable({ contratos, cliente = null, estado, noTi
                 isForm
             >
                 <form>
-                    <SedesSelector
-                        sedes={cliente?.sedes ?? []}
-                        selected={selectedSedes}
-                        setSelected={setSelectedSedes}
-                    />
-
-                    <FilialesSelector
-                        filiales={cliente?.filiales ?? []}
-                        selected={selectedFiliales}
-                        setSelected={setSelectedFiliales}
-                    />
-
                     <ContratoRow
-                        cliente={cliente}
-                        selectedSedes={selectedSedes}
-                        selectedFiliales={selectedFiliales}
-                        onSuccess={closeModal}
+                        contrato={nuevoContrato.contrato}
+                        documentos={nuevoContrato.metadataDocumentos}
+                        setFormData={setNuevoContrato}
+                        level={0}
                     />
+                    <br />
+                    {/*Seleccionar sedes del cliente */}
+                    <Acordeon title={`Seleccionar Sedes? (${sedes?.length} disponibles) (${nuevoContrato.sedesSeleccionadas.length} seleccionadas)`}
+                        isOpen={openSelectSedes}
+                        onToggle={() => setOpenSelecSedes(!openSelectSedes)}
+                        content={
+
+                            <SedesSelector
+                                sedes={sedes}
+                                selected={selectedSedes}
+                                setSelected={(rows) => {
+                                    setSelectedSedes(rows);
+
+                                    setNuevoContrato(prev => ({
+                                        ...prev,
+                                        sedesSeleccionadas: rows.map(r => r.sede_id)
+                                    }));
+                                }}
+                            />
+                        }
+                    />
+                    {/*Seleccionar sedes de filiales */}
+                    <Acordeon title={`Seleccionar Filiales? (${filiales?.length} disponibles) (${nuevoContrato.filialesSeleccionadas.length} seleccionadas)`}
+                        isOpen={openSelectFiliales}
+                        onToggle={() => setOpenSelectFiliales(!openSelectFiliales)}
+                        content={
+
+                            <FilialesSelector
+                                filiales={filiales ?? []}
+                                selected={selectedFiliales}
+                                setSelected={(rows) => {
+                                    setSelectedFiliales(rows);
+
+                                    setNuevoContrato(prev => ({
+                                        ...prev,
+                                        filialesSeleccionadas: rows.map(r => r.cliente_id)
+                                    }));
+                                }}
+                            />
+                        }
+                    />
+
 
                 </form>
             </Modal>)}
@@ -510,10 +585,10 @@ export function TablaAnexos({ anexos }) {
             title={null}
             emptyMessage={'No hay anexos'}
             columns={[
-                { field: "numeroAnexo", header: "N° Anexo" },
+                { field: "numeroAnexo", header: "N° Anexo", render: (_, row) => row.numeroAnexo },
                 { field: "tipoAnexo", header: "Tipo" },
-                { field: "fechaInicio", header: "Inicio" },
-                { field: "fechaFin", header: "Fin" },
+                { field: "fechaInicio", header: "Inicio", render: (_, row) => formatDate(row.fechaInicio) },
+                { field: "fechaFin", header: "Fin", render: (_, row) => formatDate(row.fechaFin) },
             ]}
             data={anexos}
             renderExpanded={(row) => (
@@ -527,23 +602,51 @@ export function TablaAnexos({ anexos }) {
                         content={
                             <>
 
-                                <p><strong>Número:</strong> {row.numeroAnexo}</p>
-                                <p><strong>Tipo:</strong> {row.tipoAnexo}</p>
-                                <p><strong>Monto:</strong> {row.montoNuevo}</p>
+                                <div className="info-label">
+                                    <strong>Número:</strong>
+                                    <strong>{row.numeroAnexo}</strong>
+                                </div>
 
-                                <p>
-                                    <strong>Trabajadores:</strong>{" "}
-                                    {row.cantidadMinTrabajadores} - {row.cantidadMaxTrabajadores}
-                                </p>
+                                <div className="data-line" />
+                                <div className="info-label">
+                                    <strong>Tipo:</strong>
+                                    <strong>{row.tipoAnexo}</strong>
+                                </div>
 
-                                <p>
-                                    <strong>Jornada:</strong> {row.tipoJornada}
-                                </p>
+                                <div className="data-line" />
+                                <div className="info-label">
+                                    <strong>Monto:</strong>
+                                    <strong>{row.montoNuevo}</strong>
+                                </div>
+                                <div className="data-line" />
 
-                                <p>
-                                    <strong>Sedes:</strong>{" "}
-                                    {row.sedes?.length ?? 0}
-                                </p>
+                                <div className="info-label">
+
+                                    <strong>Trabajadores:</strong>
+                                    <strong>{row.cantidadMinTrabajadores} - {row.cantidadMaxTrabajadores}</strong>
+                                </div>
+                                <div className="data-line" />
+
+                                <div className="info-label">
+                                    <strong>Jornada:</strong>
+                                    <strong>{row.tipoJornada}</strong>
+                                </div>
+                                <div className="data-line" />
+
+
+
+                                <div className="info-label">
+                                    <strong>Sedes:</strong>
+                                    <strong>{row.sedes?.length ?? 0}</strong>
+                                </div>
+                                <div className="data-line" />
+
+                                <div className="info-label">
+                                    <strong>Fecha de Creación:</strong>
+                                    <strong>{formatDateTime(row.createdAt)}</strong>
+                                </div>
+                                <div className="data-line" />
+
                             </>
                         }
                     />
@@ -557,7 +660,8 @@ export function TablaAnexos({ anexos }) {
                             row.documentos?.length ? (
                                 <TablaDocumentos documentos={row.documentos} />
                             ) : (
-                                <p>No hay documentos</p>
+
+                                'No hay documentos'
                             )
                         }
                     />
@@ -571,7 +675,8 @@ export function TablaAnexos({ anexos }) {
                             row.sedes?.length ? (
                                 < SedesSelector sedes={row.sedes} noSelect />
                             ) : (
-                                <p>No hay sedes asociadas</p>
+
+                                ' No hay sedes asociadas'
                             )
                         }
                     />
@@ -579,5 +684,22 @@ export function TablaAnexos({ anexos }) {
                 </div>
             )}
         />
+    )
+}
+
+
+
+function SedesFilialesArrayTable({ filiales = [], sedesSeleccionadas = [], setSelectedSedes }) {
+    return (
+        <>
+            {
+                filiales.map((filial, index) => (
+                    <SedesArray sedes={filial}
+                        setFormData={setSelectedSedes}
+
+                    />
+                ))
+            }
+        </>
     )
 }

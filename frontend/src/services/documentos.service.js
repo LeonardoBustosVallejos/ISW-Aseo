@@ -5,8 +5,6 @@ export async function descargarDocumento(documento_id) {
 
         const response = await axios.get(`/documentos/${documento_id}/download`, { responseType: "blob" });
 
-        console.log(response.status);
-        console.log(response.headers["content-type"]);
 
         // Obtener el nombre desde el header si existe
         let nombreArchivo = "documento";

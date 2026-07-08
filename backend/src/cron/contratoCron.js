@@ -26,7 +26,14 @@ export async function iniciarCronContratos() {
 function logCron(mensaje) {
     const ahora = new Date();
 
-    const fecha = ahora.toISOString().replace("T", " ").substring(0, 19);
+    const fecha = ahora.toISOString().replace("es-CL", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+    }).substring(0, 19).replace("T", " ")
 
     console.log(`[${fecha}] - ${mensaje}`);
 }

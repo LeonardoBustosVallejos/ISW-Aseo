@@ -15,8 +15,8 @@ export default function SedesSelector({
             rowKey="sede_id"
             selectable={!noSelect}
             noExpand
-            selection={selected}
-            setSelection={setSelected}
+            selectedRows={selected}
+            onSelectionChange={setSelected}
             columns={[
                 {
                     field: "nombre_sede",

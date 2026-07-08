@@ -219,7 +219,7 @@ export default function SedesTable({ sedes, noTitle = false, noActions = false }
 
                             <div className="info-label">
                                 <strong>Anexos asociados a la sede:</strong>
-                                <strong>{row.anexos}</strong>
+                                <strong>{row.anexos.length}</strong>
                             </div>
                             <div className="data-line" />
 

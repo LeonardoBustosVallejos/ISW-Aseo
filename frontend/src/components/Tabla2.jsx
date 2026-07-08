@@ -55,7 +55,12 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
 
     }
     const isRowSelected = (row) => {
-        return selectedRows.some(selected => selected[rowKey] === row[rowKey]);
+        const selected = selectedRows.some(
+            selected => selected[rowKey] === row[rowKey]
+        );
+
+
+        return selected;
     };
 
     const handleSelectRow = (row) => {
@@ -228,85 +233,88 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
                         ) :
 
 
-                            (paginatedData.map(row => (
+                            (paginatedData.map(row => {
 
-                                <Fragment key={row[rowKey]}>
-                                    <tr>
-                                        {selectable && (
-                                            <td style={{ textAlignment: 'center' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isRowSelected(row)}
-                                                    onChange={() => handleSelectRow(row)}
-                                                />
-                                            </td>
-                                        )}
-                                        <td>
-                                            <ChevronRightCircle
-                                                className={
-                                                    `${expanded === row[rowKey]
-                                                        ? "table-arrow open"
-                                                        : "table-arrow"} ${noExpand && 'oculto'}`
-                                                }
-                                                onClick={() =>
-                                                    setExpanded(
-                                                        expanded === row[rowKey] && !noExpand
-                                                            ? null
-                                                            : row[rowKey]
-                                                    )
-                                                }
-                                            />
+                                return (
 
-                                        </td>
-
-                                        {columns.map(col => (
-
-                                            <td key={col.field}>
-                                                {col.render
-                                                    ? col.render(row[col.field], row)
-                                                    :
-
-                                                    esFecha(row[col.field]) ? formatDateTime(row[col.field])
-                                                        : row[col.field]
-                                                }
-                                            </td>
-
-                                        ))}
-                                        {actions && (
-
+                                    <Fragment key={row[rowKey]}>
+                                        <tr>
+                                            {selectable && (
+                                                <td style={{ textAlignment: 'center' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isRowSelected(row)}
+                                                        onChange={() => handleSelectRow(row)}
+                                                    />
+                                                </td>
+                                            )}
                                             <td>
-
-                                                {actions?.(row)}
+                                                <ChevronRightCircle
+                                                    className={
+                                                        `${expanded === row[rowKey]
+                                                            ? "table-arrow open"
+                                                            : "table-arrow"} ${noExpand && 'oculto'}`
+                                                    }
+                                                    onClick={() =>
+                                                        setExpanded(
+                                                            expanded === row[rowKey] && !noExpand
+                                                                ? null
+                                                                : row[rowKey]
+                                                        )
+                                                    }
+                                                />
 
                                             </td>
-                                        )}
-                                    </tr>
 
-                                    {expanded === row[rowKey] && (
+                                            {columns.map(col => (
 
-                                        <tr className="expanded-row">
+                                                <td key={col.field}>
+                                                    {col.render
+                                                        ? col.render(row[col.field], row)
+                                                        :
 
-                                            <td className="expanded-cell"
-                                                colSpan={
-                                                    columns.length +
-                                                    1 +
-                                                    (actions ? 1 : 0)
-                                                }>
+                                                        esFecha(row[col.field]) ? formatDateTime(row[col.field])
+                                                            : row[col.field]
+                                                    }
+                                                </td>
 
-                                                <div className="expanded-content">
+                                            ))}
+                                            {actions && (
 
-                                                    {renderExpanded?.(row)}
+                                                <td>
 
-                                                </div>
-                                            </td>
+                                                    {actions?.(row)}
 
+                                                </td>
+                                            )}
                                         </tr>
 
-                                    )}
+                                        {expanded === row[rowKey] && (
 
-                                </Fragment>
+                                            <tr className="expanded-row">
 
-                            )))
+                                                <td className="expanded-cell"
+                                                    colSpan={
+                                                        columns.length +
+                                                        1 +
+                                                        (actions ? 1 : 0)
+                                                    }>
+
+                                                    <div className="expanded-content">
+
+                                                        {renderExpanded?.(row)}
+
+                                                    </div>
+                                                </td>
+
+                                            </tr>
+
+                                        )}
+
+                                    </Fragment>
+
+                                )
+                            }))
 
                         }
 

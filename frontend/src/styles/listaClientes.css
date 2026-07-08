@@ -92,16 +92,29 @@
     background: var(--ubb-azul-principal);
 }
 
+.gris {
+    background-color: #4b5563;
+}
+
+.azul-gris {
+    background-color: #475569;
+}
+
+.naranja {
+    background-color: #ea580c;
+}
+
 .verde {
-    background: green;
+    background-color: green;
 }
 
 .amarillo {
-    background: orange;
+    background-color: orange;
 }
 
+
 .rojo {
-    background: red;
+    background-color: red;
 }
 
 .filtros-clientes {

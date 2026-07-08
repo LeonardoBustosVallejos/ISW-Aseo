@@ -185,7 +185,12 @@ export default function InfoCliente() {
                     <ContactosTable contactos={dataGeneral.contactos} />
                 </Tab>
                 <Tab titulo={'Contratos'}>
-                    <ContratosTable contratos={dataGeneral.contratos} cliente={dataGeneral.cliente} estado={dataGeneral.estado} />
+                    <ContratosTable
+                        contratos={dataGeneral.contratos}
+                        cliente={dataGeneral.cliente}
+                        sedes={dataGeneral.sedes}
+                        filiales={dataGeneral.filiales}
+                        estado={dataGeneral.estado} />
                 </Tab>
                 {/*
                 <Tab titulo={'Anexos'} disabled={dataGeneral.anexos.length < 1}>

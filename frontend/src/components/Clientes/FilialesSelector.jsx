@@ -14,8 +14,9 @@ export default function FilialesSelector({
             data={filiales}
             rowKey="cliente_id"
             selectable
-            selection={selected}
-            setSelection={setSelected}
+            noExpand
+            selectedRows={selected}
+            onSelectionChange={setSelected}
             columns={[
                 {
                     field: "nombreCliente",

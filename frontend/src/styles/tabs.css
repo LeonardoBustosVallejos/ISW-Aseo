@@ -13,7 +13,7 @@
         background-color: var(--ubb-azul-secundario);
         color: var(--ubb-texto);
         cursor: pointer;
-        height: 20%;
+        height: 35px;
     }
 
     button:hover,

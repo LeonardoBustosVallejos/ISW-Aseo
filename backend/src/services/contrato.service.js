@@ -627,9 +627,9 @@ export async function createContratoClienteExistenteService(data, manager = null
                 documentosContrato,
                 anexos,
                 sedes = [],
-                sedesId = [],
+                sedesSeleccionadas = [],
                 filiales = [],
-                filialesId = []
+                filialesSeleccionadas = []
             } = data
 
             // Cliente
@@ -663,7 +663,7 @@ export async function createContratoClienteExistenteService(data, manager = null
 
             const sedesContrato = [
 
-                ...sedesId,
+                ...sedesSeleccionadas,
                 ...sedesNuevas.map(s => s.sede_id)
 
             ]
@@ -695,7 +695,7 @@ export async function createContratoClienteExistenteService(data, manager = null
 
             // Filiales existentes
 
-            for (const filialId of filialesId) {
+            for (const filialId of filialesSeleccionadas) {
 
                 await agregarContratoAClienteService(
 
@@ -744,7 +744,7 @@ export async function createContratoClienteExistenteService(data, manager = null
 
             // Filiales existentes
 
-            for (const filialId of filialesId) {
+            for (const filialId of filialesSeleccionadas) {
 
                 await agregarContratoAClienteService(
 
