@@ -34,3 +34,13 @@ export const getFechaContrato = async (cliente_id) => {
         return error.response?.data || null; 
     }
 };
+
+export const getStockBodega = async () => {
+    try {
+        const response = await axios.get(`/activos/bodega/stock`);
+        return response.data.data || response.data; 
+    } catch (error) {
+        console.error("Error obteniendo stock de bodega:", error);
+        return error.response?.data || [];
+    }
+}
