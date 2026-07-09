@@ -3,15 +3,18 @@ import useItems from '@hooks/items/useGetItems.jsx';
 import useEditItems from '@hooks/items/useEditItems';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@context/AuthContext';
 import ItemModal from './AgregarItemModal.jsx';
 import SolicitarItemModal from './SolicitarItemModal.jsx';
 import Popup from '../components/Popup';
 import { deleteItem, createItem } from '@services/item.service.js';
 import { createSolicitud } from '@services/solicitud.service.js';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
+//por los loles
 
 const Bodega = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { items, fetchItems, setItems } = useItems();
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
@@ -26,8 +29,18 @@ const Bodega = () => {
     { title : 'Codigo', field: 'codigo', width: 100, responsive: 0 },
     { title: 'Tipo', field: 'tipo', width: 70, responsive: 0 },
     //{ title: 'Descripción', field: 'descripcion', width: 70, responsive: 1 },
-    { title: 'Disponibles', field: 'disponibilidadActual', width: 70, responsive: 2 },
-    { title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
+    {
+      title: 'Disponibles',
+      width: 120,
+      responsive: 2,
+      formatter: function(cell) {
+        const rowData = cell.getRow().getData();
+        const actual = rowData?.disponibilidadActual ?? '';
+        const total = rowData?.disponibilidadTotal ?? '';
+        return `${actual}/${total}`;
+      }
+    },
+    //{ title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
     {
       title: 'Solicitar',
       hozAlign: 'center',
@@ -127,7 +140,7 @@ const Bodega = () => {
     setDataItems
   } = useEditItems(setItems);
 
-  const handleCreateSolicitud = async (cantidad) => {
+  const handleCreateSolicitud = async ({ cantidad, id_administrador_solicitud, detalle_solicitud, id_sede_solicitud }) => {
     if (!selectedItem?.id) {
       return {
         success: false,
@@ -135,15 +148,22 @@ const Bodega = () => {
       };
     }
 
+    if (!user?.id) {
+      return {
+        success: false,
+        message: 'No se encontró el usuario autenticado para la solicitud.'
+      };
+    }
+
     try {
       const result = await createSolicitud({
         cantidad_solicitud: Number(cantidad),
         id_item_solicitud: Number(selectedItem.id),
-        id_solicitante: 0,
-        id_administrador_solicitud: 0,
-        id_sede_solicitud: 0,
-        detalle_solicitud: '0',
-        estado_solicitud: '0'
+        id_solicitante: Number(user.id),
+        id_administrador_solicitud: Number(id_administrador_solicitud),
+        id_sede_solicitud: Number(id_sede_solicitud),
+        detalle_solicitud,
+        estado_solicitud: 'Pendiente'
       });
 
       if (result?.success === false) {
@@ -273,4 +293,4 @@ const Bodega = () => {
   );
 };
 
-export default Bodega
+export default Bodega;
