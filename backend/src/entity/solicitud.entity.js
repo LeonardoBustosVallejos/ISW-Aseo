@@ -73,7 +73,7 @@ const SolicitudSchema = new EntitySchema({
     sede: {
       target: "Sede",
       type: "many-to-one",
-      joinColumnn: {
+      joinColumn: {
         name: "id_sede_solicitud",
         referencedColumnName: "sede_id"
       },

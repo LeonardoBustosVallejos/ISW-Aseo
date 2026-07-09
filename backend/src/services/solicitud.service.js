@@ -36,11 +36,11 @@ export async function createSolicitudService(solicitudData) {
     const newSolicitud = SolicitudRepository.create({
       cantidad_solicitud: cantidad_solicitud,
       id_item_solicitud: id_item_solicitud,
-      id_solicitante: id_solicitante,
-      id_administrador_solicitud: id_administrador_solicitud,
-      id_sede_solicitud: id_sede_solicitud,
       detalle_solicitud: detalle_solicitud,
-      estado_solicitud: estado_solicitud
+      estado_solicitud: estado_solicitud,
+      solicitante: id_solicitante,
+      administrador: id_administrador_solicitud,
+      sede: id_sede_solicitud
     });
     const solicitudGuardada = await SolicitudRepository.save(newSolicitud);
     return [solicitudGuardada, null];
