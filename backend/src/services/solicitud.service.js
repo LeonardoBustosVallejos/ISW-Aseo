@@ -13,6 +13,8 @@ export async function getSolicitudesService() {
         "solicitud.cantidad_solicitud AS cantidad_solicitud",
         "solicitud.id_item_solicitud AS id_item_solicitud",
         "solicitud.id_solicitante AS id_solicitante",
+        "solicitud.id_administrador_solicitud AS id_administrador_solicitud",
+        "solicitud.id_sede_solicitud AS id_sede_solicitud",
         "solicitud.detalle_solicitud AS detalle_solicitud",
         "solicitud.estado_solicitud AS estado_solicitud",
         "sede.direccion AS ubicacion",
