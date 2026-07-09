@@ -45,6 +45,7 @@
 }
 
 
+
 /* Desktop */
 
 .contacto-field:nth-child(1) {
@@ -69,16 +70,26 @@
 
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .contacto-card {
+        display: grid;
+        grid-template-columns: 2fr repeat(5, 1fr);
+    }
+}
 
-@media (max-width: 900px) {
+
+@media (max-width: 1100px) {
 
     .contacto-card {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
     }
 
     .contacto-field,
     .contacto-actions {
         grid-column: auto;
+        margin-left: 6px;
+        margin-right: 6px;
     }
 
     .contacto-actions {

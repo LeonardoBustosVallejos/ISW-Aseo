@@ -1,0 +1,113 @@
+.lista-compania-container {
+    width: 100%;
+}
+.tabla-clientes {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: calc(100vh - 290px);
+    overflow-y: auto;
+    padding-right: 15px;
+    padding-bottom: 10px;
+    margin-top: 25px;
+}
+.tabla-clientes::-webkit-scrollbar { width: 8px; }
+.tabla-clientes::-webkit-scrollbar-track { background: #f4f7f6; border-radius: 4px; }
+.tabla-clientes::-webkit-scrollbar-thumb { background: #c0cddb; border-radius: 4px; }
+.tabla-clientes::-webkit-scrollbar-thumb:hover { background: #003366; }
+
+.tabla-cliente {
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tabla-cliente.clickable {
+    cursor: pointer;
+}
+.tabla-cliente.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+.fila-recurso {
+    display: grid;
+    grid-template-columns: 60px 2fr 2fr 2fr; 
+    gap: 30px;
+    align-items: start;
+}
+.indice-recurso {
+    font-weight: bold;
+    color: #003366;
+    font-size: 20px;
+    margin-top: 2px;
+}
+.fila-recurso strong {
+    display: block;
+    color: #003366;
+    margin-bottom: 12px;
+    font-size: 20px;
+}
+.fila-recurso p {
+    margin: 0;
+    color: #333;
+}
+.rut-text {
+    color: #666;
+    font-size: 14px;
+    margin-top: -5px;
+}
+.empty-message {
+    text-align: center;
+    color: #666;
+    padding: 30px;
+    background-color: #f9f9f9;
+}
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;
+    color: #333;
+}
+.nav-page {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+.nav-page:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    border-color: #003366;
+    color: #003366;
+}
+.nav-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.pages {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: white;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+}
+.pages:focus {
+    border-color: #003366;
+}

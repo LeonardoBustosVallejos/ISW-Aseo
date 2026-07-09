@@ -8,7 +8,7 @@ import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
 import { getClienteByService, getContactoByService, getSedeByService } from "./cliente.service.js";
-import { cleanRut } from "../cleaners/extras.js";
+
 
 const createErrorMessage = (dataInfo, message) => ({
   dataInfo,
@@ -81,9 +81,9 @@ export async function registerService(nuevoUsuario, manager = null) {
       return [null, createErrorMessage("email", "Correo electrónico ya en uso")];
     }
 
-    const [existingRutUser, errRutUser] = await getUserService({ rut: cleanRut(nuevoUsuario.rut) }, manager);
-    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: cleanRut(nuevoUsuario.rut) }, manager)
-    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: cleanRut(nuevoUsuario.rut) }, manager)
+    const [existingRutUser, errRutUser] = await getUserService({ rut: nuevoUsuario.rut }, manager);
+    const [existingRutContacto, errRutContacto] = await getContactoByService({ contacto_rut: nuevoUsuario.rut }, manager)
+    const [existingRutCliente, errRutCliente] = await getClienteByService({ rutCliente: nuevoUsuario.rut }, manager)
 
 
     if (existingRutUser || existingRutContacto || existingRutCliente) return [null, createErrorMessage("rut", "Rut ya en uso")];
@@ -98,7 +98,7 @@ export async function registerService(nuevoUsuario, manager = null) {
     const newUser = userRepository.create({
       nombreCompleto: nuevoUsuario.nombreCompleto,
       email: nuevoUsuario.email,
-      rut: cleanRut(nuevoUsuario.rut),
+      rut: nuevoUsuario.rut,
       password: await encryptPassword(nuevoUsuario.password),
       phone: nuevoUsuario.phone || null,
       rol: nuevoUsuario.rol_id,

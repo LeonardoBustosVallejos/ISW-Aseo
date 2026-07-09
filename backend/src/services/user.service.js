@@ -3,7 +3,7 @@ import User from "../entity/user.entity.js";
 import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import Trabajador from "../entity/trabajador.entity.js";
-import { cleanRut, createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
+import { createErrorMessage, createSimpleMessage } from "../cleaners/extras.js";
 import { getRolByNameService } from "./rol.service.js";
 import { registerService } from "./auth.service.js";
 import { getClienteByService, getSedeByService, } from "./cliente.service.js";
@@ -27,7 +27,7 @@ export async function getUserService(query, manager = null) {
     const where = [];
 
     if (id) where.push({ id });
-    else if (rut) where.push({ rut: cleanRut(rut) });
+    else if (rut) where.push({ rut: rut });
     else if (email) where.push({ email });
     else if (phone) where.push({ phone });
 
@@ -63,7 +63,7 @@ export async function getUserByService(query, manager = null) {
     const where = {};
 
     if (id) where.id = id;
-    if (rut) where.rut = cleanRut(rut);
+    if (rut) where.rut = rut;
     if (email) where.email = email;
     if (phone) where.phone = phone;
     if (typeof isActive === "boolean") where.isActive = isActive;
@@ -116,7 +116,7 @@ export async function updateUserService(query, body, manager = null) {
     if (errUser) return [null, errUser];
 
     const where = []
-    if (body.rut) where.push({ rut: cleanRut(body.rut) })
+    if (body.rut) where.push({ rut: body.rut })
     if (body.email) where.push({ email: body.email })
     if (body.phone) where.push({ phone: body.phone })
 
@@ -146,7 +146,7 @@ export async function updateUserService(query, body, manager = null) {
 
     const dataUserUpdate = {
       nombreCompleto: body.nombreCompleto,
-      rut: cleanRut(body.rut),
+      rut: body.rut,
       email: body.email,
       rol_id: body.rol,
       updatedAt: new Date(),
@@ -185,7 +185,7 @@ export async function deleteUserService(query, manager = null) {
       manager.getRepository(User) : AppDataSource.getRepository(User);
 
     const userFound = await userRepository.findOne({
-      where: [{ id: id }, { rut: cleanRut(rut) }, { email: email }],
+      where: [{ id: id }, { rut: rut }, { email: email }],
     });
 
     if (!userFound) {
@@ -222,7 +222,7 @@ export async function cambiarEstadoUsuario(query, estado = false, manager = null
       if (!id && !rut && !email) throw [null, createErrorMessage("Usuario", "Debe proporcionar al menos un criterio de búsqueda")]
 
       //verificar que el usuario exista
-      const [userFound, err] = await getUserByService({ id, rut: cleanRut(rut), email }, null, transactionManager)
+      const [userFound, err] = await getUserByService({ id, rut: rut, email }, null, transactionManager)
       if (err) throw [null, err]
 
       //verificar que el usuario no sea administrador
@@ -364,7 +364,7 @@ export async function getAsignadoByService(trabajador, estado = null, sede_id = 
       where.trabajador = {}
 
       if (id) where.trabajador.id = id
-      if (rut) where.trabajador.rut = cleanRut(rut)
+      if (rut) where.trabajador.rut = rut
       if (email) where.trabajador.email = email
     }
 
@@ -549,13 +549,13 @@ async function reactivarSupervisorService(trabajador, manager = null) {
           if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
       */
       //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
-      const [existingUser, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut), email: email }, transactionManager)
+      const [existingUser, errRut] = await getUserService({ rut: trabajadorEncontrado.rut, email: email }, transactionManager)
       if (existingUser && existingUser.email !== trabajadorEncontrado.email && !existingEmail.isActive) throw [null, createErrorMessage("rut/email", "Ya existe un otro registrado con uno de los datos")]
 
       //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
 
       //verificar que si existe un usuario entonces ver si está activo
-      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, transactionManager)
+      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: trabajadorEncontrado.rut, email: trabajadorEncontrado.email }, transactionManager)
 
 
       //primero veo si existe y después si está activado
@@ -573,7 +573,7 @@ async function reactivarSupervisorService(trabajador, manager = null) {
         //registrar el nuevo usuario del supervisor
         const [nuevoPerfil, errPerfil] = await registerService({
           nombreCompleto: trabajadorEncontrado.nombreCompleto,
-          rut: cleanRut(trabajadorEncontrado.rut),
+          rut: trabajadorEncontrado.rut,
           email: trabajadorEncontrado.email,
           password: emailParts,
           rol_id: rolSupervisor.id,
@@ -585,7 +585,7 @@ async function reactivarSupervisorService(trabajador, manager = null) {
 
       } else if (nuevoSupervisor && nuevoSupervisor.isActive === false) {
         //si existe pero está desactivado, se reactiva
-        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, transactionManager)
+        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: trabajadorEncontrado.rut }, true, transactionManager)
         if (errEstado) throw [null, errEstado]
 
         //retornar el perfil del supervisor reactivado
@@ -639,7 +639,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
           if (trabajadorEncontrado.rol === "Supervisor") return [null, createErrorMessage("trabajador", "El trabajador ya tiene rol de Supervisor")]
       */
       //verificar si existe un usuario registrado con el mismo rut o email del trabajador y si es un usuario diferente
-      const [existingRut, errRut] = await getUserService({ rut: cleanRut(trabajadorEncontrado.rut) }, transactionManager)
+      const [existingRut, errRut] = await getUserService({ rut: trabajadorEncontrado.rut }, transactionManager)
       if (existingRut && existingRut.email !== trabajadorEncontrado.email) throw [null, createErrorMessage("rut", "Ya existe un otro registrado con el mismo rut")]
 
       const [existingEmail, errEmail] = await getUserService({ email: trabajadorEncontrado.email }, transactionManager)
@@ -648,7 +648,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
       //si pasa la verificacion de rut y email, entonces puede o no existir un usuario correspondiente
 
       //verificar que si existe un usuario entonces ver si está activo
-      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: cleanRut(trabajadorEncontrado.rut), email: trabajadorEncontrado.email }, transactionManager)
+      let [nuevoSupervisor, errRegister] = await getUserByService({ rut: trabajadorEncontrado.rut, email: trabajadorEncontrado.email }, transactionManager)
       let usuarioCreado = false
 
       if (errRegister) {
@@ -664,7 +664,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
 
         const datosSupervisor = {
           nombreCompleto: trabajadorEncontrado.nombreCompleto,
-          rut: cleanRut(trabajadorEncontrado.rut),
+          rut: trabajadorEncontrado.rut,
           email: trabajadorEncontrado.email,
           password: emailParts,
           rol_id: rolSupervisor.id,
@@ -673,7 +673,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
         //registrar el nuevo usuario del supervisor
         const [nuevoPerfil, errPerfil] = await registerService({
           nombreCompleto: trabajadorEncontrado.nombreCompleto,
-          rut: cleanRut(trabajadorEncontrado.rut),
+          rut: trabajadorEncontrado.rut,
           email: trabajadorEncontrado.email,
           password: emailParts,
           rol_id: rolSupervisor.id,
@@ -684,7 +684,7 @@ export async function asignarSupervisorService(trabajador, sede_id, manager = nu
 
       } else if (nuevoSupervisor && !nuevoSupervisor.isActive) {
         //si existe pero está desactivado, se reactiva
-        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: cleanRut(trabajadorEncontrado.rut) }, true, transactionManager)
+        const [nuevoEstado, errEstado] = await cambiarEstadoUsuario({ rut: trabajadorEncontrado.rut }, true, transactionManager)
         if (errEstado) throw [null, errEstado]
         nuevoSupervisor = nuevoEstado
 

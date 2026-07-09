@@ -15,6 +15,7 @@ const SedeSchema = new EntitySchema({
             length: 15,
             nullable: true,
             unique: false,
+            default: 'Sin rut'
         },
         nombre_sede: {
             type: "varchar",
@@ -77,7 +78,13 @@ const SedeSchema = new EntitySchema({
         contrato: {
             target: "ContratoComercial",
             type: "many-to-many",
-            inverseSide: "sedes"
+            joinColumn: { name: "id_contrato_comercial" },
+            nullable: false //IMPORTANTE, al regitrar una sede debe existir un contrato al cual sujetarse
+        },
+        grupos: {
+            type: "one-to-many",
+            target: "TrabajadoresGrupos",
+            inverseSide: "sedeAsignada"
         },
         anexo: {
             target: "ContratoAnexo",

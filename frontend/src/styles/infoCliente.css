@@ -108,3 +108,24 @@
     align-self: center;
     background-color: #d9e1ea;
 }
+
+.add-buttons {
+    height: 48px;
+    display: flex;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    gap: 8px;
+
+    .action-button {
+        flex: 1;
+        width: fit-content;
+        display: flex;
+        gap: 2px;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+.oculto {
+    display: none;
+}

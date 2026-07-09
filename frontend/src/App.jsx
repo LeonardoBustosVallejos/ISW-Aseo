@@ -8,10 +8,11 @@ import Bodega from '@pages/Bodega';
 import ResumenRecursos from "@pages/Recursos/resumen.jsx";
 import IngresarTrabajador from "@pages/trabajadores/ingresarTrabajador";
 import AsignarTrabajador from "@pages/trabajadores/AsignarTrabajador";
+import EliminarTrabajador from "@pages/trabajadores/EliminarTrabajador"
 import ListaClientes from "@pages/Clientes/ListaClientes";
-import DetallesCliente from "@components/detalles.jsx";
+import DetallesCliente from "@pages/Recursos/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
-import Home from "./pages/Home";
+import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
 import SolicitudInfo from '@pages/SolicitudInfo';
 import Solicitudes from '@pages/Solicitudes';
@@ -25,8 +26,7 @@ export default function App() {
                 <Route path="/" element={<LoginForm />} />
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/" element={<Root />}>
-                    <Route path="home" element={<Home />} />
-                    <Route path="recursos/resumen" element={<ResumenRecursos />} />
+                    <Route path="home" element={<ResumenRecursos />} />
                     <Route path="recursos/detalles/:sede_id" element={<DetallesCliente />} />
                 {/* <Route path="trabajadores/eliminar" element={<EliminarTrabajador />} />*/}
                     <Route path="bodega" element={<Bodega />} />
@@ -36,11 +36,12 @@ export default function App() {
 
                     <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
                     <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
-
+                    <Route path="trabajadores/eliminar" element={<EliminarTrabajador/>}/>
 
 
                     <Route path="clientes"  >
                         <Route path="" element={<ListaClientes />} />
+                        <Route path="documentos+comerciales" element={<VistaDocumentosComerciales />} />
                         <Route path="registrar" element={<RegisterClienteForm />} />
 
                     </Route>
