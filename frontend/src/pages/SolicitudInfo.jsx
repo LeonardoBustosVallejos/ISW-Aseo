@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { getSolicitudById, updateSolicitud } from '@services/solicitud.service';
+//para ver si este commit funciona
 
 export default function SolicitudInfo() {
     const { id } = useParams();
