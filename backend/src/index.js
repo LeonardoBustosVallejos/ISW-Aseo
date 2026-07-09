@@ -15,9 +15,10 @@ import {
         createContactos,
         createRoles,
         createSedes,
-        createTrabajadores, 
+        createTrabajadores,
+        createItems,
         createUsers,
-        createItems } from "./config/initialSetup.js";
+       } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 
 

@@ -3,6 +3,7 @@ import useItems from '@hooks/items/useGetItems.jsx';
 import useEditItems from '@hooks/items/useEditItems';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@context/AuthContext';
 import ItemModal from './AgregarItemModal.jsx';
 import SolicitarItemModal from './SolicitarItemModal.jsx';
 import Popup from '../components/Popup';
@@ -13,6 +14,7 @@ import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/swee
 
 const Bodega = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { items, fetchItems, setItems } = useItems();
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
@@ -146,11 +148,18 @@ const Bodega = () => {
       };
     }
 
+    if (!user?.id) {
+      return {
+        success: false,
+        message: 'No se encontró el usuario autenticado para la solicitud.'
+      };
+    }
+
     try {
       const result = await createSolicitud({
         cantidad_solicitud: Number(cantidad),
         id_item_solicitud: Number(selectedItem.id),
-        id_solicitante: 0,
+        id_solicitante: Number(user.id),
         id_administrador_solicitud: Number(id_administrador_solicitud),
         id_sede_solicitud: Number(id_sede_solicitud),
         detalle_solicitud,
@@ -284,4 +293,4 @@ const Bodega = () => {
   );
 };
 
-export default Bodega
+export default Bodega;

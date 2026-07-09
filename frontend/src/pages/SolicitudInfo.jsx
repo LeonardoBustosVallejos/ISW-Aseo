@@ -4,7 +4,7 @@ import { useAuth } from '@context/AuthContext';
 import { getSolicitudById, updateSolicitud } from '@services/solicitud.service';
 //para ver si este commit funciona
 
-export default function SolicitudInfo() {
+const SolicitudInfo = () => {
     const { id } = useParams();
     const { user } = useAuth();
     const [solicitud, setSolicitud] = useState(null);
@@ -132,132 +132,21 @@ export default function SolicitudInfo() {
                         </div>
                     )}
                 </div>
-
-            </div>
-
-            {/* Modales */}
-            <Modal
-                open={modalActivosOpen}
-                onClose={() => {
-                    setModalActivosOpen(false);
-                    setArticuloSeleccionado(null);
-                }}
-                title={articuloSeleccionado ? "Confirmar Cantidad" : "Inventario de Activos Fijos (Bodega)"}
-                subtitle={articuloSeleccionado ? "" : "Selecciona los equipos que enviarás a la sede"}
-                width="700px"
-            >
-                <div className="modal-body-padding">
-                    
-                    {!articuloSeleccionado && (
-                        <div className="table-wrapper">
-                            {loading ? (
-                                <p className="modal-loading">Cargando stock...</p>
-                            ) : (
-                                <table className="modal-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Equipo / Maquinaria</th>
-                                            <th style={{ textAlign: 'center' }}>Stock Disponible</th>
-                                            <th style={{ textAlign: 'center' }}>Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {stockActivos && stockActivos.length > 0 ? (
-                                            stockActivos.map((activo, index) => {
-                                                const cantidadEnLista = articulosDespacho
-                                                    .filter(art => art.nombre === activo.nombre)
-                                                    .reduce((sum, art) => sum + art.cantidad, 0);
-                                                const stockReal = activo.cantidad_disponible - cantidadEnLista;
-                                                if (stockReal <= 0) return null;
-
-                                                return (
-                                                    <tr key={index}>
-                                                        <td className="modal-td-nombre">{activo.nombre}</td>
-                                                        <td className="modal-td-stock">
-                                                            {stockReal} unid.
-                                                        </td>
-                                                        <td className="modal-td-accion">
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => iniciarAgregado({...activo, cantidad_disponible: stockReal}, 'Activo')}
-                                                                className="resolver-btn modal-btn-agregar"
-                                                            >
-                                                                + Agregar
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="3" className="modal-empty-row">
-                                                    No hay activos disponibles en bodega.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    )}
-
-                    {articuloSeleccionado && (
-                        <div className="confirmacion-container">
-                            <div className="confirmacion-info">
-                                <p className="confirmacion-texto">Has seleccionado: <strong>{articuloSeleccionado.nombre}</strong></p>
-                                <p className="confirmacion-subtexto">
-                                    Máximo disponible: {articuloSeleccionado.cantidad_disponible} unidades.
-                                </p>
+                <div style={{ display: 'grid', gap: '0.85rem' }}>
+                    {camposSolicitud.length > 0 ? (
+                        camposSolicitud.map(([key, value]) => (
+                            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', padding: '0.75rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                                <span style={{ fontWeight: 600, color: '#374151' }}>{key.replace(/_/g, ' ')}:</span>
+                                <span style={{ color: '#4b5563', textAlign: 'right' }}>{String(value ?? '')}</span>
                             </div>
-                            
-                            <div>
-                                <label className="confirmacion-label">
-                                    Cantidad a despachar:
-                                </label>
-                                <input 
-                                    type="number" 
-                                    min="1" 
-                                    max={articuloSeleccionado.cantidad_disponible}
-                                    value={cantidadAAgregar}
-                                    onChange={(e) => setCantidadAAgregar(parseInt(e.target.value) || 1)}
-                                    className="confirmacion-input"
-                                />
-                            </div>
-
-                            <div className="confirmacion-acciones">
-                                <button 
-                                    type="button"
-                                    onClick={() => setArticuloSeleccionado(null)}
-                                    className="confirmacion-btn-cancelar"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    type="button"
-                                    onClick={confirmarAgregado}
-                                    className="resolver-btn confirmacion-btn-confirmar"
-                                >
-                                    Confirmar
-                                </button>
-                            </div>
-                        </div>
+                        ))
+                    ) : (
+                        <p style={{ margin: 0, color: '#6b7280' }}>No hay datos adicionales para esta solicitud.</p>
                     )}
                 </div>
-            </Modal>
-            <Modal
-                open={modalInsumosOpen}
-                onClose={() => setModalInsumosOpen(false)}
-                title="Gestión de Insumos"
-                subtitle={`Sede: ${datosSolicitud.ubicacion}`}
-                width="800px"
-            >
-                <div className="modal-body-padding">
-                    <p>Aquí se cargará el stock de detergente, cloro y útiles de aseo.</p>
-                </div>
-            </Modal>
-
+            </section>
         </div>
     );
 };
 
-export default ResolverSolicitud;
+export default SolicitudInfo;
