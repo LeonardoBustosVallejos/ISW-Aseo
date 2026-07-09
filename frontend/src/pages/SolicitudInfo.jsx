@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '@context/AuthContext';
 import { getSolicitudById, updateSolicitud } from '@services/solicitud.service';
 
 export default function SolicitudInfo() {
     const { id } = useParams();
+    const { user } = useAuth();
     const [solicitud, setSolicitud] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -42,9 +44,17 @@ export default function SolicitudInfo() {
 
     const camposSolicitud = Object.entries(solicitud || {}).filter(([key]) => !['id', 'createdAt', 'updatedAt'].includes(key));
 
-    const handleAcceptSolicitud = async () => {
+    const rolRaw = user?.rol;
+    const userRole = typeof rolRaw === 'string'
+        ? rolRaw
+        : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
+    const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
+    const lowerRole = String(userRole).toLowerCase();
+    const isAdministrador = lowerRole === 'administrador' || roleId === 1;
+
+    const handleUpdateSolicitudEstado = async (nuevoEstado) => {
         if (!solicitud?.id_solicitud && !solicitud?.id) {
-            setActionMessage({ type: 'error', text: 'No hay una solicitud válida para aceptar.' });
+            setActionMessage({ type: 'error', text: `No hay una solicitud válida para ${nuevoEstado === 'Aceptada' ? 'aceptar' : 'rechazar'}.` });
             return;
         }
 
@@ -55,21 +65,24 @@ export default function SolicitudInfo() {
             const solicitudId = solicitud.id_solicitud ?? solicitud.id;
             const response = await updateSolicitud(solicitudId, {
                 ...solicitud,
-                estado_solicitud: 'Aceptada'
+                estado_solicitud: nuevoEstado
             });
 
             if (!response?.success) {
-                throw new Error(response?.message || 'No se pudo aceptar la solicitud');
+                throw new Error(response?.message || `No se pudo ${nuevoEstado === 'Aceptada' ? 'aceptar' : 'rechazar'} la solicitud`);
             }
 
-            setSolicitud((prev) => prev ? { ...prev, estado_solicitud: 'Aceptada' } : prev);
-            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
+            setSolicitud((prev) => prev ? { ...prev, estado_solicitud: nuevoEstado } : prev);
+            setActionMessage({ type: 'success', text: `Solicitud ${nuevoEstado === 'Aceptada' ? 'aceptada' : 'rechazada'} correctamente.` });
         } catch (err) {
-            setActionMessage({ type: 'error', text: err.message || 'Ocurrió un error al aceptar la solicitud.' });
+            setActionMessage({ type: 'error', text: err.message || `Ocurrió un error al ${nuevoEstado === 'Aceptada' ? 'aceptar' : 'rechazar'} la solicitud.` });
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    const handleAcceptSolicitud = () => handleUpdateSolicitudEstado('Aceptada');
+    const handleRejectSolicitud = () => handleUpdateSolicitudEstado('Rechazada');
 
     return (
         <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
@@ -79,23 +92,44 @@ export default function SolicitudInfo() {
             <section style={{ background: '#fff', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
                     <h2 style={{ margin: 0 }}>Datos de la solicitud</h2>
-                    <button
-                        type="button"
-                        onClick={handleAcceptSolicitud}
-                        disabled={isSubmitting || solicitud?.estado_solicitud === 'Aceptada'}
-                        style={{
-                            padding: '0.7rem 1rem',
-                            border: 'none',
-                            borderRadius: '6px',
-                            backgroundColor: solicitud?.estado_solicitud === 'Aceptada' ? '#16a34a' : '#2563eb',
-                            color: '#fff',
-                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                            opacity: isSubmitting ? 0.7 : 1,
-                            fontWeight: 600
-                        }}
-                    >
-                        {isSubmitting ? 'Aceptando...' : solicitud?.estado_solicitud === 'Aceptada' ? 'Aceptada' : 'Aceptar'}
-                    </button>
+                    {isAdministrador && (
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={handleRejectSolicitud}
+                                disabled={isSubmitting || solicitud?.estado_solicitud === 'Rechazada' || solicitud?.estado_solicitud === 'Aceptada'}
+                                style={{
+                                    padding: '0.7rem 1rem',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    backgroundColor: solicitud?.estado_solicitud === 'Rechazada' ? '#dc2626' : '#ef4444',
+                                    color: '#fff',
+                                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                    opacity: isSubmitting ? 0.7 : 1,
+                                    fontWeight: 600
+                                }}
+                            >
+                                {isSubmitting ? 'Procesando...' : solicitud?.estado_solicitud === 'Rechazada' ? 'Rechazada' : 'Rechazar'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleAcceptSolicitud}
+                                disabled={isSubmitting || solicitud?.estado_solicitud === 'Aceptada'}
+                                style={{
+                                    padding: '0.7rem 1rem',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    backgroundColor: solicitud?.estado_solicitud === 'Aceptada' ? '#16a34a' : '#2563eb',
+                                    color: '#fff',
+                                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                    opacity: isSubmitting ? 0.7 : 1,
+                                    fontWeight: 600
+                                }}
+                            >
+                                {isSubmitting ? 'Procesando...' : solicitud?.estado_solicitud === 'Aceptada' ? 'Aceptada' : 'Aceptar'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {actionMessage.text && (

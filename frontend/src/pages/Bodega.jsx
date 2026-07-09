@@ -27,8 +27,18 @@ const Bodega = () => {
     { title : 'Codigo', field: 'codigo', width: 100, responsive: 0 },
     { title: 'Tipo', field: 'tipo', width: 70, responsive: 0 },
     //{ title: 'Descripción', field: 'descripcion', width: 70, responsive: 1 },
-    { title: 'Disponibles', field: 'disponibilidadActual', width: 70, responsive: 2 },
-    { title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
+    {
+      title: 'Disponibles',
+      width: 120,
+      responsive: 2,
+      formatter: function(cell) {
+        const rowData = cell.getRow().getData();
+        const actual = rowData?.disponibilidadActual ?? '';
+        const total = rowData?.disponibilidadTotal ?? '';
+        return `${actual}/${total}`;
+      }
+    },
+    //{ title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
     {
       title: 'Solicitar',
       hozAlign: 'center',
@@ -128,7 +138,7 @@ const Bodega = () => {
     setDataItems
   } = useEditItems(setItems);
 
-  const handleCreateSolicitud = async (cantidad) => {
+  const handleCreateSolicitud = async ({ cantidad, id_administrador_solicitud, detalle_solicitud, id_sede_solicitud }) => {
     if (!selectedItem?.id) {
       return {
         success: false,
@@ -141,10 +151,10 @@ const Bodega = () => {
         cantidad_solicitud: Number(cantidad),
         id_item_solicitud: Number(selectedItem.id),
         id_solicitante: 0,
-        id_administrador_solicitud: 0,
-        id_sede_solicitud: 0,
-        detalle_solicitud: '0',
-        estado_solicitud: '0'
+        id_administrador_solicitud: Number(id_administrador_solicitud),
+        id_sede_solicitud: Number(id_sede_solicitud),
+        detalle_solicitud,
+        estado_solicitud: 'Pendiente'
       });
 
       if (result?.success === false) {
