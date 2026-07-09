@@ -10,7 +10,6 @@ import { deleteItem, createItem } from '@services/item.service.js';
 import { createSolicitud } from '@services/solicitud.service.js';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
 
-
 const Bodega = () => {
   const navigate = useNavigate();
   const { items, fetchItems, setItems } = useItems();
