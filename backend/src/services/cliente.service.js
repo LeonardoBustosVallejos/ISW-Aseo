@@ -1773,7 +1773,7 @@ export async function updateClienteRelacionesService(
             const clienteActualizado = await clienteRepository.save(cliente);
             console.log('=>Cliente/Filiales actualizados');
 
-            console.log(clienteActualizado.anexos);
+            //console.log(clienteActualizado.anexos);
 
             return [clienteActualizado, null];
         };
@@ -1850,7 +1850,7 @@ export async function updateRelacionesContratoYAnexoService(
 
                 const res = await anexoRepository.save(anexos);
                 console.log('=>Anexos actualizadas');
-                console.log(res);
+                //console.log(res);
 
             }
 

@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { documentoValidation } from "./documentos.validation.js";
+import { sedeJerarquicoValidation, selectedFilialValidation } from "./cliente.validation.js";
 
 export const contratoComercialValidation = Joi.object({
     fechaInicio: Joi.date()
@@ -73,7 +74,8 @@ export const contratoAnexoValidation = Joi.object({
 
     jornada: Joi.string()
         .valid("COMPLETA", "PARCIAL")
-        .default("COMPLETA"),
+        .default("COMPLETA")
+        .messages({ "any.only": "El jornada inválida. Sólo COMPLETA ó PARCIAL" }),
 
     tipoJornada: Joi.string()
         .valid(
@@ -82,7 +84,10 @@ export const contratoAnexoValidation = Joi.object({
             "MIXTA",
             "TURNOS"
         )
-        .default("DIURNA"),
+        .default("DIURNA")
+        .messages({
+            "any.only": "El tipo de jornada inválida."
+        }),
 
     cantidadMinTrabajadores: Joi.number()
         .integer()
@@ -100,11 +105,13 @@ export const contratoAnexoValidation = Joi.object({
             "MEDIANA",
             "GRANDE",
             "INDUSTRIAL"
-        ),
+        ).messages({ "any.only": "El tamaño de instalación inválido." }),
     tipoAnexo: Joi.string()
         .valid(
             "RENOVACION", "AUMENTO_PERSONAL", "REDUCCION_PERSONAL", "CAMBIO_MONTO", "SERVICIO_ADICIONAL", "OTRO"
-        )
+        ).messages({
+            "any.only": "El tipo de anexo inválido."
+        })
     ,
     requiereGuardias: Joi.boolean()
         .default(false),

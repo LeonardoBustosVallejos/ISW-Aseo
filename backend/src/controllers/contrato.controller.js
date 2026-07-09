@@ -1,6 +1,7 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { createAnexosYDocumentos, createContratoComercialService, getVistaContratosService } from "../services/contrato.service.js";
+import { createAnexosYDocumentos, createContratoClienteExistenteService, createContratoComercialService, getVistaContratosService } from "../services/contrato.service.js";
 import { uploadAnexoValidation, uploadContratoValidation } from "../validations/contratos.validation.js";
+import { createContratoClienteExistenteValidation } from "../validations/nuevoContrato.validations.js";
 
 export async function createContratoYArchivo(req, res) {
     try {
@@ -113,13 +114,46 @@ export async function getVistaContratosComerciales(req, res) {
 
 export async function createNuevoContratoExistente(req, res) {
     try {
-        const { cliente_id } = req.params
 
-        const { contrato, metadataDocumentos, } = req.body
+        const { cliente_id } = req.params;
 
+        const body = JSON.parse(req.body.body);
+
+        const files = req.files ?? {};
+
+        const { error } = await createContratoClienteExistenteValidation.validate(body)
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+        const metadataDocumentos = body.metadataDocumentos.map(doc => ({
+            file: req.files?.[doc.fileKey]?.[0],
+            nombrePersonalizado: doc.nombrePersonalizado,
+            tipoDocumento: doc.tipoDocumento
+        }));
+        body.metadataDocumentos = metadataDocumentos;
+
+
+        const [contrato, err] = await createContratoClienteExistenteService(
+            body,
+            cliente_id,
+            null
+        );
+        if (err) return handleErrorClient(res, 400, err);
+
+        return handleSuccess(res, 201, "Contrato y documentación registrados con éxito", contrato);
 
     } catch (error) {
-        console.error("Error en crear un contrato en cliente existente:", error);
-        return handleErrorServer(res, 500, error.message);
+
+        if (Array.isArray(error)) {
+            console.error(error[1]);
+            if (manager) throw error
+            return error
+        }
+
+        console.error(error)
+
+        if (manager) throw error
+
+        return [null, "Error interno del servidor"]
+
     }
 }

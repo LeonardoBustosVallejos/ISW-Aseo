@@ -16,13 +16,14 @@ import { SedesArray } from "../../../components/Clientes/SedesForm";
 import { useNavigate } from "react-router-dom";
 
 import SedesSelector from "../../../components/Clientes/SedesSelector";
-import FilialesSelector from "../../../components/Clientes/FilialesSelector";
 import { useErrors } from "../../../hooks/errors";
 import DataClienteOFilial from "../../../components/Clientes/DataClienteOFilialForm";
+import { createNuevoContrato } from "../../../services/contratoComercial.service";
+import { showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
 
-export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "ATRASADO"].includes(estado) }
+export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "ESPERA", "ATRASADO"].includes(estado) }
 
-export function puedeCrearContrato(estado) { return estado !== 'VIGENTE' }
+export function puedeCrearContrato(estado) { return ['VIGENTE', 'ESPERA'].includes(estado) }
 
 
 export default function ContratosTable({ contratos, cliente = null, sedes = null, filiales = null, estado, noTitle = false, title, isGeneral = false }) {
@@ -76,7 +77,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
         }]
     }
     const FILIAL_BASE = {
-        datos: {
+        cliente: {
             nombreCliente: "",
             rutCliente: ""
         },
@@ -272,8 +273,64 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
     const handleOpenVerif = (type) => {
         setOpenVerifModal(type)
     }
-    const closeVerifModal = () => {
+    const closeVerifModal = (e) => {
+        e.preventDefault()
         setOpenVerifModal(null)
+    }
+
+    const submitNewContrato = async () => {
+        try {
+
+            const body = {
+
+                cliente_id: newContrato.cliente_id,
+
+                contrato: newContrato.contrato,
+
+                metadataDocumentos: newContrato.metadataDocumentos,
+
+                // Sedes existentes del representante
+                sedesSeleccionadas: newContrato.sedesSeleccionadas,
+
+                // Nuevas sedes del representante
+                nuevasSedes: newSedes,
+
+                // Filiales existentes
+                filiales: filialesForm.map(f => ({
+
+                    cliente_id: f.cliente_id,
+
+                    // ids de sedes existentes seleccionadas
+                    sedesSeleccionadas:
+                        f.selectedSedes.map(s => s.sede_id),
+
+                    // nuevas sedes de esa filial
+                    nuevasSedes: f.newSedes
+
+                })),
+
+                // Filiales nuevas
+                nuevasFiliales: newFiliales
+
+            };
+
+            const response = await createNuevoContrato(body.cliente_id, body)
+
+            if (response.status === 'Success') {
+                showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
+                setTimeout(3000)
+            } else if (response.status === 'Client error') {
+                console.log(response);
+
+                setErrors(response)
+            }
+
+
+        } catch (error) {
+
+            console.error(error);
+            showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
+        }
     }
 
     return (
@@ -283,7 +340,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                     text="Nuevo contrato"
                     onClick={abrirModalContrato}
                     hidden={cliente.tipoCliente !== 'EMPRESA'}
-                    disabled={!puedeCrearContrato(estado) || cliente.tipoCliente !== 'EMPRESA'}
+                    disabled={puedeCrearContrato(estado) || cliente.tipoCliente !== 'EMPRESA'}
                 /> : '')}
             </Header>
             <Table
@@ -459,7 +516,9 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                     open={modal === "contrato"}
                     onClose={closeModal}
                     isForm
-                    footer={displayError}
+                    footer={<span className={`error-message`}>
+                        {displayError}
+                    </span>}
                     onAcept={() => handleOpenVerif('newContrato')}
                 >
                     <form>
@@ -468,7 +527,6 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                             setContrato={setNewContrato}
 
                             sedes={sedesRepresentante}
-                            filiales={filiales}
 
                             newSedes={newSedes}
                             setNewSedes={setNewSedes}
@@ -478,6 +536,9 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
 
                             filialesForm={filialesForm}
                             setFilialesForm={setFilialesForm}
+
+                            selectedSedes={selectedSedes}
+                            setSelectedSedes={setSelectedSedes}
                         />
 
                     </form>
@@ -489,10 +550,12 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                 open={modal === "anexo"}
                 onClose={closeModal}
                 isForm
-                footer={displayError}
+                footer={<span className={`error-message`}>
+                    {displayError}
+                </span>}
                 onAcept={() => handleOpenVerif('newAnexo')}
             >
-                <form>
+                <form onSubmit={() => handleOpenVerif('newAnexo')}>
                     {/*FORMULARIO DE ANEXOS */}
                     <AnexosArray
                         anexos={newAnexos}
@@ -623,9 +686,9 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                                             level={1}
                                             content={
                                                 <DataClienteOFilial
-                                                    data={filial.datos}
+                                                    data={filial.cliente}
                                                     sedes={filial.sedes}
-                                                    dataPath={["datos"]}
+                                                    dataPath={["cliente"]}
                                                     sedesPath={["sedes"]}
                                                     setFormData={(updater) => {
 
@@ -667,8 +730,9 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
             {/*MODAL DE CONFIRMACION */}
             <Modal open={openVerifModal}
                 title={'AVISO'}
-                onClose={() => closeVerifModal()}
+                onClose={(e) => closeVerifModal(e)}
                 isForm={true}
+                onAcept={openVerifModal === 'newContrato' ? submitNewContrato : undefined}
             >
                 <br />
                 <br />
@@ -972,7 +1036,6 @@ function ContratoForm({
     setContrato,
 
     sedes = [],
-    filiales = [],
 
     newSedes,
     setNewSedes,
@@ -983,10 +1046,13 @@ function ContratoForm({
     filialesForm,
     setFilialesForm,
 
+    selectedSedes = [],
+    setSelectedSedes,
+
     level = 0
 }) {
 
-    const [selectedSedes, setSelectedSedes] = useState([]);
+    //const [selectedSedes, setSelectedSedes] = useState([]);
     const [selectedFiliales, setSelectedFiliales] = useState([]);
 
     const [openSelectSedes, setOpenSelectSedes] = useState(false);
@@ -1003,12 +1069,27 @@ function ContratoForm({
         setNewFiliales(prev => [
             ...prev,
             {
-                datos:
+                cliente:
                 {
                     nombreCliente: "",
                     rutCliente: ""
                 },
-                sedes: []
+                sedes: [{
+                    nombre_sede: "",
+                    direccion: "",
+                    personalSolicitado: 0,
+                    rutSecundario: "",
+                    tipoSede: "PRINCIPAL",
+                    contactos: [
+                        {
+                            nombreContacto: "",
+                            contacto_rut: "",
+                            email: "",
+                            phone: "",
+                            tipoContacto: "PRINCIPAL"
+                        }
+                    ]
+                }]
             }
         ]);
     };
@@ -1021,6 +1102,7 @@ function ContratoForm({
 
     return (
         <>
+            {/*FORMULARIO CONTRATO */}
             <ContratoRow
                 contrato={contrato.contrato}
                 documentos={contrato.metadataDocumentos}
@@ -1030,10 +1112,12 @@ function ContratoForm({
 
             <br />
 
+            {/*SELECCIONAR SEDES */}
             <Acordeon
                 title={`Seleccionar Sedes (${contrato.sedesSeleccionadas.length} de ${sedes.length})`}
                 isOpen={openSelectSedes}
                 onToggle={() => setOpenSelectSedes(!openSelectSedes)}
+                level={level}
                 content={
                     <SedesSelector
                         sedes={sedes}
@@ -1051,11 +1135,13 @@ function ContratoForm({
                     />
                 }
             />
+            {/*NUEVAS SEDES DEL PRINCIPAL */}
 
             <Acordeon
-                title={`Agregar Nuevas Sedes (${newSedes.length})`}
+                title={`Agregar Nuevas Sedes al Representante (${newSedes?.length ?? 0})`}
                 isOpen={openNewSedes}
                 onToggle={() => setOpenNewSedes(!openNewSedes)}
+                level={level}
                 content={
                     <SedesArray
                         newDoc
@@ -1063,14 +1149,16 @@ function ContratoForm({
                         setFormData={setNewSedes}
                         sedesPath={[]}
                         isRegister={false}
-                        level={1}
+                        level={level + 1}
                     />
                 }
             />
 
+            {/*SELECCIONAR O AGREGAR SEDES A FILIALES */}
             <Acordeon
                 title={`Agregar o Seleccionar Sedes a/de Filiales (${filialesForm.length})`}
-                level={0}
+                level={level}
+                disabled={filialesForm.length === 0}
                 isOpen={openSelectFiliales}
                 onToggle={() => setOpenSelectFiliales(!openSelectFiliales)}
                 content={
@@ -1079,7 +1167,7 @@ function ContratoForm({
 
                             <Acordeon
                                 key={filial.cliente_id}
-                                level={1}
+                                level={level + 1}
                                 isOpen={openFilial === filial.cliente_id}
                                 onToggle={() =>
                                     setOpenFilial(
@@ -1096,10 +1184,12 @@ function ContratoForm({
                                             sedes={filial.sedes}
                                             selected={filial.selectedSedes}
                                             setSelected={(rows) => {
-
+                                                //setSelectedSedes
+                                                console.log(rows);
                                                 setFilialesForm(prev => {
 
                                                     const copia = structuredClone(prev);
+                                                    console.log(prev);
 
                                                     copia[index].selectedSedes = rows;
 
@@ -1115,7 +1205,7 @@ function ContratoForm({
                                         <SedesArray
                                             sedes={filial.newSedes}
                                             newDoc
-                                            level={2}
+                                            level={level + 2}
                                             sedesPath={[]}
                                             setFormData={(updater) => {
 
@@ -1142,6 +1232,7 @@ function ContratoForm({
                 }
             />
 
+            {/*NUEVAS FILIALES */}
             <Acordeon
                 title={`Agregar Filiales (${newFiliales.length})`}
                 isOpen={openNewFiliales}
@@ -1157,7 +1248,7 @@ function ContratoForm({
 
                                 <Acordeon
                                     title={`Nueva Filial ${index + 1}`}
-                                    level={1}
+                                    level={level + 1}
                                     required
                                     isOpen={openNewFilial === index}
                                     onToggle={() =>
@@ -1169,11 +1260,11 @@ function ContratoForm({
                                     }
                                     content={
                                         <DataClienteOFilial
-                                            data={filial.datos}
+                                            data={filial.cliente}
                                             sedes={filial.sedes}
-                                            dataPath={["datos"]}
+                                            dataPath={["cliente"]}
                                             sedesPath={["sedes"]}
-                                            level={2}
+                                            level={level + 2}
                                             setFormData={(updater) => {
 
                                                 setNewFiliales(prev => {

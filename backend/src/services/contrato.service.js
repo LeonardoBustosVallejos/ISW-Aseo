@@ -4,12 +4,13 @@ import Clientes from "../entity/cliente.entity.js";
 import User from "../entity/user.entity.js";
 import Sedes from "../entity/sede.entity.js";
 import { createErrorMessage } from "../cleaners/extras.js";
-import { getClienteByService, getSedeByService } from "./cliente.service.js";
+import { getClienteByService, getSedeByService, registerClienteJerarquicoService, registerSedesJerarquicoService, updateClienteRelacionesService, updateRelacionesContratoYAnexoService } from "./cliente.service.js";
 import { getTopJerarquía } from "./user.service.js";
 import ContratoAnexoSchema from "../entity/contratos/contratoAnexo.entity.js";
 import { createMultipleDocumentosService } from "./archivo.service.js";
 import ClienteSchema from "../entity/cliente.entity.js";
 import { In } from "typeorm"
+import { calcularPersonalTotal, obtenerLimitePersonalContrato } from "../helpers/personal.helper.js";
 
 
 export async function createContratoComercialService(data, documentos, cliente_id, manager = null) {
@@ -113,7 +114,7 @@ export async function createContratoComercialService(data, documentos, cliente_i
             })
 
             const resContrato = await contratoRepository.save(contrato)
-            console.log(contrato);
+            //console.log(contrato);
 
             //Continuar con los archivos/documentos
             let documentosCreados = [];
@@ -620,189 +621,164 @@ export async function getVistaContratosService(filtros = {}, manager = null) {
 //NOTA: el contrato debería agregarse al mismo tiempo que se registra un nuevo cliente 
 
 
-export async function createContratoClienteExistenteService(data, manager = null) {
+export async function createContratoClienteExistenteService(data, cliente_id, manager = null) {
     try {
         const execute = async (transactionManager) => {
             const {
-                cliente_id,
                 contrato,
-                documentosContrato,
-                anexos,
-                sedes = [],
+                metadataDocumentos = [],
+                anexos = [],
+
+                nuevasSedes = [],
                 sedesSeleccionadas = [],
+
                 filiales = [],
-                filialesSeleccionadas = []
+                nuevasFiliales = []
             } = data
 
-            // Cliente
-
+            /*
+            1. Cliente, ver que exista
+            */
             const [cliente, errCliente] = await getClienteByService(
-                { cliente_id },
+                { cliente_id: cliente_id },
                 transactionManager
             )
+            if (errCliente) throw [null, errCliente]
 
-            if (errCliente)
-                throw [null, errCliente]
+            const totalPersonal = calcularPersonalNuevoContratoExistente(
+                nuevasSedes,
+                filiales,
+                nuevasFiliales
+            );
 
-            // Registrar sedes nuevas
+            const limitePersonal = obtenerLimitePersonalContrato(
+                contrato,
+                anexos
+            );
 
+            if (limitePersonal > 0 && totalPersonal > limitePersonal) throw [null, createErrorMessage("Contrato", `La estimación de personal (${totalPersonal}) excede el máximo permitido (${limitePersonal}).`)];
+
+
+            //Agregar los ids y que no se reptan
+            let sedes_ids = [...sedesSeleccionadas]
+            let clientes_ids = [cliente.cliente_id]
+            /*
+            2. Registrar sedes nuevas
+            */
             let sedesNuevas = []
+            if (Array.isArray(nuevasSedes) && nuevasSedes.length > 0) {
 
-            if (Array.isArray(sedes) && sedes.length > 0) {
-
-                const [nuevas, errSedes] = await registerSedesJerarquicoService(
-                    sedes,
+                const [sedesCreadas, errSedes] = await registerSedesJerarquicoService(
+                    nuevasSedes,
                     cliente_id,
                     transactionManager
                 )
-
                 if (errSedes) throw [null, errSedes]
 
-                sedesNuevas = nuevas
-            }
-
-            // IDs de sedes
-
-            const sedesContrato = [
-
-                ...sedesSeleccionadas,
-                ...sedesNuevas.map(s => s.sede_id)
-
-            ]
-
-            // Crear contrato
-
-            const [contratoCreado, errContrato] = await createContratoComercialService(
-
-                {
-                    ...contrato,
-                    sedes: sedesContrato
-                },
-                documentosContrato,
-                cliente_id,
-                transactionManager
-
-            )
-
-            if (errContrato)
-                throw [null, errContrato]
-
-            // Asociar contrato al cliente padre
-
-            await agregarContratoAClienteService(
-                cliente_id,
-                contratoCreado.id_contrato_comercial,
-                transactionManager
-            )
-
-            // Filiales existentes
-
-            for (const filialId of filialesSeleccionadas) {
-
-                await agregarContratoAClienteService(
-
-                    filialId,
-                    contratoCreado.id_contrato_comercial,
-                    transactionManager
-
-                )
+                sedes_ids.push(...sedesCreadas.map(s => s.sede_id));
+                sedesNuevas = sedesCreadas
+                console.log('=>Nuevas sedes creadas');
 
             }
 
-            // Crear anexos
-            let anexosCreados = []
 
-            if (Array.isArray(anexos) && anexos.length > 0) {
-
-                const [nuevosAnexos, errAnexos] = await createAnexosYDocumentos(
-
-                    anexos,
-                    sedesContrato,
-                    contratoCreado.id_contrato_comercial,
-                    transactionManager
-
-                )
-
-                if (errAnexos) throw [null, errAnexos]
-
-                anexosCreados = nuevosAnexos
-            }
-
-            const anexosIds = anexosCreados.map(a => a.id_anexo)
-
-            // Asociar anexos al cliente padre
-
-            if (anexosIds.length > 0) {
-
-                await agregarAnexosAClienteService(
-
-                    cliente_id,
-                    anexosIds,
-                    transactionManager
-
-                )
-
-            }
-
-            // Filiales existentes
-
-            for (const filialId of filialesSeleccionadas) {
-
-                await agregarContratoAClienteService(
-
-                    filialId,
-                    contratoCreado.id_contrato_comercial,
-                    transactionManager
-
-                )
-
-                if (anexosIds.length > 0) {
-
-                    await agregarAnexosAClienteService(
-
-                        filialId,
-                        anexosIds,
-                        transactionManager
-
-                    )
-
-                }
-
-            }
-
-            // Filiales nuevas
-
-            const filialesCreadas = []
-
+            /*
+            3. Registrar sedes a filiales
+            */
+            let sedesFiliales = []
             for (const filial of filiales) {
 
-                const [nuevaFilial, errFilial] = await registerClienteJerarquicoService(
+                let sedesFilial = [...filial.sedesSeleccionadas];
+                clientes_ids.push(filial.cliente_id)
 
-                    filial,
-                    filial.sedes,
-                    [contratoCreado.id_contrato_comercial],
-                    anexosIds,
-                    cliente_id,
-                    transactionManager
 
-                )
+                if (Array.isArray(filial.nuevasSedes) && filial.nuevasSedes.length > 0) {
+                    const [nuevas, err] = await registerSedesJerarquicoService(
+                        filial.nuevasSedes,
+                        filial.cliente_id,
+                        transactionManager
+                    )
 
-                if (errFilial) throw [null, errFilial]
+                    if (err) throw [null, err];
 
-                filialesCreadas.push(nuevaFilial)
+
+                    sedesFilial.push(
+                        ...nuevas.map(s => s.sede_id)
+                    );
+                    sedesFiliales.push(...nuevas)
+                }
+
+                sedes_ids.push(...sedesFilial);
 
             }
+            /*
+            4. Crear nuevas filiales
+            */
+            let filialesCreadas = []
 
+            for (const filial of nuevasFiliales) {
+                const [filialCreada, errFilial] = await registerClienteJerarquicoService(filial.cliente, filial.sedes, [], [], cliente_id, transactionManager)
+                if (errFilial) throw [null, errFilial]
+                filialesCreadas.push(filialCreada)
+                clientes_ids.push(filialCreada.cliente_id)
+                sedes_ids.push(...filialCreada.sedes.map(s => s.sede_id))
+            }
+            if (filialesCreadas.length > 0) console.log('=>Nuevas filiales creadas');
+
+
+            /*
+            5.- Crear contrato
+            */
+            const [contratoCreado, errContrato] = await createContratoComercialService(
+                contrato,
+                metadataDocumentos,
+                cliente_id,
+                transactionManager
+            );
+            if (errContrato) throw [null, errContrato];
+            console.log('=>Contrato creado');
+
+            //Dejar los ids sin que se repita ninguno
+            sedes_ids = [...new Set(sedes_ids)];
+            clientes_ids = [...new Set(clientes_ids)];
+
+            /*
+            6.- Agrega relaciones con clientes y filiales
+            */
+            for (const id of clientes_ids) {
+                const [, errRelacion] = await updateClienteRelacionesService(
+                    id,
+                    { contratos: [contratoCreado.id_contrato_comercial] },
+                    transactionManager
+                )
+                if (errRelacion) throw [null, errRelacion]
+            }
+            console.log('=>Relaciones agregadas con éxito');
+
+
+            /*
+            7.- Agregar relaciones con las sedes
+            */
+            const [contratoActualizado, errRelacionesContrato] = await updateRelacionesContratoYAnexoService(
+                contratoCreado.id_contrato_comercial,
+                [],
+                sedes_ids,
+                transactionManager)
+            if (errRelacionesContrato) throw [null, errRelacionesContrato]
+            console.log('=>Sedes relacionadas');
+
+
+            //throw [null, createErrorMessage('Contrato', 'intencional')]
 
             return [{
-
                 cliente,
                 contrato: contratoCreado,
-                sedes: sedesNuevas,
-                anexos: anexosCreados,
+                sedes: [
+                    ...sedesNuevas,
+                    ...sedesFiliales
+                ],
                 filiales: filialesCreadas
-
-            }, null]
+            }, null];
 
         }
 
@@ -813,6 +789,7 @@ export async function createContratoClienteExistenteService(data, manager = null
     } catch (error) {
 
         if (Array.isArray(error)) {
+            console.error(error[1]);
             if (manager) throw error
             return error
         }
@@ -826,81 +803,6 @@ export async function createContratoClienteExistenteService(data, manager = null
     }
 }
 
-export async function agregarContratoAClienteService(
-    cliente_id,
-    contratos = [],
-    manager = null
-) {
-    try {
-
-        const execute = async (transactionManager) => {
-
-            const clienteRepository = transactionManager.getRepository(ClienteSchema);
-
-            const contratoRepository = transactionManager.getRepository(Contrato);
-
-            const cliente = await clienteRepository.findOne({
-                where: { cliente_id },
-                relations: ["contrato"]
-            });
-
-            if (!cliente)
-                throw [null, createErrorMessage("cliente", "Cliente no encontrado")];
-
-            const contratosIds = Array.isArray(contratos)
-                ? contratos
-                : [contratos];
-
-            if (contratosIds.length === 0)
-                return [cliente, null];
-
-            const contratosEncontrados = await contratoRepository.find({
-                where: {
-                    id_contrato_comercial: In(contratosIds)
-                }
-            });
-
-            if (contratosEncontrados.length !== contratosIds.length)
-                throw [null, createErrorMessage("contrato", "Uno o más contratos no existen")];
-
-            const actuales = cliente.contrato || [];
-
-            const mapa = new Map(
-                actuales.map(c => [c.id_contrato_comercial, c])
-            );
-
-            for (const contrato of contratosEncontrados) {
-                mapa.set(
-                    contrato.id_contrato_comercial,
-                    contrato
-                );
-            }
-
-            cliente.contrato = [...mapa.values()];
-
-            await clienteRepository.save(cliente);
-
-            return [cliente, null];
-        };
-
-        if (manager) return await execute(manager);
-
-        return await AppDataSource.transaction(execute);
-
-    } catch (error) {
-
-        if (Array.isArray(error)) {
-
-            if (manager) throw error;
-            return error;
-        }
-
-        console.error(error);
-
-        if (manager) throw error;
-        return [null, "Error interno"];
-    }
-}
 
 export async function agregarAnexosAClienteService(
     cliente_id,
@@ -996,3 +898,30 @@ export const getFechaContratodeCliente = async (clienteId) => {
         throw error;
     }
 };
+
+export function calcularPersonalNuevoContratoExistente(
+    nuevasSedes = [],
+    filiales = [],
+    nuevasFiliales = []
+) {
+
+    const filialesCalculo = [
+
+        // Filiales existentes
+        ...filiales.map(f => ({
+            sedes: f.nuevasSedes,
+            filiales: []
+        })),
+
+        // Filiales nuevas
+        ...nuevasFiliales.map(f => ({
+            sedes: f.sedes,
+            filiales: f.filiales || []
+        }))
+    ];
+
+    return calcularPersonalTotal(
+        nuevasSedes,
+        filialesCalculo
+    );
+}

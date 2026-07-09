@@ -137,6 +137,10 @@ export async function getInfoSede(req, res) {
 
         handleSuccess(res, 200, "Sede encontrada", data);
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error(error[1])
+            return handleErrorClient(res, 400, error[1])
+        }
         console.error(error)
         return handleErrorServer(res, 500, error.message)
     }
@@ -151,6 +155,10 @@ export async function getInfoCliente(req, res) {
 
         handleSuccess(res, 200, "Cliente encontrado", data);
     } catch (error) {
+        if (Array.isArray(error)) {
+            console.error(error[1])
+            return handleErrorClient(res, 400, error[1])
+        }
         console.error(error)
         return handleErrorServer(res, 500, error.message)
     }
