@@ -9,7 +9,7 @@ import Popup from '../components/Popup';
 import { deleteItem, createItem } from '@services/item.service.js';
 import { createSolicitud } from '@services/solicitud.service.js';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
-
+//por los loles
 
 const Bodega = () => {
   const navigate = useNavigate();
