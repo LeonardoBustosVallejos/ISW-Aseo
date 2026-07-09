@@ -18,6 +18,15 @@ const ListaClientes = () => {
         obtenerClientes()
     }, [])
 
+    const MAPA_COLORES_ESTADO = {
+        ESPERA: "azul-gris",
+        ATRASADO: "naranja",
+        VIGENTE: "verde",
+        SUSPENDIDO: "amarillo",
+        TERMINADO: "gris",
+        CANCELADO: "rojo"
+    };
+
     const clientesFiltrados = [...lista].filter((cliente) => {
 
         const texto = busqueda.toLowerCase();
@@ -146,8 +155,7 @@ const ListaClientes = () => {
                                     {cliente.tipoCliente}
 
                                 </div>
-                                <div className={`estado ${cliente.contrato === "ESPERA" ? "amarillo" :
-                                    cliente.contrato === "VIGENTE" ? "verde" : "rojo"}`}>
+                                <div className={`estado ${MAPA_COLORES_ESTADO[cliente.contrato] || "gris"}`}>
                                     {cliente.contrato}
                                 </div>
                             </div>

@@ -49,7 +49,7 @@ export default function VistaDocumentosComerciales() {
                 setContratos(response.data)
 
             } catch (error) {
-                console.log(error);
+                console.error(error);
 
             } finally {
                 setLoading(false);

@@ -68,7 +68,6 @@ export default function InfoCliente() {
             <Error404 error={error.message} status={error.status} />
         );
     }
-    console.log(dataGeneral);
 
     return (
         <div className="info-cliente">

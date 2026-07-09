@@ -11,7 +11,7 @@ import Acordeon from "../Acordeon"
 import { formatRut } from "../../helpers/formatRut"
 import AddButton from "../misc/add-button"
 
-export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, level = 0, isRegister = true, isUpdate = false }) {
+export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, level = 0, isRegister = true, isUpdate = false, newDoc = false }) {
 
     const [open, setOpen] = useState(false)
     const [openContactos, setOpenContactos] = useState(0)
@@ -33,6 +33,7 @@ export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, leve
         <div className="multiple-acordeon">
             <Acordeon title={`${index + 1}. Sede ${sede.direccion || 'Sin Dirección'}`}
                 level={level}
+                required
                 isOpen={openSede === index}
                 onToggle={() => setOpenSede(openSede === index ? null : index)}
                 content={
@@ -208,8 +209,8 @@ export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, leve
             <button
                 type="button"
                 onClick={() => removeSede(index)}
-                disabled={largo === 1}
-                className={`remove-button ${largo === 1 ? "oculto" : ""}`}
+                disabled={largo === 1 && !newDoc}
+                className={`remove-button ${largo === 1 && !newDoc ? "oculto" : ""}`}
 
             >
 
@@ -221,7 +222,7 @@ export function SedeRow({ sede, onChange, removeSede, index = 0, largo = 1, leve
 }
 
 
-export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 0, isRegister = false }) {
+export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 0, isRegister = false, newDoc = false }) {
     function getReference(obj, path) {
         return path.reduce((ref, key) => ref[key], obj);
     }
@@ -254,11 +255,10 @@ export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 
 
             const copia = structuredClone(prev);
 
-            let target = copia;
 
-            for (const key of sedesPath) {
-                target = target[key];
-            }
+            const target = sedesPath?.length
+                ? getReference(copia, sedesPath)
+                : copia;
 
             target.push({
                 nombre_sede: '',
@@ -318,6 +318,7 @@ export function SedesArray({ sedes, sedesPath = ['sedes'], setFormData, level = 
                             onChange={(updater) =>
                                 updateSede(index, updater)}
                             removeSede={(i) => removeSede(i)}
+                            newDoc={newDoc}
                         />
                     </div>
                     <br />

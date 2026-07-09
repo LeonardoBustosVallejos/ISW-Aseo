@@ -7,7 +7,6 @@ export default function SedesSelector({
     noSelect = false,
     title = "Seleccionar sedes"
 }) {
-    console.log(sedes);
 
     return (
         <Table
