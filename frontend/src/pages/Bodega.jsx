@@ -140,7 +140,7 @@ const Bodega = () => {
     setDataItems
   } = useEditItems(setItems);
 
-  const handleCreateSolicitud = async ({ cantidad, id_administrador_solicitud, detalle_solicitud, id_sede_solicitud }) => {
+  const handleCreateSolicitud = async ({ cantidad, administrador, detalle_solicitud, sede }) => {
     if (!selectedItem?.id) {
       return {
         success: false,
@@ -160,8 +160,8 @@ const Bodega = () => {
         cantidad_solicitud: Number(cantidad),
         id_item_solicitud: Number(selectedItem.id),
         id_solicitante: Number(user.id),
-        id_administrador_solicitud: Number(id_administrador_solicitud),
-        id_sede_solicitud: Number(id_sede_solicitud),
+        id_administrador_solicitud: Number(administrador),
+        id_sede_solicitud: Number(sede),
         detalle_solicitud,
         estado_solicitud: 'Pendiente'
       });

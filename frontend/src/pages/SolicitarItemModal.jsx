@@ -54,9 +54,9 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
     try {
       const result = await onSubmit({
         cantidad: cantidadNumerica,
-        id_administrador_solicitud: idAdministradorNumerico,
+        dministrador: idAdministradorNumerico,
         detalle_solicitud: detalleTrim,
-        id_sede_solicitud: idSedeNumerica
+        sede: idSedeNumerica
       });
 
       if (result?.success) {

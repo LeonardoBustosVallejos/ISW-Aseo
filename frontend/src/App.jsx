@@ -14,8 +14,8 @@ import DetallesCliente from "@pages/Recursos/detalles.jsx";
 import InfoCliente from "./pages/Clientes/InfoCliente";
 import VistaDocumentosComerciales from "./pages/Clientes/DocumentosComerciales";
 import ItemInfo from '@pages/ItemInfo';
-import SolicitudInfo from '@pages/SolicitudInfo';
 import Solicitudes from '@pages/Solicitudes';
+import ResolverSolicitud from "./pages/SolicitudInfo";
 
 
 export default function App() {
@@ -32,7 +32,7 @@ export default function App() {
                     <Route path="bodega" element={<Bodega />} />
                     <Route path="item/:id" element={<ItemInfo />} />
                     <Route path="solicitudes" element={<Solicitudes />} />
-                    <Route path="solicitud/:id" element={<SolicitudInfo />} />
+                    <Route path="solicitud/:id" element={<ResolverSolicitud />} />
 
                     <Route path="trabajadores/ingresar" element={<IngresarTrabajador />} />
                     <Route path="trabajadores/asignar" element={<AsignarTrabajador />} />
