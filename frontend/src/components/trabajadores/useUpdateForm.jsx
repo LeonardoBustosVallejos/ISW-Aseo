@@ -29,11 +29,30 @@ export function useUpdateTrabajadorForm(detalle, executeUpdate, selectedId) {
   };
 
   const handleSubmitUpdate = async (e) => {
-    e.preventDefault();
-    await executeUpdate(selectedId, formData, () => {
-      setIsModalOpen(false);
-    });
-  };
+      e.preventDefault();
+
+      const fd = new FormData();
+
+      if (formData.email) fd.append("email", formData.email);
+      if (formData.rol) fd.append("rol", formData.rol);
+      if (formData.grupo_id) fd.append("grupo_id", formData.grupo_id);
+
+      if (formData.telefono && formData.telefono.trim() !== "") {
+        fd.append("telefono", formData.telefono.trim());
+      }
+
+      if (formData.competenciasIds && formData.competenciasIds.length > 0) {
+        fd.append("competenciasIds", formData.competenciasIds.join(","));
+      }
+
+      if (formData.foto_url) fd.append("foto", formData.foto_file); 
+      if (formData.cv_url) fd.append("cv", formData.cv_file);
+      if (formData.antecedentes_url) fd.append("antecedentes", formData.antecedentes_file);
+
+      await executeUpdate(selectedId, fd, () => {
+        setIsModalOpen(false);
+      });
+    };
 
   return {
     isModalOpen,

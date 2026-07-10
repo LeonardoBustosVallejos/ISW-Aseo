@@ -144,6 +144,7 @@ export async function createTrabajadoresController(req, res) {
       if (files.cv && files.cv[0]) {
         body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
       }
+
       if (files.antecedentes && files.antecedentes[0]) {
         body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
       }
@@ -222,6 +223,10 @@ export async function updateTrabajadorController(req, res) {
     if (files.cv?.[0]) {
       body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
     }
+
+    if (files.foto && files.foto[0]) {
+        body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
+      }
 
     if (body.competenciasIds) {
       if (typeof body.competenciasIds === "string") {
