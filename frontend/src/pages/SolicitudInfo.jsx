@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '@components/misc/Header.jsx'; 
 import { Modal } from '@components/Modal'; 
 import useGetStockBodega from '@hooks/solicitudes/useGetStockBodega.jsx';
+import { updateSolicitud } from '@services/solicitud.service.js';
+import { getItemById, updateItem } from '@services/item.service.js';
 import '@styles/resolverSolicitud.css'; 
 
 const ResolverSolicitud = () => {
@@ -14,6 +16,10 @@ const ResolverSolicitud = () => {
     
     const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
     const [cantidadAAgregar, setCantidadAAgregar] = useState(1);
+    
+    const [estadoSolicitud, setEstadoSolicitud] = useState(null); // null, 'Aceptada', o 'Rechazada'
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
     
     const { stockActivos, loading } = useGetStockBodega();
     const [articulosDespacho, setArticulosDespacho] = useState([]);
@@ -76,7 +82,7 @@ const ResolverSolicitud = () => {
     };
 
     const handleAcceptSolicitud = async () => {
-        if (!solicitud?.id_solicitud && !solicitud?.id) {
+        if (!datosSolicitud?.id_solicitud) {
             setActionMessage({ type: 'error', text: 'No hay una solicitud válida para aceptar.' });
             return;
         }
@@ -85,20 +91,68 @@ const ResolverSolicitud = () => {
         setActionMessage({ type: '', text: '' });
 
         try {
-            const solicitudId = solicitud.id_solicitud ?? solicitud.id;
-            const response = await updateSolicitud(solicitudId, {
-                ...solicitud,
+            // Actualizar estado de la solicitud a "Aceptada"
+            const solicitudResponse = await updateSolicitud(datosSolicitud.id_solicitud, {
+                ...datosSolicitud,
                 estado_solicitud: 'Aceptada'
             });
 
-            if (!response?.success) {
-                throw new Error(response?.message || 'No se pudo aceptar la solicitud');
+            if (!solicitudResponse?.success) {
+                throw new Error(solicitudResponse?.message || 'No se pudo aceptar la solicitud');
             }
 
-            setSolicitud((prev) => prev ? { ...prev, estado_solicitud: 'Aceptada' } : prev);
-            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
+            // Obtener el item y restar la cantidad disponible
+            const itemResponse = await getItemById(datosSolicitud.id_item_solicitud);
+            if (!itemResponse?.success) {
+                throw new Error(itemResponse?.message || 'No se pudo obtener el item');
+            }
+
+            const item = itemResponse.data;
+            const nuevaDisponibilidad = Math.max(0, item.disponibilidadActual - datosSolicitud.cantidad_solicitud);
+
+            // Actualizar el item con la nueva disponibilidad
+            const updateItemResponse = await updateItem(datosSolicitud.id_item_solicitud, {
+                ...item,
+                disponibilidadActual: nuevaDisponibilidad
+            });
+
+            if (!updateItemResponse?.success) {
+                throw new Error(updateItemResponse?.message || 'No se pudo actualizar el item');
+            }
+
+            setEstadoSolicitud('Aceptada');
+            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente. Disponibilidad del item actualizada.' });
         } catch (err) {
             setActionMessage({ type: 'error', text: err.message || 'Ocurrió un error al aceptar la solicitud.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleRejectSolicitud = async () => {
+        if (!datosSolicitud?.id_solicitud) {
+            setActionMessage({ type: 'error', text: 'No hay una solicitud válida para rechazar.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        setActionMessage({ type: '', text: '' });
+
+        try {
+            // Actualizar estado de la solicitud a "Rechazada"
+            const response = await updateSolicitud(datosSolicitud.id_solicitud, {
+                ...datosSolicitud,
+                estado_solicitud: 'Rechazada'
+            });
+
+            if (!response?.success) {
+                throw new Error(response?.message || 'No se pudo rechazar la solicitud');
+            }
+
+            setEstadoSolicitud('Rechazada');
+            setActionMessage({ type: 'success', text: 'Solicitud rechazada correctamente.' });
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.message || 'Ocurrió un error al rechazar la solicitud.' });
         } finally {
             setIsSubmitting(false);
         }
@@ -147,6 +201,40 @@ const ResolverSolicitud = () => {
                 {/* Columna derecha*/}
                 <div className="resolver-card">
                     <h3>Resolución Rápida</h3>
+
+                    {/* Botones Aceptar y Rechazar */}
+                    <div className="botones-decision-container">
+                        <button
+                            type="button"
+                            onClick={handleAcceptSolicitud}
+                            disabled={isSubmitting || estadoSolicitud !== null || datosSolicitud.estado_solicitud !== 'Pendiente'}
+                            className={`resolver-btn btn-aceptar ${estadoSolicitud === 'Aceptada' ? 'btn-activo' : ''} ${estadoSolicitud === 'Rechazada' ? 'btn-desactivado' : ''}`}
+                        >
+                            ✓ Aceptar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleRejectSolicitud}
+                            disabled={isSubmitting || estadoSolicitud !== null || datosSolicitud.estado_solicitud !== 'Pendiente'}
+                            className={`resolver-btn btn-rechazar ${estadoSolicitud === 'Rechazada' ? 'btn-activo' : ''} ${estadoSolicitud === 'Aceptada' ? 'btn-desactivado' : ''}`}
+                        >
+                            ✕ Rechazar
+                        </button>
+                    </div>
+
+                    {/* Mensaje de estado */}
+                    {actionMessage.text && (
+                        <div className={`message-alert message-${actionMessage.type}`}>
+                            {actionMessage.text}
+                        </div>
+                    )}
+
+                    {/* Badge de estado actual */}
+                    {estadoSolicitud && (
+                        <div className={`solicitud-status-badge status-${estadoSolicitud.toLowerCase()}`}>
+                            Estado: {estadoSolicitud}
+                        </div>
+                    )}
 
                     <div className="botones-modales-container">
                         <div className="boton-modal-opcion" onClick={() => setModalActivosOpen(true)}>

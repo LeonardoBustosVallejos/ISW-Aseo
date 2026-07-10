@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@styles/AgregarItemModal.css';
 import { getUsers } from '../services/user.service.js';
-import { getInfoCliente, listarClientesTope } from '../services/clientes.service.js';
+import { getSedes } from '../services/clientes.service.js';
 
 const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
   const [cantidad, setCantidad] = useState('');
@@ -31,9 +31,9 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
     const cargarOpciones = async () => {
       setIsLoadingOptions(true);
       try {
-        const [usuariosResponse, clientesResponse] = await Promise.all([
+        const [usuariosResponse, sedesResponse] = await Promise.all([
           getUsers(),
-          listarClientesTope()
+          getSedes()
         ]);
 
         if (!isMounted) return;
@@ -42,8 +42,8 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
           ? usuariosResponse
           : usuariosResponse?.data || usuariosResponse?.data?.data || [];
 
-        const administradoresFiltrados = usuarios
-          .filter((usuario) => {
+        const usuariosParaSeleccion = (Array.isArray(usuarios) ? usuarios : [])
+                  .filter((usuario) => {
             const rolRaw = usuario?.rol;
             const rolNombre = typeof rolRaw === 'string'
               ? rolRaw
@@ -57,36 +57,18 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
             id: usuario?.id,
             nombre: usuario?.nombreCompleto || usuario?.nombre || usuario?.email || `Usuario ${usuario?.id}`
           }))
-          .filter((usuario) => usuario.id);
+          .filter((usuario) => usuario.id)
+          .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
 
-        setAdministradores(administradoresFiltrados);
+        setAdministradores(usuariosParaSeleccion);
 
-        const clientes = Array.isArray(clientesResponse)
-          ? clientesResponse
-          : clientesResponse?.data?.lista || clientesResponse?.lista || clientesResponse?.data || clientesResponse?.data?.data || [];
-
-        const clientesBase = Array.isArray(clientes) ? clientes : [];
-
-        const sedesList = (
-          await Promise.all(
-            clientesBase.map(async (cliente) => {
-              if (!cliente?.cliente_id || !cliente?.rutCliente) return [];
-
-              try {
-                const detalleCliente = await getInfoCliente(cliente.cliente_id, cliente.rutCliente);
-                const sedes = detalleCliente?.data?.sedes || detalleCliente?.sedes || [];
-
-                return (Array.isArray(sedes) ? sedes : []).map((sede) => ({
-                  id: sede?.sede_id ?? sede?.id,
-                  nombre: `${sede?.nombre_sede || 'Sede sin nombre'}${cliente?.nombreCliente ? ` - ${cliente.nombreCliente}` : ''}`
-                }));
-              } catch (error) {
-                console.error('Error cargando sedes para el cliente:', cliente?.nombreCliente, error);
-                return [];
-              }
-            })
-          )
-        ).flat().filter((sede) => sede.id);
+        const sedesList = (Array.isArray(sedesResponse) ? sedesResponse : [])
+          .map((sede) => ({
+            id: sede?.sede_id ?? sede?.id,
+            nombre: sede?.nombre_sede || sede?.nombre || sede?.name || `Sede ${sede?.sede_id ?? sede?.id}`
+          }))
+          .filter((sede) => sede.id)
+          .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
 
         setSedes(sedesList);
       } catch (error) {

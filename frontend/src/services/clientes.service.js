@@ -19,6 +19,19 @@ export async function getInfoCliente(cliente_id, rutCliente) {
     }
 }
 
+export async function getSedes() {
+    try {
+        const response = await axios.get('/clientes/sedes');
+        const payload = Array.isArray(response.data?.data)
+            ? response.data.data
+            : Array.isArray(response.data) ? response.data : [];
+        return payload;
+    } catch (error) {
+        console.error('Error al obtener sedes:', error);
+        return [];
+    }
+}
+
 export async function registerCliente(data) {
     try {
         const formData = new FormData()

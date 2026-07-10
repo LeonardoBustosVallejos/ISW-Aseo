@@ -5,6 +5,8 @@ import Cliente from "../entity/cliente.entity.js";
 import Contacto from "../entity/contacto.entity.js";
 import Sede from "../entity/sede.entity.js";
 import Item from "../entity/item.entity.js";
+import Solicitud from "../entity/solicitud.entity.js";
+import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { HOST, PORT } from "./configEnv.js";
@@ -191,6 +193,15 @@ async function createUsers() {
           email: "usuario6@gmail.com",
           password: await encryptPassword("user1234"),
           rol: 4,
+        })
+      ),
+      userRepository.save(
+        userRepository.create({
+          nombreCompleto: "Damián Alejandro Soto Jimenez",
+          rut: "22419881-4",
+          email: "administrador2@gmail.com",
+          password: await encryptPassword("admin1234"),
+          rol: 1,
         })
       ),
     ]);
@@ -438,4 +449,48 @@ async function createItems() {
   }
 }
 
-export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems };
+async function createSolicitudes() {
+  try {
+    const solicitudRepository = AppDataSource.getRepository(Solicitud);
+
+    const count = await solicitudRepository.count();
+    if (count > 0) return;
+
+    const solicitudesData = [
+      {
+        cantidad_solicitud: 5,
+        id_item_solicitud: 1,
+        id_solicitante: 3,
+        id_administrador_solicitud: 1,
+        id_sede_solicitud: 1,
+        detalle_solicitud: "Solicitud de pulidora para la sede principal.",
+        estado_solicitud: "Pendiente",
+      },
+      {
+        cantidad_solicitud: 8,
+        id_item_solicitud: 2,
+        id_solicitante: 3,
+        id_administrador_solicitud: 1,
+        id_sede_solicitud: 2,
+        detalle_solicitud: "Solicitud de detergente para la sucursal del sur.",
+        estado_solicitud: "Pendiente",
+      },
+      {
+        cantidad_solicitud: 3,
+        id_item_solicitud: 3,
+        id_solicitante: 3,
+        id_administrador_solicitud: 8,
+        id_sede_solicitud: 1,
+        detalle_solicitud: "Solicitud de carro de utensilios para la sede principal.",
+        estado_solicitud: "Pendiente",
+      },
+    ];
+
+    await solicitudRepository.save(solicitudRepository.create(solicitudesData));
+    console.log("* => Solicitudes creadas exitosamente");
+  } catch (error) {
+    console.error("Error al crear solicitudes:", error);
+  }
+}
+
+export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes };
