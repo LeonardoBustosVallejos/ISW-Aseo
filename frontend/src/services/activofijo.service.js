@@ -44,3 +44,13 @@ export const getStockBodega = async () => {
         return error.response?.data || [];
     }
 }
+
+export const asignarActivos = async (datos_asignacion) => {
+    try {
+        const response = await axios.patch(`/activos/asignar`, datos_asignacion);
+        return response.data;
+    }catch (error){
+        console.error("Error al asignar activo:", error);
+        return error.response?.data || { status: "Error", message: "Error de conexión" };
+    }
+};

@@ -18,6 +18,7 @@ export async function getSolicitudesService() {
         "solicitud.detalle_solicitud AS detalle_solicitud",
         "solicitud.estado_solicitud AS estado_solicitud",
         "sede.direccion AS ubicacion",
+        "sede.cliente_id AS cliente_id",
         "cliente.nombreCliente AS nombre_cliente",
         "cliente.rutCliente AS rut_cliente"
       ])
