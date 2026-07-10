@@ -96,6 +96,21 @@ export async function getClientes(req, res) {
     }
 }
 
+export async function getSedes(req, res) {
+    try {
+        const [sedes, err] = await getSedesService();
+
+        if (err) return handleErrorClient(res, 404, err);
+
+        sedes.length === 0
+            ? handleSuccess(res, 204)
+            : handleSuccess(res, 200, "Sedes encontradas", sedes);
+    } catch (error) {
+        console.error(error);
+        return handleErrorServer(res, 500, error.message);
+    }
+}
+
 export async function deleteCliente(req, res) {
     try {
         const { cliente_id } = req.params

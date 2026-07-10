@@ -33,6 +33,7 @@ export async function getSolicitudesController(req, res) {
 
 export async function createSolicitudController(req, res) {
   try {
+
     const { cantidad_solicitud, id_item_solicitud, id_solicitante, id_administrador_solicitud, id_sede_solicitud, detalle_solicitud, estado_solicitud } = req.body;
     const [created, err] = await createSolicitudService({ cantidad_solicitud, id_item_solicitud, id_solicitante, id_administrador_solicitud, id_sede_solicitud, detalle_solicitud, estado_solicitud });
     if (err) return handleErrorServer(res, 500, err);

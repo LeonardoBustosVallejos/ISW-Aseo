@@ -21,29 +21,39 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }, []);
 
     let rolUsuario = null;
+    let rolIdUsuario = null;
     try {
         const usuarioGuardado = sessionStorage.getItem("usuario");
-        console.log("¡Por fin encontramos el rol! Es:", usuarioGuardado);
         if (usuarioGuardado && usuarioGuardado !== "undefined") {
             const usuarioLogueado = JSON.parse(usuarioGuardado);
-            rolUsuario = usuarioLogueado.rol.id;
+            const rolRaw = usuarioLogueado?.rol;
+            rolUsuario = typeof rolRaw === "string"
+                ? rolRaw
+                : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || usuarioLogueado?.rolNombre || usuarioLogueado?.nombreRol || "";
+            rolIdUsuario = Number(
+                rolRaw?.id ?? rolRaw?.rol_id ?? rolRaw?.role_id ?? usuarioLogueado?.rol_id ?? usuarioLogueado?.role_id ?? usuarioLogueado?.rol?.id ?? 0
+            );
         }
-        console.log("¡Por fin encontramos el rol! Es:", rolUsuario);
-
     } catch (error) {
         console.error("Error al intentar leer el perfil del usuario:", error);
     }
+
+    const rolNormalizado = String(rolUsuario || "").trim().toLowerCase();
+    const esRolAutorizado = rolNormalizado === "administrador" || rolNormalizado === "supervisor" || rolIdUsuario === 1 || rolIdUsuario === 3;
+
     const menuData = [
-        {
-            symbol: <Warehouse />,
-            title: "Bodega",
-            path: "/bodega",
-        },
-        {
-            symbol: <NotebookPen />,
-            title: "Solicitudes",
-            path: "/solicitudes",
-        },
+        ...(esRolAutorizado ? [
+            {
+                symbol: <Warehouse />,
+                title: "Bodega",
+                path: "/bodega",
+            },
+            {
+                symbol: <NotebookPen />,
+                title: "Solicitudes",
+                path: "/solicitudes",
+            },
+        ] : []),
         {
             symbol: <BookUser />,
             title: "Trabajadores",

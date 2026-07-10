@@ -25,7 +25,7 @@ const SolicitudSchema = new EntitySchema({
     },
     id_administrador_solicitud: {
       type: "int",
-      nullable: false
+      nullable: true
     },
     id_sede_solicitud: {
       type: "int",
@@ -39,7 +39,45 @@ const SolicitudSchema = new EntitySchema({
     estado_solicitud: {
       type: "varchar",
       length: 255,
+      default: "Pendiente",
       nullable: false
+    }
+  },
+  relations: {
+   /* item: {
+      target: "Item",
+      type: "many-to-one",
+      joinColumn: {
+        name: "id_item_solicitud",
+        referencedColumnName: "id"
+      },
+      onDelete: "CASCADE"
+    },*/
+    solicitante: {
+      target: "Trabajador",
+      type: "many-to-one",
+      joinColumn: {
+        name: "id_solicitante",
+        referencedColumnName: "id"
+      },
+    },
+    administrador: {
+      target: "Trabajador",
+      type: "many-to-one",
+      joinColumn: {
+        name: "id_administrador_solicitud",
+        referencedColumnName: "id"
+      },
+      onDelete: "SET NULL"
+    },
+    sede: {
+      target: "Sede",
+      type: "many-to-one",
+      joinColumn: {
+        name: "id_sede_solicitud",
+        referencedColumnName: "sede_id"
+      },
+      onDelete: "CASCADE"
     }
   },
   indices: [

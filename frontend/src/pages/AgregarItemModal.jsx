@@ -66,11 +66,14 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
 
   return (
   <div className="modal-overlay">
-    <div className="modal-content">
+    <div className="modal-content form-card form-content">
       <button className="close-button" onClick={onClose}>×</button>
       
-      {/* SECCIÓN CREAR TEMA (sin caja) */}
-      <h3>Crear Nuevo Item</h3>
+      <div className="form-header">
+        <div>
+          <h1 className="form-title">Crear Nuevo Item</h1>
+        </div>
+      </div>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -83,89 +86,105 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
             disponibilidadTotal: itemDisTo.trim()
           });
         }}
-        style={{ margin: 0, padding: 0 }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {
-                /*puede q tga q cambiar ls htmls por ls d mi ruta
-                también puede que tenga que cambiar el nombre de las ids d los inputs*/
-
-            }
-          <label htmlFor="create-item">Info</label>
-          <input
-            id="create-item"
-            type="text"
-            name="nombre"
-            placeholder="Ingrese el nombre del item"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <input
-            id="create-item6"
-            type="text"
-            name="codigo"
-            placeholder="Ingrese el codigo del item"
-            value={itemCode}
-            onChange={(e) => setItemCode(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <input
-            id="create-item2"
-            type="text"
-            name="tipo"
-            placeholder="Ingrese el tipo del item"
-            value={itemType}
-            onChange={(e) => setItemType(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <input
-            id="create-item3"
-            type="text"
-            name="description"
-            placeholder="Ingrese la descripción del item"
-            value={itemDesc}
-            onChange={(e) => setItemDesc(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <input
-            id="create-item4"
-            type="text"
-            name="disponibilidad actual"
-            placeholder="Ingrese la cantidad de items disponibles actualmente"
-            value={itemDisCu}
-            onChange={(e) => setItemDisCu(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <input
-            id="create-item5"
-            type="text"
-            name="disponibilidad total"
-            placeholder="Ingrese la cantidad de items totales actualmente"
-            value={itemDisTo}
-            onChange={(e) => setItemDisTo(e.target.value)}
-            disabled={isLoading}
-            style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-          <div>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading || (itemName || '').trim().length < 3}
-            >
-              {isLoading ? 'Creando...' : 'Crear item'}
-            </button>
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="label" htmlFor="create-item">Nombre</label>
+            <input
+              id="create-item"
+              className="input"
+              type="text"
+              name="nombre"
+              placeholder="Ingrese el nombre del item"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
+
+          <div className="form-group">
+            <label className="label" htmlFor="create-item6">Código</label>
+            <input
+              id="create-item6"
+              className="input"
+              type="text"
+              name="codigo"
+              placeholder="Ingrese el código del item"
+              value={itemCode}
+              onChange={(e) => setItemCode(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label" htmlFor="create-item2">Tipo</label>
+            <input
+              id="create-item2"
+              className="input"
+              type="text"
+              name="tipo"
+              placeholder="Ingrese el tipo del item"
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label" htmlFor="create-item3">Descripción</label>
+            <input
+              id="create-item3"
+              className="input"
+              type="text"
+              name="description"
+              placeholder="Ingrese la descripción del item"
+              value={itemDesc}
+              onChange={(e) => setItemDesc(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label" htmlFor="create-item4">Disponibilidad Actual</label>
+            <input
+              id="create-item4"
+              className="input"
+              type="text"
+              name="disponibilidad actual"
+              placeholder="Ingrese la cantidad de items disponibles actualmente"
+              value={itemDisCu}
+              onChange={(e) => setItemDisCu(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="label" htmlFor="create-item5">Disponibilidad Total</label>
+            <input
+              id="create-item5"
+              className="input"
+              type="text"
+              name="disponibilidad total"
+              placeholder="Ingrese la cantidad de items totales actualmente"
+              value={itemDisTo}
+              onChange={(e) => setItemDisTo(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+
+        </div>
+
+        <div className="action-buttons" style={{ marginTop: 8 }}>
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={isLoading || (itemName || '').trim().length < 3}
+          >
+            {isLoading ? 'Creando...' : 'Crear item'}
+          </button>
         </div>
       </form>
-            
       <hr />
-      
       {message.text && (
         <div className={`message ${message.type}`}>
           {message.text}
