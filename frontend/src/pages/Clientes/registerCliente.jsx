@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showErrorAlert, showSuccessAlert } from '@helpers/sweetAlert.js';
 import { registerCliente } from '@services/clientes.service';
-import Acordeon from '@components/acordeon';
+import Acordeon from '@components/Acordeon';
 import ContratoRow from '@components/Contrato/ContratoComercialForm';
 import AnexoRow from '@components/Contrato/AnexoComercial';
 import { Trash2, TriangleAlert } from 'lucide-react';

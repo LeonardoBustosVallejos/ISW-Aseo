@@ -7,7 +7,7 @@ import { ModalProvider } from './context/ModalContext';
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
-import App from './app';
+import App from './App';
 
 
 createRoot(document.getElementById('root')).render(

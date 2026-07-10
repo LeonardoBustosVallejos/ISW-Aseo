@@ -1,5 +1,5 @@
 import { CirclePlus, Plus } from "lucide-react";
-import Acordeon from "@components/acordeon";
+import Acordeon from "@components/Acordeon";
 import { SedeRow, SedesArray } from "./SedesForm";
 import { useState } from "react";
 import "@styles/registerCliente.css"

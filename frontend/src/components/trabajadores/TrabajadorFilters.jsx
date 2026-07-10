@@ -1,7 +1,7 @@
 import { useState } from "react";
-import "@styles/trabajadorFilters.css"; 
+import "@styles/trabajadorFilters.css";
 import useItems from "@hooks/items/useGetItems.jsx";
-import Acordeon from "../acordeon";
+import Acordeon from "../Acordeon";
 import { handleCompetenciaToggle } from "@helpers/CompetenciaToggle";
 
 const filtrosPorDefecto = {
@@ -38,7 +38,7 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
     });
   };
   const onCompetenciaToggle = handleCompetenciaToggle(value, updateFilter);
-  
+
   const MIN_EDAD_PERMITIDA = 18;
   const MAX_EDAD_PERMITIDA = 70;
 
@@ -64,7 +64,7 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
       {open && (
         <div className="filters-dropdown">
           <div className="filters-content-wrapper">
-            
+
             {/* FILTRO: SEXO */}
             <label className="filter-label-group">
               Sexo
@@ -96,7 +96,7 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
             {/* FILTRO: RANGO ETARIO CON UN SOLO SLIDER DE DOBLE HANDLE */}
             <div className="filter-label-group">
               <span className="filter-section-title">Rango Etario (Edad)</span>
-              
+
               <div className="dual-slider-track-container">
                 <div className="dual-slider-bg-line" />
 
@@ -166,15 +166,15 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
             <div className="filter-label-group">
               Competencias
               <Acordeon
-              title= {"Competencias"}
-              level= {1}
-              isOpen = {openSection === "competenciasFiltro"}
-                  required={false}
-                  onToggle={() => {
-                      setOpenSection(openSection === "competenciasFiltro" ? null : "competenciasFiltro")
-                  }}
+                title={"Competencias"}
+                level={1}
+                isOpen={openSection === "competenciasFiltro"}
+                required={false}
+                onToggle={() => {
+                  setOpenSection(openSection === "competenciasFiltro" ? null : "competenciasFiltro")
+                }}
                 content={
-                <div className="accordion-content-list" style={{ display: 'flex', flexDirection: 'column', maxHeight: '150px', overflowY: 'auto', gap: '6px', paddingTop: '8px' }}>
+                  <div className="accordion-content-list" style={{ display: 'flex', flexDirection: 'column', maxHeight: '150px', overflowY: 'auto', gap: '6px', paddingTop: '8px' }}>
                     {/* 3. Mapeamos directamente "items" del Hook */}
                     {!items || items.length === 0 ? (
                       <span style={{ fontSize: '0.85rem', color: '#666', padding: '0 12px' }}>No hay competencias disponibles</span>
@@ -194,7 +194,7 @@ export default function TrabajadorFilters({ value, onChange, onClear }) {
                       })
                     )}
                   </div>}
-                
+
               />
             </div>
 
