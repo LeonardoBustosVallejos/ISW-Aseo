@@ -77,6 +77,22 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+
+          const disponibilidadActual = Number(itemDisCu.trim());
+          const disponibilidadTotal = Number(itemDisTo.trim());
+
+          if (
+            !Number.isFinite(disponibilidadActual) ||
+            !Number.isFinite(disponibilidadTotal) ||
+            disponibilidadActual > disponibilidadTotal
+          ) {
+            setMessage({
+              type: 'error',
+              text: 'La disponibilidad actual no puede ser mayor a la disponibilidad total.'
+            });
+            return;
+          }
+
           await handleSubmit({
             nombre: itemName.trim(),
             codigo: itemCode.trim(),
@@ -178,7 +194,18 @@ const ItemModal = ({ isOpen, onClose, onSubmit, onDelete, itemList = [] }) => {
           <button
             type="submit"
             className="submit-button"
-            disabled={isLoading || (itemName || '').trim().length < 3}
+            disabled={
+              isLoading ||
+              !itemName.trim() ||
+              !itemCode.trim() ||
+              !itemType.trim() ||
+              !itemDesc.trim() ||
+              !itemDisCu.trim() ||
+              !itemDisTo.trim() ||
+              !Number.isFinite(Number(itemDisCu.trim())) ||
+              !Number.isFinite(Number(itemDisTo.trim())) ||
+              Number(itemDisCu.trim()) > Number(itemDisTo.trim())
+            }
           >
             {isLoading ? 'Creando...' : 'Crear item'}
           </button>
