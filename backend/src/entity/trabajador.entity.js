@@ -56,7 +56,7 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 255,
       nullable: true,
-    },
+    },*/
     foto_url: {
       type: "varchar",
       length: 255,
@@ -89,49 +89,49 @@ const TrabajadorSchema = new EntitySchema({
       nullable: false,
     },
   },
-    relations: {
-      historialDesvinculaciones: {
-        type: "one-to-many",
-        target: "TrabajadorHistorial",
-        inverseSide: "trabajador",
+  relations: {
+    historialDesvinculaciones: {
+      type: "one-to-many",
+      target: "TrabajadorHistorial",
+      inverseSide: "trabajador",
+    },
+    grupoAsignado: {
+      type: "many-to-one",
+      target: "TrabajadoresGrupos",
+      joinColumn: { name: "grupo_id" },
+      nullable: true,
+      onDelete: "SET NULL",
+      inverseSide: "miembros"
+    },
+    rol: {
+      type: "many-to-one",
+      target: "Rol",
+      joinColumn: {
+        name: "rol_id"
       },
-      grupoAsignado: {
-        type: "many-to-one",
-        target: "TrabajadoresGrupos",
-        joinColumn: { name: "grupo_id" },
-        nullable: true,
-        onDelete: "SET NULL",
-        inverseSide: "miembros"
+      eager: true //hace que al buscar un trabajador, traiga automáticamente su rol
+    },
+    gruposSupervisados: {
+      type: "one-to-many",
+      target: "TrabajadoresGrupos",
+      inverseSide: "supervisorAsignado",
+      eager: true
+    },
+    competencias: {
+      type: "many-to-many",
+      target: "Item",
+      inverseSide: "competenciasTrabajadores",
+      JoinTable: true,
+      nullable: true,
+      joinTable: {
+        name: "trabajadoresCompetencias",
+        referencedColumn: "id"
       },
-      rol: {
-        type: "many-to-one",
-        target: "Rol",
-        joinColumn: {
-          name: "rol_id"
-        },
-        eager: true //hace que al buscar un trabajador, traiga automáticamente su rol
-      },
-      gruposSupervisados: {
-        type: "one-to-many",
-        target: "TrabajadoresGrupos",
-        inverseSide: "supervisorAsignado",
-        eager: true
-      },
-      competencias: {
-        type: "many-to-many",
-        target: "Item",
-        inverseSide: "competenciasTrabajadores",
-        JoinTable: true,
-        nullable: true,
-        joinTable: {
-          name: "trabajadoresCompetencias",
-          referencedColumn: "id"
-        },
-        inverseJoinColumn: {
-          name: "item_id",
-          referencedColumn: "id"
-        }
+      inverseJoinColumn: {
+        name: "item_id",
+        referencedColumn: "id"
       }
+    }
   },
 });
 

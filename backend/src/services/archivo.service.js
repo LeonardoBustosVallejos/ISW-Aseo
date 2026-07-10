@@ -5,7 +5,10 @@ import contratoComercialSchema from "../entity/contratos/contratoComercial.entit
 import contratoLaboralSchema from "../entity/contratos/contratoLaboral.entity.js";
 import DocumentoSchema from "../entity/contratos/documentoContrato.entity.js"
 import { createUploadMiddleware } from "../middlewares/multer2.middleware.js"
+import fs from "fs";
 import path from "path";
+
+
 export const uploadContratoComercialService =
     createUploadMiddleware({
         destination: "uploads/comercial",
@@ -39,6 +42,17 @@ export const uploadImagenPerfilService =
         ]
     })
 
+export const uploadAnexoService =
+    createUploadMiddleware({
+        destination: "uploads/anexos",
+        allowedMimeTypes: [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpeg",
+            "image/png"
+        ]
+    });
 
 export async function createMultipleDocumentosService(documentos, relaciones, manager = null) {
     try {
@@ -124,7 +138,7 @@ export async function createDocumentoService(data, IDs, manager = null) {
             if (!file) throw [null, createErrorMessage("archivo", "Debe proporcionar un archivo")]
 
             //asegurar que el documento pertenezca a un contrato o anexo
-            if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato", "Debe proporcionar un contrato válido")]
+            if (!contrato_laboral_id && !id_contrato_comercial && !anexo_id) throw [null, createErrorMessage("contrato o anexo", "Debe proporcionar un contrato válido")]
 
 
             //NUNCA puede pertenecer a un contrato Y anexo a la vez, esto incluye a los tipos de contrato 
@@ -304,5 +318,37 @@ export async function createMultipleDocumentosAnexoService(documentos, anexo_id,
         console.error(error)
 
         return [null, "Error interno"]
+    }
+}
+
+
+export async function downloadDocumentoService(idDocumento, manager = null) {
+    try {
+
+        const execute = async (transactionManager) => {
+
+            const documentoRepository = transactionManager.getRepository(DocumentoSchema);
+
+            const documento = await documentoRepository.findOne({
+                where: { id_documento: idDocumento }
+            });
+
+            if (!documento)
+                return [null, createErrorMessage("Dcumento", "Documento no encontrado")];
+
+            if (!fs.existsSync(documento.ruta))
+                return [null, createErrorMessage("Documento", "El archivo no existe en el servidor")];
+
+            return [documento, null];
+        };
+
+        if (manager) return await execute(manager)
+
+        return await AppDataSource.transaction(execute)
+
+
+    } catch (error) {
+        console.error(error);
+        return [null, "Error al obtener el documento"];
     }
 }

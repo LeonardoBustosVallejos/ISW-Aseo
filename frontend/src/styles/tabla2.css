@@ -178,7 +178,7 @@ tbody td {
     width: 100%;
     border-radius: 8px;
 
-    background: var(--ubb-azul-principal);
+    background: var(--ubb-azul-secundario);
     color: var(--ubb-texto);
     cursor: pointer;
     justify-content: center;

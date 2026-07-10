@@ -28,10 +28,18 @@ const contratoComercialSchema = new EntitySchema({
         },
         estado: {
             type: "enum",
-            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA",],
+            enum: ["VIGENTE", "TERMINADO", "SUSPENDIDO", "ESPERA", "ATRASADO", "CANCELADO"],
             default: "ESPERA",
             nullable: false,
         },
+        /*
+        * ESPERA: El contrato existe, pero aún no llega su fecha de inicio.
+        * ATRASADO: Ya debería haber comenzado, pero hay impedimentos para iniciarlo.
+        * VIGENTE: Está en ejecución.
+        * SUSPENDIDO: Se pausó temporalmente.
+        * TERMINADO: Se ejecutó y finalizó normalmente.
+        * CANCELADO: Se decidió no ejecutar o dar por terminado el proceso antes de que se completara.
+        */
         jornada: {
             type: "enum",
             enum: ["COMPLETA", "PARCIAL"],
@@ -46,9 +54,13 @@ const contratoComercialSchema = new EntitySchema({
             type: "text",
             default: "Sin descripción"
         },
+        cantidadMinTrabajadores: {
+            type: "int",
+            default: 0
+        },
         cantidadMaxTrabajadores: {
             type: "int",
-            nullable: true
+            default: 0
         },
 
         tipoJornada: {
@@ -114,10 +126,11 @@ const contratoComercialSchema = new EntitySchema({
         },
         cliente: {
             target: "Cliente",
-            type: "many-to-one",
-            joinColumn: { name: "cliente_id" },
+            type: "many-to-many",
+            joinTable: { name: "rel_contrato_cliente" },
             nullable: false, //el contrato si o si debe ser dirigido a alguien
             onDelete: "CASCADE",
+            inverseSide: "contrato"
         },
         sedes: {
             target: "Sede",
@@ -125,10 +138,10 @@ const contratoComercialSchema = new EntitySchema({
             joinTable: { name: "rel_contrato_sede" }, //IMPORTANTE, al regitrar un contrato debe existir una sede sujeta a un cliente
             nullable: false,
             onDelete: "CASCADE",
+            inverseSide: "contrato"
         }
     }
 });
-
 export default contratoComercialSchema;
 /*
 export const ContratoArchivoSchema = new EntitySchema({

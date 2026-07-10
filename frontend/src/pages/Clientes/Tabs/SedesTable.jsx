@@ -14,10 +14,11 @@ import AnexoRow, { AnexosArray } from "../../../components/Contrato/AnexoComerci
 import { createContactos, updateContactos, updateSede } from "../../../services/clientes.service";
 import { useErrors } from "../../../hooks/errors";
 import { formatDate, formatDateTime } from "../../../helpers/formatDate";
-export default function SedesTable({ sedes }) {
+export default function SedesTable({ sedes, noTitle = false, noActions = false }) {
 
     const [open, setOpen] = useState('')
     const [accOpen, setAccOpen] = useState('old')
+    const [openContactos, setOpenContactos] = useState(false)
 
     const [newSedes, setNewSedes] = useState([{
         nombre_sede: '',
@@ -159,18 +160,18 @@ export default function SedesTable({ sedes }) {
         cleanObject()
         setOpen('')
     }
-    console.log(displayError);
 
     return (
         <>
             <Table
-                title={'Sedes'}
+                title={noTitle ? '' : 'Sedes'}
                 emptyMessage="No existen sedes"
                 rowKey="sede_id"
                 columns={[
                     {
                         field: "nombre_sede",
-                        header: "Nombre"
+                        header: "Nombre",
+                        render: (_, row) => row.nombre_sede
                     },
                     {
                         field: "tipoSede",
@@ -179,7 +180,13 @@ export default function SedesTable({ sedes }) {
                     },
                     {
                         field: "direccion",
-                        header: "Dirección"
+                        header: "Dirección",
+                        render: (_, row) => row.direccion
+                    },
+                    {
+                        field: "nombreCliente",
+                        header: "Perteneciente",
+                        render: (_, row) => (row.cliente.nombreCliente + ' - ' + row.cliente.tipoCliente)
                     },
                     {
                         field: "personalSolicitado",
@@ -196,7 +203,12 @@ export default function SedesTable({ sedes }) {
                         <div className="info-card">
                             <div className="info-label">
                                 <strong>Propietario:</strong>
-                                <strong>{row.cliente.nombreCliente + ' - ' + row.cliente.rutCliente || 'Sin Datos'}</strong>
+                                <strong>{row.cliente?.nombreCliente + ' - ' + row.cliente.rutCliente || 'Sin Datos'}</strong>
+                            </div>
+                            <div className="data-line" />
+                            <div className="info-label">
+                                <strong>Tipo de propietario:</strong>
+                                <strong>{row.cliente.tipoCliente || 'Sin Datos'}</strong>
                             </div>
                             <div className="data-line" />
                             <div className="info-label">
@@ -214,7 +226,7 @@ export default function SedesTable({ sedes }) {
 
                             <div className="info-label">
                                 <strong>Anexos asociados a la sede:</strong>
-                                <strong>{row.anexos}</strong>
+                                <strong>{row.anexos.length}</strong>
                             </div>
                             <div className="data-line" />
 
@@ -244,101 +256,107 @@ export default function SedesTable({ sedes }) {
                                     onClick={() => setOpen('newContactos')}>
                                     <ContactRound />
                                     Agregar Contacto(s)
-                                </button>
+                                </button>{/*
                                 <button className="action-button">
                                     <UserRoundPlus />
                                     Asignar Trabajador(es)
-                                </button>
+                                </button>*/}
                             </div>
-                            <Table
-                                title='Contactos'
-                                emptyMessage="No existen contactos"
-                                rowKey={'contacto_id'}
-                                data={row.contactos}
-                                columns={
-                                    [{
-                                        field: "nombreContacto",
-                                        header: "Nombre"
-                                    },
-                                    {
-                                        field: "contacto_rut",
-                                        header: "RUT"
-                                    },
-                                    {
-                                        field: "email",
-                                        header: "Correo"
-                                    },
+                            <br />
+                            <Acordeon title={`Contactos (${row.contactos.length})`}
+                                isOpen={openContactos}
+                                onToggle={() => setOpenContactos(openContactos ? false : true)}
+                                content={
 
-                                    {
-                                        field: "tipoContacto",
-                                        header: "Tipo"
-                                    }]
+                                    <Table
+                                        emptyMessage="No existen contactos"
+                                        rowKey={'contacto_id'}
+                                        data={row.contactos}
+                                        columns={
+                                            [{
+                                                field: "nombreContacto",
+                                                header: "Nombre"
+                                            },
+                                            {
+                                                field: "contacto_rut",
+                                                header: "RUT"
+                                            },
+                                            {
+                                                field: "email",
+                                                header: "Correo"
+                                            },
+
+                                            {
+                                                field: "tipoContacto",
+                                                header: "Tipo"
+                                            }]
+                                        }
+                                        actions={(cont) =>
+                                        (<div className="table-actions">
+                                            <button className="action-button"
+                                                onClick={() => {
+                                                    setExistingContacts([cont]);
+                                                    setOpen('updateContact');
+                                                }} >
+                                                <UserRoundPen />
+                                            </button>{/*
+                                            <button type="button"
+                                                className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
+                                                <Trash2 size={18} />
+                                            </button>*/}
+                                        </div>
+                                        )
+                                        }
+                                        renderExpanded={(cont) => (<div className="info-card">
+
+
+                                            <div className="info-label">
+                                                <strong>Nombre:</strong>
+                                                <strong>{cont.nombreContacto || 'Sin Datos'}</strong>
+                                            </div>
+                                            <div className="data-line" />
+                                            <div className="info-label">
+                                                <strong>Rut del contacto:</strong>
+                                                <strong>{cont.contacto_rut || 'Sin Datos'}</strong>
+                                            </div>
+                                            <div className="data-line" />
+
+                                            <div className="info-label">
+                                                <strong>Correo de contacto:</strong>
+                                                <strong>{cont.email}</strong>
+                                            </div>
+                                            <div className="data-line" />
+
+                                            <div className="info-label">
+                                                <strong>Teléfono de contacto:</strong>
+                                                <strong>{cont.phone || 'Sin Datos'}</strong>
+                                            </div>
+                                            <div className="data-line" />
+
+                                            <div className="info-label">
+                                                <strong>Tipo de contacto:</strong>
+                                                <strong>{cont.tipoContacto}</strong>
+                                            </div>
+                                            <div className="data-line" />
+
+                                            <div className="info-label">
+                                                <strong>Fecha de registro:</strong>
+                                                <strong>{formatDateTime(cont.createdAt)}</strong>
+                                            </div>
+                                            <div className="data-line" />
+
+                                            <div className="info-label">
+                                                <strong>Última actualización:</strong>
+                                                <strong>{formatDateTime(cont.updatedAt)}</strong>
+                                            </div>
+                                            <div className="data-line" />
+                                        </div>)}
+                                    >
+
+                                    </Table>
                                 }
-                                actions={cont => (
-                                    <div className="table-actions">
-                                        <button className="action-button"
-                                            onClick={() => {
-                                                console.log(row.contactos);
+                            />
 
-                                                setExistingContacts([cont]);
-                                                setOpen('updateContact');
-                                            }} >
-                                            <UserRoundPen />
-                                        </button>
-                                        <button type="button"
-
-                                            className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                )}
-                                renderExpanded={(cont) => (<div className="info-card">
-
-
-                                    <div className="info-label">
-                                        <strong>Nombre:</strong>
-                                        <strong>{cont.nombreContacto || 'Sin Datos'}</strong>
-                                    </div>
-                                    <div className="data-line" />
-                                    <div className="info-label">
-                                        <strong>Rut del contacto:</strong>
-                                        <strong>{cont.contacto_rut || 'Sin Datos'}</strong>
-                                    </div>
-                                    <div className="data-line" />
-
-                                    <div className="info-label">
-                                        <strong>Correo de contacto:</strong>
-                                        <strong>{cont.email}</strong>
-                                    </div>
-                                    <div className="data-line" />
-
-                                    <div className="info-label">
-                                        <strong>Teléfono de contacto:</strong>
-                                        <strong>{cont.phone || 'Sin Datos'}</strong>
-                                    </div>
-                                    <div className="data-line" />
-
-                                    <div className="info-label">
-                                        <strong>Tipo de contacto:</strong>
-                                        <strong>{cont.tipoContacto}</strong>
-                                    </div>
-                                    <div className="data-line" />
-
-                                    <div className="info-label">
-                                        <strong>Fecha de registro:</strong>
-                                        <strong>{formatDateTime(cont.createdAt)}</strong>
-                                    </div>
-                                    <div className="data-line" />
-
-                                    <div className="info-label">
-                                        <strong>Última actualización:</strong>
-                                        <strong>{formatDateTime(cont.updatedAt)}</strong>
-                                    </div>
-                                    <div className="data-line" />
-                                </div>)}
-                            >
-
-                            </Table>
                         </div>
                     </>
                 )}
@@ -356,7 +374,9 @@ export default function SedesTable({ sedes }) {
                                 tipoContacto: ''
                             }]);
                             setOpen('updateSede');
-                        }} />
+                        }}
+                            disabled={noActions}
+                        />
 
                     </>
                 )}

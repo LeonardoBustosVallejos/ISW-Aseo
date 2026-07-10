@@ -32,4 +32,4 @@ export const documentoValidation = Joi.object({
         .messages({
             "any.required": "Debe proporcionar una referencia del archivo."
         })
-})
+}).unknown(true)

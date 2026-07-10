@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    container-type: inline-size;
 }
 
 .contactos-header {
@@ -70,7 +71,7 @@
 
 
 /* Responsive */
-@media (max-width: 1200px) {
+@container (max-width: 700px) {
     .contacto-card {
         display: grid;
         grid-template-columns: 2fr repeat(5, 1fr);
@@ -78,7 +79,7 @@
 }
 
 
-@media (max-width: 1100px) {
+@container (max-width: 500px) {
 
     .contacto-card {
         display: flex;

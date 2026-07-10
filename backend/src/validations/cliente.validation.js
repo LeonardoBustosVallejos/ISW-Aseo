@@ -273,7 +273,8 @@ export const sedeJerarquicoValidation = Joi.object({
             "SUCURSAL",
             "SECUNDARIA"
         ).required()
-        .default("SUCURSAL"),
+        .default("SUCURSAL")
+        .messages({ "any.only": "El tipo de sede inválido." }),
 })
 
 
@@ -324,3 +325,14 @@ export const registerClienteJerarquicoYArchivoValidation = Joi.object({
 
 export const contactosArrayValidation = Joi.array().min(1).items(contactoValidation).required()
 
+export const selectedFilialValidation = Joi.object({
+    cliente_id: Joi.number().required(),
+
+    sedesSeleccionadas: Joi.array()
+        .items(Joi.number())
+        .default([]),
+
+    nuevasSedes: Joi.array()
+        .items(sedeJerarquicoValidation)
+        .default([])
+})

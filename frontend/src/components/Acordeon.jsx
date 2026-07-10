@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom';
 import '../styles/acordeon.css'
 import { ChevronRight, ChevronsRight } from 'lucide-react';
 
-export default function Acordeon({ title, content, onToggle, isOpen = true, required, level = 0 }) {
+export default function Acordeon({ title, content, onToggle, isOpen = true, required, level = 0, disabled = false }) {
     return (
         <div className={`accordion level-${level}`} >
 
-            <div className="accordion-header" onClick={onToggle}>
+            <div className={`accordion-header ${disabled ? 'disabled' : ''}`} onClick={disabled ? undefined : onToggle}>
 
                 <div className="accordion-title">
 
