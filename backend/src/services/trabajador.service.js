@@ -8,6 +8,7 @@ import { getContactoByService } from "./cliente.service.js";
 import TrabajadorHistorialSchema from "../entity/trabajadorHistorial.entity.js";
 import Sede from "../entity/sede.entity.js"
 import TrabajadoresGruposSchema from "../entity/trabajadoresGrupos.entity.js";
+import { Not } from "typeorm";
 
 const formatDateOnly = (date) => {
     const year = date.getFullYear();
@@ -193,15 +194,17 @@ export async function updateTrabajadorService(id, body) {
         });
         if (!trabajadorFound) return [null, "Trabajador no encontrado"];
 
-        //verificar que el correo electrónico no esté registrado
-        if (body.email) {
-            const existingEmail = await trabajadoresRepository.findOne(
-                { where: [{ email: body.email }] })
-            const existingContactoEmail = await contactoRepository.findOne(
-                { where: [{ email: body.email }] })
+        if (body.email && body.email !== trabajadorFound.email) {
+            const existingEmail = await trabajadoresRepository.findOne({ 
+                where: { email: body.email } 
+            });
+            const existingContactoEmail = await contactoRepository.findOne({ 
+                where: { email: body.email } 
+            });
+            
             if (existingEmail || existingContactoEmail) {
-                return [null, "Email ya en uso"]};
-
+                return [null, "Email ya en uso"];
+            }
             trabajadorFound.email = body.email;
         }
      
@@ -231,11 +234,16 @@ export async function updateTrabajadorService(id, body) {
             trabajadorFound.rol = rolObj;
             }
 
-        if (body.telefono) {
+        // 2. CORRECCIÓN TELÉFONO
+        if (body.telefono && body.telefono !== trabajadorFound.telefono) {
+            // Buscamos si OTRO trabajador tiene este teléfono (excluyendo al actual)
             const existingTelefono = await trabajadoresRepository.findOne({ 
-                where: { telefono: body.telefono, id: id } });
+                where: { telefono: body.telefono, id: Not(Number(id)) } 
+            });
+            
             if (existingTelefono) {
-                return [null, "El teléfono ya se encuentra en uso"];}
+                return [null, "El teléfono ya se encuentra en uso"];
+            }
             trabajadorFound.telefono = body.telefono;
         }
    

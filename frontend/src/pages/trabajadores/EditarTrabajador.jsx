@@ -5,7 +5,7 @@ import { useUpdateTrabajadorForm } from "@components/trabajadores/useUpdateForm"
 import { useDespedirTrabajador } from "@hooks/trabajadores/useDespedirTrabajador";
 import { useEditarCompetencias } from "@hooks/trabajadores/useEditarCompetencias.jsx"
 import useItems from "@hooks/items/useGetItems.jsx";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Acordeon from "@components/acordeon";
 import Search from "@components/Search.jsx";
 import Header from "@components/misc/Header.jsx";
@@ -33,7 +33,7 @@ export default function Trabajadores() {
 
   const [isDespedirModalOpen, setIsDespedirModalOpen] = useState(false);
   const [motivoDespido, setMotivoDespido] = useState("");
-  const evidenciaRef = useRef(null);
+  const archivoRef = useRef(null);
 
   const { detalle, loadingDetalle, errorDetalle } = useDetalleTrabajador(selectedId); 
   const { trabajadores, loading, pagina, setPagina, infoPaginacion } = useTrabajadores(searchTerm, filtros); 
@@ -54,15 +54,20 @@ const competenciasIniciales = useMemo(() => {
     return detalle.competencias.map(comp => comp.id.toString());
   }, [detalle]);
 
-  const handleCompetenciasChange = (e) => {
-    const nombreCampo = e.target.name;
-    const valorCampo = e.target.value;
-    
-    setFormData(prevData => ({
-      ...prevData,
-      [nombreCampo]: valorCampo
-    }));
-  };
+const handleCompetenciasChange = (nuevasCompetenciasIds) => {
+  
+  const arraySeguro = Array.isArray(nuevasCompetenciasIds)
+    ? nuevasCompetenciasIds
+    : (typeof nuevasCompetenciasIds === 'string' && nuevasCompetenciasIds.trim() !== "" 
+        ? nuevasCompetenciasIds.split(',') 
+        : []); 
+  
+  setFormData((prevData) => ({
+    ...prevData,
+   
+    competenciasIds: arraySeguro.length > 0 ? arraySeguro.join(",") : ""
+  }));
+};
 
   const {
     listaCompetencias,
@@ -71,6 +76,15 @@ const competenciasIniciales = useMemo(() => {
     handleAdd,
     handleRemove
   } = useEditarCompetencias(items, competenciasIniciales, handleCompetenciasChange);
+
+  useEffect(() => {
+    if (listaCompetencias) {
+      setFormData(prev => ({
+        ...prev,
+        competenciasIds: listaCompetencias.join(",")
+      }));
+    }
+  }, [listaCompetencias, setFormData]);
 
   const handleFiltrosChange = (nextFiltros) => {
     setFiltros(nextFiltros);
@@ -81,8 +95,8 @@ const competenciasIniciales = useMemo(() => {
     
     const fd = new FormData();
     fd.append("motivo", motivoDespido);
-    if (evidenciaRef.current?.files[0]) {
-      fd.append("evidencia", evidenciaRef.current.files[0]);
+    if (archivoRef.current?.files[0]) {
+      fd.append("archivo", archivoRef.current.files[0]);
     }
 
     const exito = await executeDespedir(selectedId, fd, () => {
@@ -587,7 +601,7 @@ const competenciasIniciales = useMemo(() => {
                                 <button 
                                   className="btn-add-competencia" 
                                   onClick={handleAdd}
-                                  disabled={!competenciaActual} // Se bloquea si no hay nada seleccionado
+                                  disabled={!competenciaActual} 
                                 >
                                   +
                                 </button>
@@ -597,7 +611,6 @@ const competenciasIniciales = useMemo(() => {
                               {listaCompetencias.length > 0 && (
                                 <div className="tags-container">
                                   {listaCompetencias.map(id => {
-                                    // Buscamos el objeto completo para poder mostrar el nombre en lugar del ID
                                     const comp = items?.find(i => i.id.toString() === id.toString());
                                     
                                     return (
@@ -664,7 +677,7 @@ const competenciasIniciales = useMemo(() => {
 
           <div>
             <label className="modal-label">Subir evidencias adjuntas</label>
-            <input type="file" ref={evidenciaRef} className="modal-file-input" />
+            <input type="file" ref={archivoRef} className="modal-file-input" />
           </div>
 
           <div className="modal-acciones">
