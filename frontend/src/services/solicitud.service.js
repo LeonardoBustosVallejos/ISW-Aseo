@@ -64,3 +64,13 @@ export async function getSolicitudById(id) {
     return { success: false, message: error.message || 'Error al cargar la solicitud' };
   }
 }
+
+export const marcarSolicitudComoRecibida = async (id_solicitud) => {
+    try {
+        const response = await axios.patch(`/solicitud/${id_solicitud}/recepcion`);
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Error cambiando el booleano:", error);
+        return { success: false, message: "Error al actualizar la solicitud." };
+    }
+};

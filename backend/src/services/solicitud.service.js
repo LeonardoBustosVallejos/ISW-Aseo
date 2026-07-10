@@ -17,6 +17,7 @@ export async function getSolicitudesService() {
         "solicitud.id_sede_solicitud AS id_sede_solicitud",
         "solicitud.detalle_solicitud AS detalle_solicitud",
         "solicitud.estado_solicitud AS estado_solicitud",
+        "solicitud.recepcion_confirmada AS recepcion_confirmada",
         "sede.direccion AS ubicacion",
         "sede.cliente_id AS cliente_id",
         "cliente.nombreCliente AS nombre_cliente",
@@ -81,5 +82,21 @@ export async function updateSolicitudService(id, updateData) {
     return { success: true, data: updatedSolicitud, message: "Solicitud actualizada exitósamente" };
   } catch (error) {
     return { success: false, message: "Error actualizando solicitud", error: error.message };
+  }
+}
+
+export async function confirmarRecepcionBooleanoService(id_solicitud) {
+  try {
+    const repository = AppDataSource.getRepository(Solicitud);
+    const solicitud = await repository.findOne({ where: { id_solicitud } });
+
+    if (!solicitud) return [null, "La solicitud no existe."];
+    solicitud.recepcion_confirmada = true;
+    const actualizada = await repository.save(solicitud);
+    
+    return [actualizada, null];
+  } catch (error) {
+    console.error("Error al actualizar booleano:", error);
+    return [null, "Error interno del servidor."];
   }
 }

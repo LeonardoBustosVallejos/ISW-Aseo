@@ -9,25 +9,32 @@ import UserSchema from "../entity/user.entity.js";
 export const getResumenActivos = async (req, res) => {
     try {
         const user_id = req.user.id;
-        let resumen;
-        const userRepository = AppDataSource.getRepository(UserSchema);
-        const usuarioCompleto = await userRepository.findOne({
-            where: { id: user_id },
-            relations: ["rol"]
-        });
-        if (!usuarioCompleto) {
-            return res.status(404).json({ status: "Error", message: "Usuario no encontrado", data: [] });
+        const rol_id = req.user.rol?.id || req.user.rol_id;
+        if (!rol_id) {
+            return res.status(403).json({ status: "Error", message: "Rol no identificado", data: [] });
         }
-        const rol_id = usuarioCompleto.rol?.id || usuarioCompleto.rol?.rol_id;
 
-        if(rol_id == 1){
-            resumen = await resumenActivosAdmin();
-        }else{
-            return res.status(403).json({ status: "Error", message: "No tienes permisos para ver el resumen", data: [] });
+        let resumen = await resumenActivosAdmin();
+        if (rol_id === 1) {
+        } 
+        else if (rol_id === 3) {
+            const grupo = await AppDataSource.query(
+                `SELECT sede_id FROM trabajadores_grupos WHERE supervisor_id = $1 LIMIT 1`,
+                [user_id]
+            );
+
+            if (!grupo || grupo.length === 0 || !grupo[0].sede_id) {
+                return handleSuccess(res, 200, "Resumen obtenido (Sin sede asignada)", []);
+            }
+            const miSedeId = grupo[0].sede_id;
+            resumen = resumen.filter(item => item.sede_id === miSedeId);
+        } 
+        else {
+            return res.status(403).json({ status: "Error", message: "No tienes permisos para ver este resumen." });
         }
         return handleSuccess(res, 200, "Resumen obtenido correctamente", resumen);
-
-    }catch(error){
+    } catch(error) {
+        console.error("Error en getResumenActivos:", error);
         return res.status(500).json({ status: "Error", message: "Error interno del servidor", error: error.message });
     }
 };
@@ -35,7 +42,6 @@ export const getResumenActivos = async (req, res) => {
 export async function getStockBodega(req, res) {
     try {
         const [stock, error] = await obtenerStockBodegaService();
-
         if (error) {
             return res.status(400).json({
                 status: "Client error",
@@ -61,7 +67,6 @@ export const getActivosPorSede = async (req, res) => {
     try {
         const sede_id = req.params.sedeId;
         const user_id = req.user.id;
-
         const userRepository = AppDataSource.getRepository(UserSchema);
         const usuarioCompleto = await userRepository.findOne({
             where: { id: user_id },

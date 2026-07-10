@@ -3,10 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '@components/misc/Header.jsx'; 
 import { Modal } from '@components/Modal'; 
 import useGetStockBodega from '@hooks/solicitudes/useGetStockBodega.jsx';
-import { updateSolicitud } from '@services/solicitud.service.js';
+import { updateSolicitud, marcarSolicitudComoRecibida } from '@services/solicitud.service.js';
 import { getItemById, updateItem } from '@services/item.service.js';
-import { asignarActivos } from '../services/activofijo.service';
-import { useAuth } from '../context/AuthContext';
+import { asignarActivos, confirmarRecepcion, getHistorialSede } from '../services/activofijo.service.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import '@styles/resolverSolicitud.css'; 
 
 const ResolverSolicitud = () => {
@@ -15,19 +15,21 @@ const ResolverSolicitud = () => {
     const { user } = useAuth();
 
     const idTrabajador = user?.id;
-
+    const rolId = Number(user?.rol_id || user?.rol?.id);
+    const datosSolicitud = location.state?.datosSolicitud;
     const [modalActivosOpen, setModalActivosOpen] = useState(false);
     const [modalInsumosOpen, setModalInsumosOpen] = useState(false);
     const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
     const [comentarios, setComentarios] = useState(""); 
     const [articuloSeleccionado, setArticuloSeleccionado] = useState(null);
     const [cantidadAAgregar, setCantidadAAgregar] = useState(1);
-    const [estadoSolicitud, setEstadoSolicitud] = useState(null); 
+    const [estadoSolicitud, setEstadoSolicitud] = useState(datosSolicitud?.estado_solicitud || null); 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
     const { stockActivos, loading } = useGetStockBodega();
     const [articulosDespacho, setArticulosDespacho] = useState([]);
-    const datosSolicitud = location.state?.datosSolicitud;
+    const isRecepcionConfirmada = datosSolicitud.recepcion_confirmada === true || datosSolicitud.recepcion_confirmada === 'true';
+    const isSolicitudResuelta = estadoSolicitud !== 'Pendiente'
 
     if (!datosSolicitud) {
         return (
@@ -40,11 +42,6 @@ const ResolverSolicitud = () => {
         );
     }
 
-    const handleGuardarResolucion = (e) => {
-        e.preventDefault();
-        setModalConfirmacionOpen(true);
-    };
-
     const removerArticulo = (indexToRemove) => {
         setArticulosDespacho(prev => prev.filter((_, index) => index !== indexToRemove));
     };
@@ -55,33 +52,60 @@ const ResolverSolicitud = () => {
     };
 
     const handleConfirmarEnvioFinal = async () => {
+        setIsSubmitting(true);
         try {
-            if (articulosDespacho.length === 0) {
-                alert("No hay artículos seleccionados para despachar.");
+            let erroresAsignacion = [];
+            if (articulosDespacho.length > 0) {
+                for (const articulo of articulosDespacho) {
+                    const payload = {
+                        cliente_id: datosSolicitud.cliente_id,
+                        sede_id: datosSolicitud.id_sede_solicitud,
+                        nombre_maquina: articulo.nombre,
+                        cantidad: articulo.cantidad
+                    };
+
+                    const respuesta = await asignarActivos(payload);
+                    if (!respuesta || (respuesta.status !== 'Success' && respuesta.status !== 200 && respuesta.estado !== 'exito' && !respuesta.success)) { 
+                        const mensajeBackend = respuesta?.mensaje || respuesta?.message || "Ocurrió un problema al guardar.";
+                        erroresAsignacion.push(`- ${articulo.nombre}: ${mensajeBackend}`);
+                    }
+                }
+            }
+
+            if (erroresAsignacion.length > 0) {
+                alert(`Algunos activos no pudieron ser asignados:\n\n${erroresAsignacion.join('\n')}\n\nLa solicitud no fue procesada.`);
+                setIsSubmitting(false);
                 return;
             }
 
-            const articulo = articulosDespacho[0];
+            const solicitudResponse = await updateSolicitud(datosSolicitud.id_solicitud, {
+                ...datosSolicitud,
+                estado_solicitud: 'Aceptada',
+                detalle_solicitud: comentarios ? `${datosSolicitud.detalle_solicitud} | Resolución Admin: ${comentarios}` : datosSolicitud.detalle_solicitud
+            });
 
-            const payload = {
-                cliente_id: datosSolicitud.cliente_id,
-                sede_id: datosSolicitud.id_sede_solicitud,
-                nombre_maquina: articulo.nombre,
-                cantidad: articulo.cantidad
-            };
-
-            const respuesta = await asignarActivos(payload);
-            if (respuesta && (respuesta.status === 'Success' || respuesta.status === 200)) { 
-                alert("Resolución guardada y activos asignados correctamente.");
-                setModalConfirmacionOpen(false);
-                navigate('/solicitudes');
-            } else {
-                alert("Ocurrió un problema al guardar.");
+            if (!solicitudResponse?.success) throw new Error('No se pudo aceptar la solicitud en la base de datos.');
+            const itemResponse = await getItemById(datosSolicitud.id_item_solicitud);
+            if (itemResponse?.success) {
+                const item = itemResponse.data;
+                const nuevaDisponibilidad = Math.max(0, item.disponibilidadActual - datosSolicitud.cantidad_solicitud);
+                await updateItem(datosSolicitud.id_item_solicitud, {
+                    ...item,
+                    disponibilidadActual: nuevaDisponibilidad
+                });
             }
 
-        }  catch (error) {
-            console.error("Error detallado del backend:", error.response?.data);
-            alert(`Error: ${error.response?.data?.message || 'Revisa la consola para más detalles'}`);
+            alert("Resolución guardada y solicitud ACEPTADA correctamente.");
+            setEstadoSolicitud('Aceptada');
+            setModalConfirmacionOpen(false);
+            navigate('/solicitudes');
+
+        } catch (error){
+            console.error("Error detallado del backend:", error);
+            const mensajeError = error.response?.data?.mensaje || error.response?.data?.message || error.message || 'Revisa la consola para más detalles';
+            alert(`Error crítico en la operación: ${mensajeError}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -92,7 +116,7 @@ const ResolverSolicitud = () => {
         }
 
         setArticulosDespacho(prev => {
-            const indexExistente = prev.findIndex(art => art.id === articuloSeleccionado.id);
+            const indexExistente = prev.findIndex(art => art.nombre === articuloSeleccionado.nombre);
             
             if (indexExistente >= 0) {
                 const nuevaLista = [...prev];
@@ -105,7 +129,7 @@ const ResolverSolicitud = () => {
                 return [
                     ...prev,
                     { 
-                        id: articuloSeleccionado.id,
+                        id: articuloSeleccionado.id || Date.now(), 
                         tipo: articuloSeleccionado.tipo, 
                         nombre: articuloSeleccionado.nombre, 
                         cantidad: cantidadAAgregar 
@@ -116,38 +140,6 @@ const ResolverSolicitud = () => {
         
         setArticuloSeleccionado(null);
         setModalActivosOpen(false);
-    };
-
-    const handleAcceptSolicitud = async () => {
-        if (!datosSolicitud?.id_solicitud) return;
-        setIsSubmitting(true);
-        setActionMessage({ type: '', text: '' });
-
-        try {
-            const solicitudResponse = await updateSolicitud(datosSolicitud.id_solicitud, {
-                ...datosSolicitud,
-                estado_solicitud: 'Aceptada'
-            });
-
-            if (!solicitudResponse?.success) throw new Error('No se pudo aceptar la solicitud');
-
-            const itemResponse = await getItemById(datosSolicitud.id_item_solicitud);
-            if (!itemResponse?.success) throw new Error('No se pudo obtener el item');
-
-            const item = itemResponse.data;
-            const nuevaDisponibilidad = Math.max(0, item.disponibilidadActual - datosSolicitud.cantidad_solicitud);
-            await updateItem(datosSolicitud.id_item_solicitud, {
-                ...item,
-                disponibilidadActual: nuevaDisponibilidad
-            });
-
-            setEstadoSolicitud('Aceptada');
-            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
-        } catch (err) {
-            setActionMessage({ type: 'error', text: err.message });
-        } finally {
-            setIsSubmitting(false);
-        }
     };
 
     const handleRejectSolicitud = async () => {
@@ -173,24 +165,53 @@ const ResolverSolicitud = () => {
 
     const handleConfirmarRecepcion = async () => {
         setIsSubmitting(true);
-        
         try {
-            const activosIds = datosSolicitud.activos_enviados?.map(a => a.id); 
+            const historial = await getHistorialSede(datosSolicitud.id_sede_solicitud);
+            if (!historial || !Array.isArray(historial)) {
+                alert("Error al leer el historial de la sede.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            let activosIds = [];
+            for (const mov of historial) {
+                if (mov.tipo_movimiento === 'ASIGNACION') {
+                    if (mov.activos_ids) {
+                        const ids = String(mov.activos_ids)
+                            .split(',')
+                            .map(id => parseInt(id.trim()))
+                            .filter(id => !isNaN(id));
+                        activosIds = [...activosIds, ...ids];
+                    }
+                } else if (mov.tipo_movimiento === 'RECEPCION') {
+                    break;
+                }
+            }
+
+            if (activosIds.length === 0) {
+                alert("No hay activos pendientes de recepción en el historial de esta sede.");
+                setIsSubmitting(false);
+                return;
+            }
 
             const payload = {
                 cliente_id: datosSolicitud.cliente_id,
                 sede_id: datosSolicitud.id_sede_solicitud,
-                activos_ids: activosIds, 
-                trabajador_id: usuarioActual.id 
+                activos_ids: activosIds,
+                trabajador_id: idTrabajador
             };
-
-            console.log("Enviando al backend la recepción:", payload);
-            alert("Recepción confirmada exitosamente. Los activos ya están en sede.");
-            navigate('/solicitudes'); 
-
+            const respuesta = await confirmarRecepcion(payload); 
+            
+            if (respuesta?.estado === "exito" || respuesta?.status === "Success" || respuesta?.success) {
+                await marcarSolicitudComoRecibida(datosSolicitud.id_solicitud);
+                alert(`Recepción confirmada exitosamente. Se recibieron ${activosIds.length} activos en total.`);
+                navigate('/solicitudes'); 
+            } else {
+                alert(respuesta?.mensaje || "Ocurrió un problema al confirmar la recepción.");
+            }
         } catch (error) {
             console.error("Error al confirmar recepción:", error);
-            alert("Ocurrió un problema al confirmar la recepción.");
+            alert("Ocurrió un problema al confirmar la recepción. Revisa la consola.");
         } finally {
             setIsSubmitting(false);
         }
@@ -208,8 +229,7 @@ const ResolverSolicitud = () => {
             </Header>
 
             <div className="resolver-grid">
-                
-                {/* Columna izquierda(Visible para ambos) */}
+                {/* Columna izquierda */}
                 <div className="resolver-card">
                     <h3>Requerimiento Original</h3>
                     <ul className="resolver-lista">
@@ -236,17 +256,16 @@ const ResolverSolicitud = () => {
                     </ul>
                 </div>
 
-                {/* Columna derecha. segun rol */}
-                
-                {idTrabajador === 1 && (
+                {/* Columna derecha (ADMIN) */}
+                {rolId === 1 && (
                     <div className="resolver-card">
                         <h3>Resolución Rápida</h3>
 
                         <div className="botones-decision-container">
                             <button
                                 type="button"
-                                onClick={handleAcceptSolicitud}
-                                disabled={isSubmitting || estadoSolicitud !== null || datosSolicitud.estado_solicitud !== 'Pendiente'}
+                                onClick={() => setModalConfirmacionOpen(true)} // 👇 Abre el modal en vez de aceptar directamente
+                                disabled={isSubmitting || isSolicitudResuelta}
                                 className={`resolver-btn btn-aceptar ${estadoSolicitud === 'Aceptada' ? 'btn-activo' : ''} ${estadoSolicitud === 'Rechazada' ? 'btn-desactivado' : ''}`}
                             >
                                 ✓ Aceptar
@@ -254,7 +273,7 @@ const ResolverSolicitud = () => {
                             <button
                                 type="button"
                                 onClick={handleRejectSolicitud}
-                                disabled={isSubmitting || estadoSolicitud !== null || datosSolicitud.estado_solicitud !== 'Pendiente'}
+                                disabled={isSubmitting || isSolicitudResuelta}
                                 className={`resolver-btn btn-rechazar ${estadoSolicitud === 'Rechazada' ? 'btn-activo' : ''} ${estadoSolicitud === 'Aceptada' ? 'btn-desactivado' : ''}`}
                             >
                                 ✕ Rechazar
@@ -268,12 +287,21 @@ const ResolverSolicitud = () => {
                         )}
 
                         <div className="botones-modales-container">
-                            <div className="boton-modal-opcion" onClick={() => setModalActivosOpen(true)}>
+                            {/* 👇 Bloqueamos visual y funcionalmente estos botones si ya se resolvió */}
+                            <div 
+                                className="boton-modal-opcion" 
+                                onClick={() => !isSolicitudResuelta && setModalActivosOpen(true)}
+                                style={{ opacity: isSolicitudResuelta ? 0.5 : 1, cursor: isSolicitudResuelta ? 'not-allowed' : 'pointer' }}
+                            >
                                 <div className="boton-modal-titulo">Activos Fijos</div>
                                 <div className="boton-modal-icono">📦</div>
                             </div>
                             
-                            <div className="boton-modal-opcion" onClick={() => setModalInsumosOpen(true)}>
+                            <div 
+                                className="boton-modal-opcion" 
+                                onClick={() => !isSolicitudResuelta && setModalInsumosOpen(true)}
+                                style={{ opacity: isSolicitudResuelta ? 0.5 : 1, cursor: isSolicitudResuelta ? 'not-allowed' : 'pointer' }}
+                            >
                                 <div className="boton-modal-titulo">Insumos</div>
                                 <div className="boton-modal-icono">🧪</div>
                             </div>
@@ -286,7 +314,7 @@ const ResolverSolicitud = () => {
                             
                             {articulosDespacho.length === 0 ? (
                                 <p className="seleccionados-vacio">
-                                    No se han agregado artículos aún.<br/>Usa los botones de arriba para buscar en el inventario.
+                                    No se han agregado artículos extra.
                                 </p>
                             ) : (
                                 <ul className="seleccionados-lista">
@@ -296,37 +324,27 @@ const ResolverSolicitud = () => {
                                                 <strong className="seleccionados-item-cantidad">{art.cantidad}x</strong> {art.nombre} 
                                                 <span className="seleccionados-item-tipo">({art.tipo})</span>
                                             </span>
-                                            <button 
-                                                type="button"
-                                                onClick={() => removerArticulo(index)}
-                                                className="seleccionados-btn-quitar"
-                                            >
-                                                ✕
-                                            </button>
+                                            {/* Ocultar el botón "Quitar" si ya se resolvió */}
+                                            {!isSolicitudResuelta && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => removerArticulo(index)}
+                                                    className="seleccionados-btn-quitar"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
                             )}
                         </div>
-
-                        <form onSubmit={handleGuardarResolucion} className="formulario-resolucion">
-                            <label className="formulario-label">Comentarios:</label>
-                            <textarea 
-                                rows="2" 
-                                placeholder="Ej: Se envían insumos desde bodega central..."
-                                className="formulario-textarea"
-                                required
-                                value={comentarios}
-                                onChange={(e) => setComentarios(e.target.value)}
-                            ></textarea>
-                            <button type="submit" className="resolver-btn formulario-btn-guardar">
-                                Guardar Resolución
-                            </button>
-                        </form>
+                        {/* Se eliminó el formulario y el botón de Guardar Resolución que iba aquí */}
                     </div>
                 )}
 
-                {idTrabajador === 3 && (
+                {/* Columna derecha (SUPERVISOR) */}
+                {rolId === 3 && (
                     <div className="resolver-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <div style={{ fontSize: '40px', marginBottom: '10px' }}>🏢</div>
@@ -335,34 +353,30 @@ const ResolverSolicitud = () => {
                                 ¿Confirmas que los activos asignados a esta solicitud han llegado físicamente a la sede?
                             </p>
                         </div>
-
                         <button 
                             type="button" 
-                            className="resolver-btn btn-aceptar" 
+                            className={`resolver-btn btn-aceptar ${isRecepcionConfirmada ? 'btn-desactivado' : ''}`} 
                             onClick={handleConfirmarRecepcion}
-                            disabled={isSubmitting}
-                            style={{ padding: '15px', fontSize: '1.1rem', fontWeight: 'bold' }}
+                            disabled={isSubmitting || isRecepcionConfirmada}
+                            style={{ 
+                                padding: '15px', 
+                                fontSize: '1.1rem', 
+                                fontWeight: 'bold',
+                                opacity: isRecepcionConfirmada ? 0.6 : 1,
+                                cursor: isRecepcionConfirmada ? 'not-allowed' : 'pointer'
+                            }}
                         >
-                            {isSubmitting ? 'Procesando...' : 'Sí, confirmar recepción'}
+                            {isSubmitting ? 'Procesando...' : (isRecepcionConfirmada ? 'Recepción Confirmada ✓' : 'Sí, confirmar recepción')}
                         </button>
                     </div>
                 )}
 
             </div>
 
-            {/* modales del admin*/}
-            <Modal
-                open={modalActivosOpen}
-                onClose={() => {
-                    setModalActivosOpen(false);
-                    setArticuloSeleccionado(null);
-                }}
-                title={articuloSeleccionado ? "Confirmar Cantidad" : "Inventario de Activos Fijos (Bodega)"}
-                subtitle={articuloSeleccionado ? "" : "Selecciona los equipos que enviarás a la sede"}
-                width="700px"
-            >
+            {/* Modales de Inventario ... (Se mantienen igual) */}
+            <Modal open={modalActivosOpen} onClose={() => { setModalActivosOpen(false); setArticuloSeleccionado(null); }} title={articuloSeleccionado ? "Confirmar Cantidad" : "Inventario de Activos Fijos"} subtitle={articuloSeleccionado ? "" : "Selecciona los equipos que enviarás a la sede"} width="700px">
+                {/* ... código del modal de activos (mismo que ya tenías) ... */}
                 <div className="modal-body-padding">
-                    
                     {!articuloSeleccionado && (
                         <div className="table-wrapper">
                             {loading ? (
@@ -380,23 +394,17 @@ const ResolverSolicitud = () => {
                                         {stockActivos && stockActivos.length > 0 ? (
                                             stockActivos.map((activo, index) => {
                                                 const cantidadEnLista = articulosDespacho
-                                                    .filter(art => art.id === activo.id) 
+                                                    .filter(art => art.nombre === activo.nombre) 
                                                     .reduce((sum, art) => sum + art.cantidad, 0);
 
                                                 const stockReal = activo.cantidad_disponible - cantidadEnLista;
-                                                
                                                 if (stockReal <= 0) return null;
-
                                                 return(
                                                 <tr key={index}>
                                                     <td className="modal-td-nombre">{activo.nombre}</td>
                                                     <td className="modal-td-stock">{stockReal} unid.</td>
                                                     <td className="modal-td-accion">
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => iniciarAgregado({...activo, cantidad_disponible: stockReal}, 'Activo')}
-                                                            className="resolver-btn modal-btn-agregar"
-                                                        >
+                                                        <button type="button" onClick={() => iniciarAgregado({...activo, cantidad_disponible: stockReal}, 'Activo')} className="resolver-btn modal-btn-agregar">
                                                             + Agregar
                                                         </button>
                                                     </td>
@@ -404,11 +412,7 @@ const ResolverSolicitud = () => {
                                                 );
                                             })
                                         ) : (
-                                            <tr>
-                                                <td colSpan="3" className="modal-empty-row">
-                                                    No hay activos disponibles en bodega.
-                                                </td>
-                                            </tr>
+                                            <tr><td colSpan="3" className="modal-empty-row">No hay activos disponibles.</td></tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -420,91 +424,64 @@ const ResolverSolicitud = () => {
                         <div className="confirmacion-container">
                             <div className="confirmacion-info">
                                 <p className="confirmacion-texto">Has seleccionado: <strong>{articuloSeleccionado.nombre}</strong></p>
-                                <p className="confirmacion-subtexto">
-                                    Máximo disponible: {articuloSeleccionado.cantidad_disponible} unidades.
-                                </p>
+                                <p className="confirmacion-subtexto">Máximo disponible: {articuloSeleccionado.cantidad_disponible} unidades.</p>
                             </div>
-                            
                             <div>
-                                <label className="confirmacion-label">
-                                    Cantidad a despachar:
-                                </label>
-                                <input 
-                                    type="number" 
-                                    min="1" 
-                                    max={articuloSeleccionado.cantidad_disponible}
-                                    value={cantidadAAgregar}
-                                    onChange={(e) => setCantidadAAgregar(parseInt(e.target.value) || 1)}
-                                    className="confirmacion-input"
-                                />
+                                <label className="confirmacion-label">Cantidad a despachar:</label>
+                                <input type="number" min="1" max={articuloSeleccionado.cantidad_disponible} value={cantidadAAgregar} onChange={(e) => setCantidadAAgregar(parseInt(e.target.value) || 1)} className="confirmacion-input" />
                             </div>
-
                             <div className="confirmacion-acciones">
-                                <button 
-                                    type="button"
-                                    onClick={() => setArticuloSeleccionado(null)}
-                                    className="confirmacion-btn-cancelar"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    type="button"
-                                    onClick={confirmarAgregado}
-                                    className="resolver-btn confirmacion-btn-confirmar"
-                                >
-                                    Confirmar
-                                </button>
+                                <button type="button" onClick={() => setArticuloSeleccionado(null)} className="confirmacion-btn-cancelar">Cancelar</button>
+                                <button type="button" onClick={confirmarAgregado} className="resolver-btn confirmacion-btn-confirmar">Confirmar</button>
                             </div>
                         </div>
                     )}
                 </div>
             </Modal>
-            <Modal
-                open={modalInsumosOpen}
-                onClose={() => setModalInsumosOpen(false)}
-                title="Gestión de Insumos"
-                subtitle={`Sede: ${datosSolicitud.ubicacion}`}
-                width="800px"
-            >
-                <div className="modal-body-padding">
-                    <p>Aquí se cargará el stock de detergente, cloro y útiles de aseo.</p>
-                </div>
+            
+            <Modal open={modalInsumosOpen} onClose={() => setModalInsumosOpen(false)} title="Gestión de Insumos" subtitle={`Sede: ${datosSolicitud.ubicacion}`} width="800px">
+                <div className="modal-body-padding"><p>Aquí se cargará el stock de detergente, cloro y útiles de aseo.</p></div>
             </Modal>
 
+            {/* 👇 NUEVO MODAL DE CONFIRMACIÓN FINAL (Ahora incluye los comentarios) */}
             <Modal
                 open={modalConfirmacionOpen}
                 onClose={() => setModalConfirmacionOpen(false)}
-                title="Confirmar Resolución"
+                title="Confirmar Aceptación"
                 subtitle={`Destino: ${datosSolicitud.ubicacion}`}
                 isForm={true}
                 onAcept={handleConfirmarEnvioFinal}
             >
                 <div style={{ padding: '20px', color: '#333' }}>
-                    <h4 style={{ marginBottom: '10px', fontSize: '1.1rem', color: '#003366' }}>Resumen de artículos a despachar:</h4>
-                    
-                    {articulosDespacho.length === 0 ? (
-                        <p style={{ fontStyle: 'italic', color: '#666' }}>No seleccionaste ningún artículo extra.</p>
-                    ) : (
-                        <ul style={{ listStyleType: 'none', padding: 0, marginBottom: '20px' }}>
-                            {articulosDespacho.map((art, idx) => (
-                                <li key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                                    <strong>{art.cantidad}x</strong> {art.nombre} <span style={{ color: '#888', fontSize: '0.9em' }}>({art.tipo})</span>
-                                </li>
-                            ))}
-                        </ul>
+                    {articulosDespacho.length > 0 && (
+                        <>
+                            <h4 style={{ marginBottom: '10px', fontSize: '1.1rem', color: '#003366' }}>Resumen de artículos a despachar:</h4>
+                            <ul style={{ listStyleType: 'none', padding: 0, marginBottom: '20px' }}>
+                                {articulosDespacho.map((art, idx) => (
+                                    <li key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                                        <strong>{art.cantidad}x</strong> {art.nombre} <span style={{ color: '#888', fontSize: '0.9em' }}>({art.tipo})</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
                     )}
                     
                     <h4 style={{ marginBottom: '10px', fontSize: '1.1rem', color: '#003366' }}>Comentarios adicionales:</h4>
-                    <p style={{ background: '#f9f9f9', padding: '12px', borderRadius: '6px', border: '1px solid #e0e0e0' }}>
-                        {comentarios || "Sin comentarios."}
-                    </p>
+                    {/* El textarea ahora vive dentro del modal */}
+                    <textarea 
+                        rows="3" 
+                        placeholder="Ej: Se aprueba la solicitud y se envían repuestos..."
+                        className="formulario-textarea"
+                        style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                        value={comentarios}
+                        onChange={(e) => setComentarios(e.target.value)}
+                    ></textarea>
                     
                     <p style={{ marginTop: '20px', fontWeight: 'bold', textAlign: 'center' }}>
-                        ¿Estás seguro de enviar esta resolución?
+                        ¿Estás seguro de ACEPTAR la solicitud y procesar el envío?
                     </p>
                 </div>
             </Modal>
-
         </div>
     );
 };

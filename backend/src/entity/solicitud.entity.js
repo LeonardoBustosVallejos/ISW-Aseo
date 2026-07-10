@@ -41,6 +41,11 @@ const SolicitudSchema = new EntitySchema({
       length: 255,
       default: "Pendiente",
       nullable: false
+    },
+    recepcion_confirmada: {
+      type: "boolean",
+      default: false,
+      nullable: false
     }
   },
   relations: {

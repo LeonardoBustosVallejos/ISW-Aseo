@@ -10,6 +10,8 @@ import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { HOST, PORT } from "./configEnv.js";
+import ActivoFijo from "../entity/activofijo.entity.js";
+import { registrarNuevoActivo } from "../services/activofijo.service.js";
 
 async function createRoles() {
   try {
@@ -370,7 +372,7 @@ async function createTrabajadores() {
         rut: "19111222-5",
         nacimiento: "1992-08-30",
         telefono: "+56431001287",
-        email: "paula.vargas@gmail.cl",
+        email: "paula.vargas@gmail.com",
         rol: 3,
         sexo: "F",
         competencias: "Administración, archivo",
@@ -378,6 +380,7 @@ async function createTrabajadores() {
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Paula_Andrea.jpg`,
         cv_url: `http://${HOST}:${PORT}/uploads/cvs/Paula_Andrea.pdf`,
         antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Paula_Andrea.pdf`,
+        password: await encryptPassword("sup1234")
       },
     ];
 
@@ -493,4 +496,77 @@ async function createSolicitudes() {
   }
 }
 
-export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes };
+async function createActivosFijos() {
+  try {
+    const activoRepository = AppDataSource.getRepository(ActivoFijo); 
+    const count = await activoRepository.count();
+    if (count > 0) return;
+
+    const activosData = [
+      {
+        codigo_inventario: "LBL-001",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-002",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-003",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-004",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-001",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-002",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-003",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-004",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+    ];
+
+    await activoRepository.save(activoRepository.create(activosData));
+    console.log("* => Activos Fijos creados exitosamente");
+
+  } catch (error) {
+    console.error("Error al crear activos fijos", error);
+  }
+}
+
+export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes, createActivosFijos};

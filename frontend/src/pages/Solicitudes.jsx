@@ -48,25 +48,20 @@ const Solicitudes = () => {
       ? solicitudes.filter((solicitud) => String(solicitud.id_solicitante) === String(user?.id))
       : solicitudes;
 
-  console.log(
-    'user:', user,
-    'id usuario:', user?.id,
-    'rol raw:', rolRaw,
-    'rol normalizado:', userRole,
-    'rol id:', roleId,
-    'isAdministrador:', isAdministrador,
-    'isSupervisor:', isSupervisor,
-    'ids admin solicitudes:', solicitudes.map((s) => s.id_administrador_solicitud),
-    'ids solicitantes:', solicitudes.map((s) => s.id_solicitante),
-    'solicitudes totales:', solicitudes.length,
-    'filtradas:', solicitudesFiltradas.length
-  );
+  const solicitudesParaTabla = solicitudesFiltradas.map((sol) => ({
+      ...sol,
+      texto_recepcion: (sol.recepcion_confirmada === true || sol.recepcion_confirmada === 'true') 
+          ? "Recepción Confirmada" 
+          : "Recepción Pendiente"
+  }));
+
   const navigate = useNavigate();
+  
   const columns = [
     { header: 'RUT Cliente', field: 'rut_cliente' },
     { header: 'Nombre Cliente', field: 'nombre_cliente' },
     { header: 'Ubicación Sede', field: 'ubicacion' },
-    { header: 'Tipo', field: 'tipo_solicitud', render: () => "Recepción Pendiente" }, 
+    { header: 'Tipo', field: 'texto_recepcion' },
     { header: 'Estado', field: 'estado_solicitud' },
   ];
 
@@ -96,22 +91,23 @@ const Solicitudes = () => {
       </div>
     );
   };
+
   return (
     <div className='main-container'>
       <div className='table-container'>
         <Table
           title="Solicitudes Pendientes"
-          data={solicitudesFiltradas || []}
+          data={solicitudesParaTabla || []}
           columns={columns}
           rowKey="id_solicitud"
           emptyMessage="No hay solicitudes registradas."
           renderExpanded={renderDetallesSolicitud}
 
-          actions={isAdministrador ? (row) => {
+          actions={(row) => {
             const id = row?.id_solicitud ?? row?.id;
             return (
-              <button
-                className='btn-view-solicitud'
+              <button 
+                className='btn-view-solicitud' 
                 onClick={() => {
                   if (id) {
                     navigate(`/solicitud/${id}`, { state: { datosSolicitud: row } });
@@ -121,7 +117,7 @@ const Solicitudes = () => {
                 Resolver
               </button>
             );
-          } : undefined}
+          }}
         />
       </div>
     </div>
