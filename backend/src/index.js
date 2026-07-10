@@ -18,6 +18,7 @@ import {
         createTrabajadores,
         createItems,
         createUsers,
+        createSolicitudes,
        } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 
@@ -95,6 +96,7 @@ async function setupAPI() {
     await createItems();
     await createUsers();
     await createTrabajadores();
+    await createSolicitudes();
   } catch (error) {
     console.log("Error en index.js -> setupAPI(), el error es: ", error);
   }

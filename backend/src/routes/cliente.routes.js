@@ -1,7 +1,7 @@
 "use strict";
 import { authorizeRoles } from "../middlewares/authorization.middleware.js";
 import { Router } from "express";
-import { createSede, deleteCliente, getClientes, getInfoCliente, getInfoSede, registerCliente, registerContactos, registrarClienteJerarquico, registrarClienteYArchivo, updateContactos, updateSede } from "../controllers/cliente.controller.js";
+import { createSede, deleteCliente, getClientes, getInfoCliente, getInfoSede, getSedes, registerCliente, registerContactos, registrarClienteJerarquico, registrarClienteYArchivo, updateContactos, updateSede } from "../controllers/cliente.controller.js";
 import { authenticateJwt } from "../middlewares/authentication.middleware.js";
 import { uploadContratoComercialService } from "../services/archivo.service.js";
 
@@ -12,6 +12,7 @@ router
 router
     .post('/register/contactos/:sede_id', authorizeRoles(['Administrador']), registerContactos)
     .patch('/update/contactos', authorizeRoles(['Administrador']), updateContactos)
+    .get('/sedes', getSedes)
 
 
 

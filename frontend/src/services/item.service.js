@@ -64,3 +64,20 @@ export async function deleteItem(id) {
         return error.response?.data || { success: false, message: 'Error deleting item' };
     }
 }
+
+export async function updateItem(id, itemData) {
+    try {
+        const { data } = await axios.put(`/item/update/${id}`, itemData);
+        return {
+            success: true,
+            data: data?.data || data,
+            message: data?.message || 'Item actualizado correctamente'
+        };
+    } catch (error) {
+        console.error('Error updating item', error);
+        return {
+            success: false,
+            message: error.response?.data?.message || error.message || 'Error al actualizar el item'
+        };
+    }
+}
