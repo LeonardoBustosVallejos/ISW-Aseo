@@ -39,24 +39,16 @@ export function useUpdateTrabajadorForm(detalle, executeUpdate, selectedId) {
       fd.append("telefono", formData.telefono.trim());
     }
 
-    // ==========================================
-    // SOLUCIÓN AQUÍ PARA CONFIGURAR competenciasIds
-    // ==========================================
+
     if (formData.competenciasIds) {
-      // Si por error es un string ("1,4,5"), lo convertimos a array. Si ya es array, lo dejamos igual.
       const arrayCompetencias = typeof formData.competenciasIds === 'string'
         ? formData.competenciasIds.split(',').map(Number)
         : (Array.isArray(formData.competenciasIds) ? formData.competenciasIds.map(Number) : []);
 
-      // Como estás usando FormData (que solo transmite strings/archivos), para enviar un Array 
-      // que Joi pueda entender en el backend, debes mandarlo iterando sobre cada elemento 
-      // o serializándolo según lo que soporte tu librería de backend.
-      // La forma estándar en FormData para pasar arrays a un validador tipo Joi/Express es:
       arrayCompetencias.forEach(id => {
-        fd.append("competenciasIds[]", id); // o simplemente "competenciasIds" según tu parser de backend
+        fd.append("competenciasIds[]", id);
       });
     }
-    // ==========================================
 
     if (formData.foto_file) {
       fd.append("foto_url", formData.foto_file); 

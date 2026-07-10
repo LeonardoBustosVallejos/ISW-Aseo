@@ -54,20 +54,17 @@ const competenciasIniciales = useMemo(() => {
     return detalle.competencias.map(comp => comp.id.toString());
   }, [detalle]);
 
-// SOLUCIÓN COMPLETA Y SEGURA para EditarTrabajador.jsx:
 const handleCompetenciasChange = (nuevasCompetenciasIds) => {
   
-  // 1. Validamos de forma segura qué tipo de dato está llegando
   const arraySeguro = Array.isArray(nuevasCompetenciasIds)
     ? nuevasCompetenciasIds
     : (typeof nuevasCompetenciasIds === 'string' && nuevasCompetenciasIds.trim() !== "" 
         ? nuevasCompetenciasIds.split(',') 
-        : []); // Si es null, undefined o vacío, dejamos un array limpio.
-
-  // 2. Ahora sí podemos usar .join o guardar de forma segura
+        : []); 
+  
   setFormData((prevData) => ({
     ...prevData,
-    // Guardamos como string separado por comas solo si tiene elementos
+   
     competenciasIds: arraySeguro.length > 0 ? arraySeguro.join(",") : ""
   }));
 };
@@ -604,7 +601,7 @@ const handleCompetenciasChange = (nuevasCompetenciasIds) => {
                                 <button 
                                   className="btn-add-competencia" 
                                   onClick={handleAdd}
-                                  disabled={!competenciaActual} // Se bloquea si no hay nada seleccionado
+                                  disabled={!competenciaActual} 
                                 >
                                   +
                                 </button>
@@ -614,7 +611,6 @@ const handleCompetenciasChange = (nuevasCompetenciasIds) => {
                               {listaCompetencias.length > 0 && (
                                 <div className="tags-container">
                                   {listaCompetencias.map(id => {
-                                    // Buscamos el objeto completo para poder mostrar el nombre en lugar del ID
                                     const comp = items?.find(i => i.id.toString() === id.toString());
                                     
                                     return (
