@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table } from "../../components/Tabla2"; 
+import { Table } from "@components/Tabla2"; 
 import { getGrupos, createGrupo, updateGrupo, deleteGrupo, getTrabajadores } from '@services/trabajador.service';
 import { Plus, Trash2, Save, UserPlus, X } from 'lucide-react';
 import "@styles/gruposTrabajador.css"
