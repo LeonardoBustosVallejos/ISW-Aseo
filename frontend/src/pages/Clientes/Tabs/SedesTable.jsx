@@ -256,11 +256,11 @@ export default function SedesTable({ sedes, noTitle = false, noActions = false }
                                     onClick={() => setOpen('newContactos')}>
                                     <ContactRound />
                                     Agregar Contacto(s)
-                                </button>
+                                </button>{/*
                                 <button className="action-button">
                                     <UserRoundPlus />
                                     Asignar Trabajador(es)
-                                </button>
+                                </button>*/}
                             </div>
                             <br />
                             <Acordeon title={`Contactos (${row.contactos.length})`}
@@ -299,11 +299,11 @@ export default function SedesTable({ sedes, noTitle = false, noActions = false }
                                                     setOpen('updateContact');
                                                 }} >
                                                 <UserRoundPen />
-                                            </button>
+                                            </button>{/*
                                             <button type="button"
                                                 className={`remove-button ${row.contactos.length < 2 ? 'oculto' : ''}`} disabled={row.contactos.length < 2}>
                                                 <Trash2 size={18} />
-                                            </button>
+                                            </button>*/}
                                         </div>
                                         )
                                         }
