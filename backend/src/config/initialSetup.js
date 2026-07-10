@@ -487,6 +487,15 @@ async function createSolicitudes() {
         detalle_solicitud: "Solicitud de carro de utensilios para la sede principal.",
         estado_solicitud: "Pendiente",
       },
+      {
+        cantidad_solicitud: 2,
+        id_item_solicitud: 2,
+        id_solicitante: 10,
+        id_administrador_solicitud: 1,
+        id_sede_solicitud: 1,
+        detalle_solicitud: "Solicitud de carro de utensilios para la sede principal.",
+        estado_solicitud: "Pendiente",
+      },
     ];
 
     await solicitudRepository.save(solicitudRepository.create(solicitudesData));
