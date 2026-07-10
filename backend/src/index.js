@@ -19,6 +19,7 @@ import {
         createItems,
         createUsers,
         createSolicitudes,
+        createActivosFijos
        } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
 import { iniciarCronContratos } from "./cron/contratoCron.js";
@@ -99,6 +100,7 @@ async function setupAPI() {
     await createUsers();
     await createTrabajadores();
     await createSolicitudes();
+    await createActivosFijos();
   } catch (error) {
     console.log("Error en index.js -> setupAPI(), el error es: ", error);
   }

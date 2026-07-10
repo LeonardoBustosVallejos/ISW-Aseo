@@ -13,6 +13,7 @@ import {
   createSolicitudService,
   deleteSolicitudService,
   updateSolicitudService,
+  confirmarRecepcionBooleanoService
 } from "../services/solicitud.service.js";
 import { AppDataSource } from "../config/configDb.js";
 import Solicitud from "../entity/solicitud.entity.js";
@@ -78,5 +79,17 @@ export async function updateSolicitudController(req, res) {
     }
   } catch(error) {
     return res.status(500).json({ success: false, message: "Error interno de servidor", error: error.message})
+  }
+}
+
+export async function marcarSolicitudRecibidaController(req, res) {
+  try {
+    const { id_solicitud } = req.params;
+    const [solicitud, error] = await confirmarRecepcionBooleanoService(id_solicitud);
+
+    if (error) return handleErrorClient(res, 404, error);
+    return handleSuccess(res, 200, "Recepción marcada como true exitosamente.", solicitud);
+  } catch (error) {
+    return handleErrorServer(res, 500, error.message);
   }
 }

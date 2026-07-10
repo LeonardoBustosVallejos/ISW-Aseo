@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import '@styles/AgregarItemModal.css';
+import '@styles/SolicitarItemModal.css';
 import { getUsers } from '../services/user.service.js';
 import { getSedes } from '../services/clientes.service.js';
 
@@ -101,6 +102,15 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
       return;
     }
 
+    const disponibilidadActual = Number(item?.disponibilidadActual);
+    if (Number.isFinite(disponibilidadActual) && cantidadNumerica > disponibilidadActual) {
+      setMessage({
+        type: 'error',
+        text: `La cantidad solicitada supera la disponibilidad actual (${disponibilidadActual}).`
+      });
+      return;
+    }
+
     if (!Number.isInteger(idAdministradorNumerico) || idAdministradorNumerico <= 0) {
       setMessage({ type: 'error', text: 'Ingresa un id de administrador válido.' });
       return;
@@ -142,38 +152,52 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
     }
   };
 
+  const disponibilidadActual = item?.disponibilidadActual;
+  const cantidadExcedeDisponibilidad =
+    Number.isFinite(Number(disponibilidadActual)) &&
+    cantidad !== '' &&
+    Number(cantidad) > Number(disponibilidadActual);
+
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content solicitar-modal">
         <button className="close-button" onClick={onClose}>×</button>
 
-        <h3>Solicitar item</h3>
-        <p style={{ marginTop: 0, marginBottom: '12px' }}>
+        <h3 className="solicitar-modal-title">Solicitar item</h3>
+        <p className="solicitar-modal-subtitle">
           {item?.nombre ? `Item seleccionado: ${item.nombre}` : 'Selecciona un item para solicitar.'}
         </p>
 
-        <form onSubmit={handleSubmit} style={{ margin: 0, padding: 0 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <form onSubmit={handleSubmit} className="solicitar-modal-form">
+          <div className="solicitar-modal-field">
             <label htmlFor="cantidad-solicitud">Cantidad</label>
             <input
               id="cantidad-solicitud"
+              className="solicitar-modal-input"
               type="number"
               min="1"
               step="1"
+              max={disponibilidadActual ?? undefined}
               placeholder="Ingrese la cantidad"
               value={cantidad}
               onChange={(e) => setCantidad(e.target.value)}
               disabled={isLoading}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             />
+            {disponibilidadActual != null && (
+              <span className={`solicitar-modal-hint${cantidadExcedeDisponibilidad ? ' warning' : ''}`}>
+                Disponibilidad actual: {disponibilidadActual}
+              </span>
+            )}
+          </div>
 
+          <div className="solicitar-modal-field">
             <label htmlFor="administrador-solicitud">Administrador</label>
             <select
               id="administrador-solicitud"
+              className="solicitar-modal-input"
               value={idAdministradorSolicitud}
               onChange={(e) => setIdAdministradorSolicitud(e.target.value)}
               disabled={isLoading || isLoadingOptions}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             >
               <option value="">Seleccione un administrador</option>
               {administradores.map((administrador) => (
@@ -182,25 +206,30 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
                 </option>
               ))}
             </select>
+          </div>
 
+          <div className="solicitar-modal-field">
             <label htmlFor="detalle-solicitud">Detalle de la solicitud</label>
             <textarea
               id="detalle-solicitud"
+              className="solicitar-modal-input"
               rows="3"
               placeholder="Ingrese el detalle de la solicitud"
               value={detalleSolicitud}
               onChange={(e) => setDetalleSolicitud(e.target.value)}
               disabled={isLoading}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', resize: 'vertical' }}
+              style={{ resize: 'vertical' }}
             />
+          </div>
 
+          <div className="solicitar-modal-field">
             <label htmlFor="sede-solicitud">Sede</label>
             <select
               id="sede-solicitud"
+              className="solicitar-modal-input"
               value={idSedeSolicitud}
               onChange={(e) => setIdSedeSolicitud(e.target.value)}
               disabled={isLoading || isLoadingOptions}
-              style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             >
               <option value="">Seleccione una sede</option>
               {sedes.map((sede) => (
@@ -209,15 +238,24 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
                 </option>
               ))}
             </select>
+          </div>
 
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                {isLoading ? 'Creando...' : 'Aceptar'}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
-                Cancelar
-              </button>
-            </div>
+          <div className="solicitar-modal-actions">
+            <button
+              type="submit"
+              className="btn-view-solicitud"
+              disabled={isLoading || cantidadExcedeDisponibilidad}
+            >
+              {isLoading ? 'Creando...' : 'Aceptar'}
+            </button>
+            <button
+              type="button"
+              className="btn-view-solicitud btn-cancelar"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancelar
+            </button>
           </div>
         </form>
 

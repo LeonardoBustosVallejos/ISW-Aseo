@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { AppDataSource } from "../config/configDb.js";
 import { comparePassword, encryptPassword } from "../helpers/bcrypt.helper.js";
 import { ACCESS_TOKEN_SECRET } from "../config/configEnv.js";
+import Trabajador from "../entity/trabajador.entity.js";
 
 import { getRolByIdService, getRolByNameService } from "./rol.service.js";
 import { getUserService } from "./user.service.js";
@@ -24,44 +25,69 @@ const createErrorMessage = (dataInfo, message) => ({
 export async function loginService(user) {
   try {
     const userRepository = AppDataSource.getRepository(User);
+    const trabajadoresRepository = AppDataSource.getRepository(Trabajador);
+
     const { email, password } = user;
-
-
-    const userFound = await userRepository.findOne({
-      relations: ["rol"],
+    let accountFound = await userRepository.findOne({
+      relations: ["rol"], 
       where: { email: email, isActive: true },
     });
+    let tipoCuenta = "usuario";
 
-    if (!userFound) {
+    if (!accountFound) {
+      accountFound = await trabajadoresRepository.findOne({
+        relations: ["rol"],
+        where: { email: email, despedido: false },
+      });
+      tipoCuenta = "trabajador";
+    }
+    if (!accountFound) {
       return [null, createErrorMessage("email", "Correo o contraseña incorrectos")];
     }
 
-    const isMatch = await comparePassword(password, userFound.password);
-
+    if (!accountFound.password) {
+      return [null, createErrorMessage("password", "Esta cuenta aún no tiene una contraseña asignada.")];
+    }
+    const isMatch = await comparePassword(password, accountFound.password);
     if (!isMatch) {
       return [null, createErrorMessage("password", "Correo o contraseña incorrectos")];
     }
 
-    const payload = {
-      id: userFound.id,
-      nombreCompleto: userFound.nombreCompleto,
-      email: userFound.email,
-      rut: userFound.rut,
-      rol: userFound.rol,
-      cliente: userFound.cliente
-    };
+    let payload = {};
+
+    if (tipoCuenta === "usuario") {
+      payload = {
+        id: accountFound.id,
+        nombreCompleto: accountFound.nombreCompleto,
+        email: accountFound.email,
+        rut: accountFound.rut,
+        rol: accountFound.rol,
+        rol_id: accountFound.rol?.id || accountFound.rol?.rol_id
+      };
+    } else {
+      const nombreCompleto = `${accountFound.nombres} ${accountFound.apellidoPaterno} ${accountFound.apellidoMaterno}`.trim();
+      
+      payload = {
+        id: accountFound.id,
+        nombreCompleto: nombreCompleto,
+        email: accountFound.email,
+        rut: accountFound.rut,
+        rol: accountFound.rol,
+        rol_id: accountFound.rol?.id || accountFound.rol?.rol_id
+      };
+    }
 
     const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
       expiresIn: "1d",
     });
 
     return [accessToken, null];
+
   } catch (error) {
-    console.error("Error al iniciar sesión:", error);
+    console.error("Error DETALLADO al iniciar sesión:", error);
     return [null, "Error interno del servidor"];
   }
 }
-
 /**
  * Solo el administrador puede registrar nuevos usuarios
 */
