@@ -9,17 +9,17 @@ const __dirname = path.dirname(__filename);
 const UPLOAD_BASE = path.join(__dirname, "..", "uploads");
 
 const folderForField = {
-  foto: "fotos",
-  cv: "cvs",
-  antecedentes: "antecedentes",
+  foto_url: "fotos",
+  cv_url: "cvs",
+  antecedentes_url: "antecedentes",
   contrato: "contratos",
   archivo: "archivos"
 };
 
 const allowedMimes = {
-  foto: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
-  cv: ["application/pdf"],
-  antecedentes: ["application/pdf"],
+  foto_url: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
+  cv_url: ["application/pdf"],
+  antecedentes_url: ["application/pdf"],
   contrato: ["application/pdf"],
   archivo: ["application/pdf"]
 };
@@ -60,8 +60,8 @@ export const upload = multer({
 });
 
 export const uploadFiles = upload.fields([
-  { name: "foto", maxCount: 1 },
-  { name: "cv", maxCount: 1 },
-  { name: "antecedentes", maxCount: 1 },
+  { name: "foto_url", maxCount: 1 },
+  { name: "cv_url", maxCount: 1 },
+  { name: "antecedentes_url", maxCount: 1 },
   { name: "archivo", maxCount: 1 },
 ]);

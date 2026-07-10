@@ -41,13 +41,21 @@ export function useUpdateTrabajadorForm(detalle, executeUpdate, selectedId) {
         fd.append("telefono", formData.telefono.trim());
       }
 
-      if (formData.competenciasIds && formData.competenciasIds.length > 0) {
-        fd.append("competenciasIds", formData.competenciasIds.join(","));
+      // Corrección 1: Como ya es un string ("1,4,5"), lo agregamos directo
+      if (formData.competenciasIds) {
+        fd.append("competenciasIds", formData.competenciasIds);
       }
 
-      if (formData.foto_url) fd.append("foto", formData.foto_file); 
-      if (formData.cv_url) fd.append("cv", formData.cv_file);
-      if (formData.antecedentes_url) fd.append("antecedentes", formData.antecedentes_file);
+      // Corrección 2: Preguntamos por el archivo nuevo (_file) y usamos los nombres correctos (_url)
+      if (formData.foto_file) {
+        fd.append("foto_url", formData.foto_file); 
+      }
+      if (formData.cv_file) {
+        fd.append("cv_url", formData.cv_file);
+      }
+      if (formData.antecedentes_file) {
+        fd.append("antecedentes_url", formData.antecedentes_file);
+      }
 
       await executeUpdate(selectedId, fd, () => {
         setIsModalOpen(false);
