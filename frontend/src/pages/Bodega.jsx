@@ -18,22 +18,34 @@ const Bodega = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, fetchItems, setItems } = useItems();
+
+  const rolRaw = user?.rol;
+  const userRole = typeof rolRaw === 'string'
+    ? rolRaw
+    : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
+  const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
+  const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 3;
+  const isAdministrador = String(userRole).toLowerCase() === 'administrador' || roleId === 1;
+
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchByName, setSearchByName] = useState('');
   const [searchByCode, setSearchByCode] = useState('');
+  const [itemIdToDelete, setItemIdToDelete] = useState('');
 
   //tabla que muestra los datos de los items que existen en bodega
+  const mostrarValor = (valor) => (valor === null || valor === undefined || valor === '' ? '-' : valor);
+
   const columns = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombre', header: 'Nombre' },
-    { field: 'codigo', header: 'Código' },
-    { field: 'tipo', header: 'Tipo' },
+    { field: 'id', header: 'ID', render: (value) => mostrarValor(value) },
+    { field: 'nombre', header: 'Nombre', render: (value) => mostrarValor(value) },
+    { field: 'codigo', header: 'Código', render: (value) => mostrarValor(value) },
+    { field: 'tipo', header: 'Tipo', render: (value) => mostrarValor(value) },
     {
       field: 'disponibilidadActual',
       header: 'Disponibles',
-      render: (_, row) => `${row?.disponibilidadActual ?? ''}/${row?.disponibilidadTotal ?? ''}`,
+      render: (_, row) => `${mostrarValor(row?.disponibilidadActual)}/${mostrarValor(row?.disponibilidadTotal)}`,
     },
   ];
   
@@ -136,7 +148,7 @@ const Bodega = () => {
   };
 
   const handleDeleteItem = async () => {
-    if (!selectedItem || !selectedItem.id) {
+    if (!itemIdToDelete) {
       showErrorAlert('Selección requerida', 'Selecciona primero un item antes de borrar.');
       return;
     }
@@ -147,15 +159,15 @@ const Bodega = () => {
     }
 
     try {
-      const response = await deleteItem(selectedItem.id);
+      const response = await deleteItem(itemIdToDelete);
       if (!response || response.success === false) {
         showErrorAlert('Error', response?.message || 'No se pudo borrar el item');
         return;
       }
 
       showSuccessAlert('¡Eliminado!', 'El item ha sido eliminado correctamente.');
-      setItems((prevItems) => prevItems.filter((item) => item.id !== selectedItem.id));
-      setSelectedItem(null);
+      setItems((prevItems) => prevItems.filter((item) => String(item.id) !== String(itemIdToDelete)));
+      setItemIdToDelete('');
       setDataItems([]);
       await fetchItems();
     } catch (error) {
@@ -181,28 +193,34 @@ const Bodega = () => {
       <div className='table-container'>
         <div className='bodega-toolbar'>
           <div className='bodega-actions-group'>
-            <button className='btn-view-solicitud' onClick={() => setAgregarItemOpen(true)}>
-              Agregar Item
-            </button>
-            <button className='btn-view-solicitud btn-danger' onClick={() => handleDeleteItem()}>
-              Borrar Item
-            </button>
-          </div>
-          <div className='bodega-search-group'>
-            <input
-              className='bodega-search-input'
-              type='text'
-              value={searchByName}
-              onChange={(e) => setSearchByName(e.target.value)}
-              placeholder='Buscar por nombre'
-            />
-            <input
-              className='bodega-search-input'
-              type='text'
-              value={searchByCode}
-              onChange={(e) => setSearchByCode(e.target.value)}
-              placeholder='Buscar por código'
-            />
+            {isAdministrador && (
+              <button className='btn-view-solicitud' onClick={() => setAgregarItemOpen(true)}>
+                Agregar Item
+              </button>
+            )}
+            {isAdministrador && (
+              <>
+                <select
+                  className='bodega-search-input'
+                  value={itemIdToDelete}
+                  onChange={(e) => setItemIdToDelete(e.target.value)}
+                >
+                  <option value="">Seleccione un item</option>
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className='btn-view-solicitud btn-danger'
+                  onClick={() => handleDeleteItem()}
+                  disabled={!itemIdToDelete}
+                >
+                  Borrar Item
+                </button>
+              </>
+            )}
           </div>
         </div>
         <Table
@@ -213,15 +231,17 @@ const Bodega = () => {
           emptyMessage='No hay items registrados.'
           actions={(row) => (
             <div className='bodega-row-actions'>
-              <button
-                className='btn-view-solicitud'
-                onClick={() => {
-                  setSelectedItem(row);
-                  setIsSolicitarModalOpen(true);
-                }}
-              >
-                Solicitar
-              </button>
+              {isSupervisor && (
+                <button
+                  className='btn-view-solicitud'
+                  onClick={() => {
+                    setSelectedItem(row);
+                    setIsSolicitarModalOpen(true);
+                  }}
+                >
+                  Solicitar
+                </button>
+              )}
               <button
                 className='btn-view-solicitud'
                 onClick={() => {

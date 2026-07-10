@@ -252,6 +252,24 @@ export const updateTrabajadorBodyValidation = Joi.object({
         .messages({
             "array.base": "Las competencias deben venir en un formato de lista (Array)."
         }),
+    foto_url: Joi.string()
+        .uri()
+        .optional()
+        .messages({
+            "string.uri": "La foto de perfil debe ser una URL válida."
+        }),
+    cv_url: Joi.string()
+        .uri()
+        .optional()
+        .messages({
+            "string.uri": "El Currículum Vitae debe ser una URL válida."
+        }),
+    antecedentes_url: Joi.string()
+        .uri()
+        .optional()
+        .messages({
+            "string.uri": "Los antecedentes deben ser una URL válida."
+        }),
 
 });
 

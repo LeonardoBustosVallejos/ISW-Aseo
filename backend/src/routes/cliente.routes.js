@@ -16,6 +16,7 @@ router
 
 
 
+
     .post('/sedes/add/:clienteId', authorizeRoles(['Administrador']))
     .patch('/update/sede/:sede_id', authorizeRoles(['Administrador']), updateSede)
 

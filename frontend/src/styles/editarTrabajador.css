@@ -455,8 +455,12 @@ textarea:focus {
   padding: 6px 12px;
   border-radius: 4px;
   border: 1px solid #ccc;
-  background: transparent;
+  background-color: #dc2626;
   cursor: pointer;
+}
+.btn-cancelar:hover {
+  background-color: #c52222;
+
 }
 
 .btn-guardar {

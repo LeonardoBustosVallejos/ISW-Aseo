@@ -216,16 +216,16 @@ export async function updateTrabajadorController(req, res) {
 
     const files = req.files || {};
 
-    if (files.antecedentes?.[0]) {
-      body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
+    if (files.antecedentes_url?.[0]) {
+      body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes_url[0].filename}`;
     }
 
-    if (files.cv?.[0]) {
-      body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
+    if (files.cv_url?.[0]) {
+      body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv_url[0].filename}`;
     }
 
-    if (files.foto && files.foto[0]) {
-        body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
+    if (files.foto_url && files.foto_url[0]) {
+        body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto_url[0].filename}`;
       }
 
     if (body.competenciasIds) {

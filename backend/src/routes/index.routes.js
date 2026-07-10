@@ -5,6 +5,7 @@ import authRoutes from "./auth.routes.js";
 import ActivoFijo from "../entity/activofijo.entity.js";
 import activoFijoRoutes from "./activoFijo.routes.js";
 import itemRoutes from "./item.routes.js";
+import itemSedeRoutes from "./itemSede.routes.js";
 import trabajadoresRoutes from "./trabajadores.routes.js";
 import capacitacionesRoutes from "./capacitacion.route.js";
 import clienteRoutes from "./cliente.routes.js";
@@ -18,6 +19,7 @@ router
     .use("/user", userRoutes)
     .use("/activos", activoFijoRoutes)
     .use("/item", itemRoutes)
+    .use("/item-sede", itemSedeRoutes)
     .use("/solicitud", solicitudRoutes)
     .use("/clientes", clienteRoutes)
     .use("/trabajadores", trabajadoresRoutes)
