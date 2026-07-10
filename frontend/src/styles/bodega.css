@@ -1,0 +1,50 @@
+.bodega-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bodega-actions-group,
+.bodega-search-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bodega-search-input {
+  min-width: 220px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #334155;
+  outline: none;
+}
+
+.bodega-search-input:focus {
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.12);
+}
+
+.bodega-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-danger {
+  background-color: #dc2626 !important;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c !important;
+}
+
+.bodega-actions-group button:disabled {
+  background-color: #94a3b8 !important;
+  cursor: not-allowed;
+}

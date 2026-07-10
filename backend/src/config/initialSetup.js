@@ -4,9 +4,14 @@ import Rol from "../entity/rol.entity.js";
 import Cliente from "../entity/cliente.entity.js";
 import Contacto from "../entity/contacto.entity.js";
 import Sede from "../entity/sede.entity.js";
+import Item from "../entity/item.entity.js";
+import Solicitud from "../entity/solicitud.entity.js";
+import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { HOST, PORT } from "./configEnv.js";
+import ActivoFijo from "../entity/activofijo.entity.js";
+import { registrarNuevoActivo } from "../services/activofijo.service.js";
 
 async function createRoles() {
   try {
@@ -192,6 +197,15 @@ async function createUsers() {
           rol: 4,
         })
       ),
+      userRepository.save(
+        userRepository.create({
+          nombreCompleto: "Damián Alejandro Soto Jimenez",
+          rut: "22419881-4",
+          email: "administrador2@gmail.com",
+          password: await encryptPassword("admin1234"),
+          rol: 1,
+        })
+      ),
     ]);
     console.log("* => Usuarios creados exitosamente");
   } catch (error) {
@@ -367,7 +381,7 @@ async function createTrabajadores() {
         rut: "19111222-5",
         nacimiento: "1992-08-30",
         telefono: "+56431001287",
-        email: "paula.vargas@gmail.cl",
+        email: "paula.vargas@gmail.com",
         rol: 3,
         sexo: "F",
         password: await encryptPassword("supervisor1234"),
@@ -376,6 +390,7 @@ async function createTrabajadores() {
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Paula_Andrea.jpg`,
         cv_url: `http://${HOST}:${PORT}/uploads/cvs/Paula_Andrea.pdf`,
         antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Paula_Andrea.pdf`,
+        password: await encryptPassword("sup1234")
       },
     ];
 
@@ -388,4 +403,180 @@ async function createTrabajadores() {
   }
 }
 
-export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes };
+async function createItems() {
+  try {
+    const itemsRepository = AppDataSource.getRepository("Item");
+
+    const count = await itemsRepository.count();
+    if (count > 0) return;
+
+    const items = [
+      {
+        nombre: "Máquina pulidora Bauker 110W",
+        codigo: "F-MP-B110W",
+        tipo: "Fijo",
+        descripcion: "La Pulidora para Mármol Trifásica MEC7-CE es una máquina profesional diseñada para pulir y abrillantar pavimentos de mármol, terrazo, cemento y superficies similares. Su alimentación trifásica, velocidad fija y estructura robusta permiten trabajar con estabilidad, precisión y buen rendimiento en faenas determinación y mantención de pisos.",
+        disponibilidadActual: 9,
+        disponibilidadTotal: 10
+      },
+      {
+        nombre: "Pack de 12 detergente OMO",
+        codigo: "C-PD12-O",
+        tipo: "Consumible",
+        descripcion: "Fórmula líquida concentrada que limpia en profundidad y rinde más por lavado, en pack de botella y doypack.",
+        disponibilidadActual: 43,
+        disponibilidadTotal: 50
+      },
+      {
+        nombre: "Carro utensilios con tapa Abrillantadora",
+        codigo: "F-CUT-A",
+        tipo: "Fijo",
+        descripcion: "Optimiza la organización y movilidad en tus espacios de limpieza con nuestro versátil carro porta útiles en color gris.** Diseñado para facilitar el almacenamiento y transporte de herramientas, este carro es ideal tanto para entornos comerciales como residenciales donde la eficiencia es clave.",
+        disponibilidadActual: 8,
+        disponibilidadTotal: 15
+      },
+      {
+        nombre: "2 Trapeadores Kleine Wolge",
+        codigo: "C-T2-KW",
+        tipo: "Consumible",
+        descripcion: "Dale un giro a tu limpieza con el Balde Pedal + Mopa Easy Wring. Olvídate del esfuerzo y disfruta de pisos impecables con su sistema de fácil escurrido, que te permite controlar la humedad con solo presionar un pedal. Su mopa de microfibra limpia eficazmente distintos tipos de pisos, incluso paredes y vidrios. ¡Limpieza eficiente y sin goteos!",
+        disponibilidadActual: 19,
+        disponibilidadTotal: 30
+      },
+      {
+        nombre: "Contenedor de basura 1100 Litros Bioplastic",
+        codigo: "F-CB-B",
+        tipo: "Fijo",
+        descripcion: "Basurero Domiciliario de 120 litros con ruedas – Fabricación chilena. Fabricado en polietileno con filtro UV. Ideal para uso domiciliario, condominios y pequeñas industrias. Cumple con la Norma Europea EN 840.",
+        disponibilidadActual: 10,
+        disponibilidadTotal: 20
+      },
+    ];
+
+    await itemsRepository.save(items);
+
+    console.log("* => Items creados exitosamente");
+
+  } catch (error) {
+    console.error("Error al crear items", error);
+  }
+}
+
+async function createSolicitudes() {
+  try {
+    const solicitudRepository = AppDataSource.getRepository(Solicitud);
+
+    const count = await solicitudRepository.count();
+    if (count > 0) return;
+
+    const solicitudesData = [
+      {
+        cantidad_solicitud: 5,
+        id_item_solicitud: 1,
+        id_solicitante: 3,
+        id_administrador_solicitud: 1,
+        id_sede_solicitud: 1,
+        detalle_solicitud: "Solicitud de pulidora para la sede principal.",
+        estado_solicitud: "Pendiente",
+      },
+      {
+        cantidad_solicitud: 8,
+        id_item_solicitud: 2,
+        id_solicitante: 3,
+        id_administrador_solicitud: 1,
+        id_sede_solicitud: 2,
+        detalle_solicitud: "Solicitud de detergente para la sucursal del sur.",
+        estado_solicitud: "Pendiente",
+      },
+      {
+        cantidad_solicitud: 3,
+        id_item_solicitud: 3,
+        id_solicitante: 3,
+        id_administrador_solicitud: 8,
+        id_sede_solicitud: 1,
+        detalle_solicitud: "Solicitud de carro de utensilios para la sede principal.",
+        estado_solicitud: "Pendiente",
+      },
+    ];
+
+    await solicitudRepository.save(solicitudRepository.create(solicitudesData));
+    console.log("* => Solicitudes creadas exitosamente");
+  } catch (error) {
+    console.error("Error al crear solicitudes:", error);
+  }
+}
+
+async function createActivosFijos() {
+  try {
+    const activoRepository = AppDataSource.getRepository(ActivoFijo); 
+    const count = await activoRepository.count();
+    if (count > 0) return;
+
+    const activosData = [
+      {
+        codigo_inventario: "LBL-001",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-002",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-003",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-004",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-001",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-002",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-003",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-004",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+    ];
+
+    await activoRepository.save(activoRepository.create(activosData));
+    console.log("* => Activos Fijos creados exitosamente");
+
+  } catch (error) {
+    console.error("Error al crear activos fijos", error);
+  }
+}
+
+export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes, createActivosFijos};

@@ -1,5 +1,5 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService, updateSedeService, uptadeContactosArrayService, registerContactoJerarquicoService } from "../services/cliente.service.js";
+import { getContactosService, registerClienteSimpleService, listarClientesService, registerClienteJerarquicoService, registerSedeSimpleService, registerClienteJerarquicoYArchivoService, getInfoClienteService, getInfoSedeService, deleteClienteService, updateSedeService, uptadeContactosArrayService, registerContactoJerarquicoService, getSedesService } from "../services/cliente.service.js";
 import { contactosArrayValidation, createSedeValidation, registerClienteJerarquicoValidation, registerClienteJerarquicoYArchivoValidation, registerClienteValidation, sedeJerarquicoValidation } from "../validations/cliente.validation.js";
 import fs from "fs";
 
@@ -94,6 +94,21 @@ export async function getClientes(req, res) {
     } catch (error) {
         console.error(error)
         return handleErrorServer(res, 500, error.message)
+    }
+}
+
+export async function getSedes(req, res) {
+    try {
+        const [sedes, err] = await getSedesService();
+
+        if (err) return handleErrorClient(res, 404, err);
+
+        sedes.length === 0
+            ? handleSuccess(res, 204)
+            : handleSuccess(res, 200, "Sedes encontradas", sedes);
+    } catch (error) {
+        console.error(error);
+        return handleErrorServer(res, 500, error.message);
     }
 }
 

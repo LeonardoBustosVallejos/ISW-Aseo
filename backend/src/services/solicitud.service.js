@@ -4,11 +4,32 @@ import Solicitud from "../entity/solicitud.entity.js";
 
 export async function getSolicitudesService() {
   try {
-    const solicitudRepository = AppDataSource.getRepository(Solicitud);
-    const solicitudes = await solicitudRepository.find();
+    const solicitudes = await AppDataSource.getRepository(Solicitud)
+      .createQueryBuilder("solicitud")
+      .leftJoin("Sede", "sede", "solicitud.id_sede_solicitud = sede.sede_id")
+      .leftJoin("Cliente", "cliente", "sede.cliente_id = cliente.cliente_id")
+      .leftJoin("Trabajador", "solicitante", "solicitud.id_solicitante = solicitante.id")
+      .select([
+        "solicitud.id_solicitud AS id_solicitud",
+        "solicitud.cantidad_solicitud AS cantidad_solicitud",
+        "solicitud.id_item_solicitud AS id_item_solicitud",
+        "solicitud.id_solicitante AS id_solicitante",
+        "solicitud.id_administrador_solicitud AS id_administrador_solicitud",
+        "solicitud.id_sede_solicitud AS id_sede_solicitud",
+        "solicitud.detalle_solicitud AS detalle_solicitud",
+        "solicitud.estado_solicitud AS estado_solicitud",
+        "solicitud.recepcion_confirmada AS recepcion_confirmada",
+        "sede.direccion AS ubicacion",
+        "sede.nombre_sede AS nombre_sede",
+        "sede.cliente_id AS cliente_id",
+        "cliente.nombreCliente AS nombre_cliente",
+        "cliente.rutCliente AS rut_cliente",
+        "solicitante.nombres AS nombre_solicitante",
+        "solicitante.apellidoPaterno AS apellido_paterno_solicitante"
+      ])
+      .getRawMany();
+
     if (!solicitudes || solicitudes.length === 0) return [null, "No hay solicitudes"];
-    console.log("hay un total de %d items", solicitudes.length);
-    const solicitudesData = solicitudes.map(({ id, ...solicitud }) => solicitud);
     return [solicitudes, null];
   } catch (error) {
     console.error("Error al obtener solicitudes:", error);
@@ -65,5 +86,21 @@ export async function updateSolicitudService(id, updateData) {
     return { success: true, data: updatedSolicitud, message: "Solicitud actualizada exitósamente" };
   } catch (error) {
     return { success: false, message: "Error actualizando solicitud", error: error.message };
+  }
+}
+
+export async function confirmarRecepcionBooleanoService(id_solicitud) {
+  try {
+    const repository = AppDataSource.getRepository(Solicitud);
+    const solicitud = await repository.findOne({ where: { id_solicitud } });
+
+    if (!solicitud) return [null, "La solicitud no existe."];
+    solicitud.recepcion_confirmada = true;
+    const actualizada = await repository.save(solicitud);
+    
+    return [actualizada, null];
+  } catch (error) {
+    console.error("Error al actualizar booleano:", error);
+    return [null, "Error interno del servidor."];
   }
 }

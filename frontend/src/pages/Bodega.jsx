@@ -1,82 +1,52 @@
-import Table from '@components/Table';
+import { Table } from '@components/Tabla2';
 import useItems from '@hooks/items/useGetItems.jsx';
 import useEditItems from '@hooks/items/useEditItems';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@context/AuthContext';
 import ItemModal from './AgregarItemModal.jsx';
 import SolicitarItemModal from './SolicitarItemModal.jsx';
 import Popup from '../components/Popup';
 import { deleteItem, createItem } from '@services/item.service.js';
 import { createSolicitud } from '@services/solicitud.service.js';
 import { deleteDataAlert, showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
-
+import '../styles/solicitudes.css';
+import '../styles/bodega.css';
+//por los loles
 
 const Bodega = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { items, fetchItems, setItems } = useItems();
+
+  const rolRaw = user?.rol;
+  const userRole = typeof rolRaw === 'string'
+    ? rolRaw
+    : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
+  const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
+  const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 3;
+  const isAdministrador = String(userRole).toLowerCase() === 'administrador' || roleId === 1;
+
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchByName, setSearchByName] = useState('');
   const [searchByCode, setSearchByCode] = useState('');
+  const [itemIdToDelete, setItemIdToDelete] = useState('');
 
   //tabla que muestra los datos de los items que existen en bodega
+  const mostrarValor = (valor) => (valor === null || valor === undefined || valor === '' ? '-' : valor);
+
   const columns = [
-    { title: 'ID', field: 'id', width: 50, responsive: 0 },
-    { title: 'Nombre', field: 'nombre', width: 70, responsive: 0 },
-    { title : 'Codigo', field: 'codigo', width: 70, responsive: 0 },
-    { title: 'Tipo', field: 'tipo', width: 70, responsive: 0 },
-    { title: 'Descripción', field: 'descripcion', width: 70, responsive: 1 },
-    { title: 'Disponibles', field: 'disponibilidadActual', width: 70, responsive: 2 },
-    { title: 'Totales', field: 'disponibilidadTotal', width: 70, responsive: 2 },
+    { field: 'id', header: 'ID', render: (value) => mostrarValor(value) },
+    { field: 'nombre', header: 'Nombre', render: (value) => mostrarValor(value) },
+    { field: 'codigo', header: 'Código', render: (value) => mostrarValor(value) },
+    { field: 'tipo', header: 'Tipo', render: (value) => mostrarValor(value) },
     {
-      title: 'Solicitar',
-      hozAlign: 'center',
-      headerSort: false,
-      formatter: function(cell, formatterParams, onRendered) {
-        const btn = document.createElement('button');
-        btn.textContent = 'Solicitar';
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const rowData = cell.getData();
-          try {
-            // mark selection in React state for parent component
-            setSelectedItem(rowData);
-            setIsSolicitarModalOpen(true);
-          } catch (err) {
-            // fallback: log if state setter is not available in this scope
-            // (shouldn't happen because setSelectedItem is in component scope)
-            // eslint-disable-next-line no-console
-            console.log('Solicitar clicked', rowData);
-          }
-        });
-        return btn;
-      }
+      field: 'disponibilidadActual',
+      header: 'Disponibles',
+      render: (_, row) => `${mostrarValor(row?.disponibilidadActual)}/${mostrarValor(row?.disponibilidadTotal)}`,
     },
-    {
-      title: 'Ver',
-      hozAlign: 'center',
-      headerSort: false,
-      formatter: function(cell, formatterParams, onRendered) {
-        const btn = document.createElement('button');
-        btn.textContent = 'Ver';
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const rowData = cell.getData();
-          try {
-            setSelectedItem(rowData);
-            if (rowData?.id) {
-              navigate(`/item/${rowData.id}`);
-            }
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.log('Ver clicked', rowData, err);
-          }
-        });
-        return btn;
-      }
-    }
-    
   ];
   
 
@@ -128,7 +98,7 @@ const Bodega = () => {
     setDataItems
   } = useEditItems(setItems);
 
-  const handleCreateSolicitud = async (cantidad) => {
+  const handleCreateSolicitud = async ({ cantidad, administrador, detalle_solicitud, sede }) => {
     if (!selectedItem?.id) {
       return {
         success: false,
@@ -136,15 +106,22 @@ const Bodega = () => {
       };
     }
 
+    if (!user?.id) {
+      return {
+        success: false,
+        message: 'No se encontró el usuario autenticado para la solicitud.'
+      };
+    }
+
     try {
       const result = await createSolicitud({
         cantidad_solicitud: Number(cantidad),
         id_item_solicitud: Number(selectedItem.id),
-        id_solicitante: 0,
-        id_administrador_solicitud: 0,
-        id_sede_solicitud: 0,
-        detalle_solicitud: '0',
-        estado_solicitud: '0'
+        id_solicitante: Number(user.id),
+        id_administrador_solicitud: Number(administrador),
+        id_sede_solicitud: Number(sede),
+        detalle_solicitud,
+        estado_solicitud: 'Pendiente'
       });
 
       if (result?.success === false) {
@@ -171,7 +148,7 @@ const Bodega = () => {
   };
 
   const handleDeleteItem = async () => {
-    if (!selectedItem || !selectedItem.id) {
+    if (!itemIdToDelete) {
       showErrorAlert('Selección requerida', 'Selecciona primero un item antes de borrar.');
       return;
     }
@@ -182,15 +159,15 @@ const Bodega = () => {
     }
 
     try {
-      const response = await deleteItem(selectedItem.id);
+      const response = await deleteItem(itemIdToDelete);
       if (!response || response.success === false) {
         showErrorAlert('Error', response?.message || 'No se pudo borrar el item');
         return;
       }
 
       showSuccessAlert('¡Eliminado!', 'El item ha sido eliminado correctamente.');
-      setItems((prevItems) => prevItems.filter((item) => item.id !== selectedItem.id));
-      setSelectedItem(null);
+      setItems((prevItems) => prevItems.filter((item) => String(item.id) !== String(itemIdToDelete)));
+      setItemIdToDelete('');
       setDataItems([]);
       await fetchItems();
     } catch (error) {
@@ -198,12 +175,6 @@ const Bodega = () => {
       showErrorAlert('Error', error.message || 'Ocurrió un error al borrar el item');
     }
   }
-
-  const handleSelectionChange = useCallback((selectedItems) => {
-    const item = selectedItems && selectedItems.length > 0 ? selectedItems[0] : null;
-    setSelectedItem(item);
-    setDataItems(selectedItems);
-  }, [setDataItems]);
 
   const filteredItems = items.filter((item) => {
     const name = item?.nombre?.toLowerCase?.() ?? '';
@@ -218,39 +189,72 @@ const Bodega = () => {
   });
 
   return (
-    <div className='main-container'>     
-      <div className='table-container'>       
-        <div className='top-table'>         
-          <h1 className='title-table'>Items</h1>
-        </div>
-        {/*botón para abrir un modal que agregue items al inventario*/}
-        <button onClick={() => setAgregarItemOpen(true)}>
-          Agregar Item
-        </button>
-        <button onClick= {() => handleDeleteItem() }>
-          Borrar Item
-        </button>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '12px 0' }}>
-          <input
-            type='text'
-            value={searchByName}
-            onChange={(e) => setSearchByName(e.target.value)}
-            placeholder='Buscar por nombre'
-            style={{ minWidth: '220px', padding: '8px 10px' }}
-          />
-          <input
-            type='text'
-            value={searchByCode}
-            onChange={(e) => setSearchByCode(e.target.value)}
-            placeholder='Buscar por código'
-            style={{ minWidth: '220px', padding: '8px 10px' }}
-          />
+    <div className='main-container'>
+      <div className='table-container'>
+        <div className='bodega-toolbar'>
+          <div className='bodega-actions-group'>
+            {isAdministrador && (
+              <button className='btn-view-solicitud' onClick={() => setAgregarItemOpen(true)}>
+                Agregar Item
+              </button>
+            )}
+            {isAdministrador && (
+              <>
+                <select
+                  className='bodega-search-input'
+                  value={itemIdToDelete}
+                  onChange={(e) => setItemIdToDelete(e.target.value)}
+                >
+                  <option value="">Seleccione un item</option>
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className='btn-view-solicitud btn-danger'
+                  onClick={() => handleDeleteItem()}
+                  disabled={!itemIdToDelete}
+                >
+                  Borrar Item
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <Table
+          title='Inventario de Bodega'
           data={filteredItems}
           columns={columns}
-          initialSortName='id'
-          onSelectionChange={handleSelectionChange}
+          rowKey='id'
+          emptyMessage='No hay items registrados.'
+          actions={(row) => (
+            <div className='bodega-row-actions'>
+              {isSupervisor && (
+                <button
+                  className='btn-view-solicitud'
+                  onClick={() => {
+                    setSelectedItem(row);
+                    setIsSolicitarModalOpen(true);
+                  }}
+                >
+                  Solicitar
+                </button>
+              )}
+              <button
+                className='btn-view-solicitud'
+                onClick={() => {
+                  setSelectedItem(row);
+                  if (row?.id) {
+                    navigate(`/item/${row.id}`);
+                  }
+                }}
+              >
+                Ver
+              </button>
+            </div>
+          )}
         />
       </div>
       {/*puede q acá esté mi problema, pues la data con la q trabajo no son users */}
@@ -274,4 +278,4 @@ const Bodega = () => {
   );
 };
 
-export default Bodega
+export default Bodega;

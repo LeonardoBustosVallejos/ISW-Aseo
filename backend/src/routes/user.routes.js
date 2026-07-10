@@ -14,7 +14,7 @@ const router = Router();
 router
   .use(authenticateJwt)
 router
-  .get("/", authorizeRoles(["Administrador"]), getUsers)
+  .get("/", getUsers)
   .get("/detail/", getUser)
   .patch("/detail/", updateUser)
   .delete("/detail/", authorizeRoles(["Administrador"]), deleteUser);

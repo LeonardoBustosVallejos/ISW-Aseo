@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import useDetallesActivos from "@hooks/activos/useDetalles.jsx";
-import '../styles/detalles.css';
+import { getItemSedes } from "@services/itemSede.service.js";
+import { getItems } from "@services/item.service.js";
+import { getSedes } from "@services/clientes.service.js";
+import { Table } from "@components/Tabla2";
+import '@styles/detalles.css';
 import Header from '@components/misc/Header.jsx';
 
 const DetallesCliente = () => {
@@ -10,8 +14,44 @@ const DetallesCliente = () => {
     const location = useLocation();
     
     const [activoSeleccionado, setActivoSeleccionado] = useState(null);
+    const [itemSedes, setItemSedes] = useState([]);
+    const [items, setItems] = useState([]);
+    const [sedes, setSedes] = useState([]);
     const datosSucursal = location.state?.datosSucursal || {};
     const { activosFijos, historial, fechaContrato, loading, error } = useDetallesActivos(sede_id, datosSucursal.id);
+
+    useEffect(() => {
+        const cargarItemSedes = async () => {
+            const [itemSedesData, itemsData, sedesData] = await Promise.all([
+                getItemSedes(),
+                getItems(),
+                getSedes()
+            ]);
+            setItemSedes(Array.isArray(itemSedesData) ? itemSedesData : []);
+            setItems(Array.isArray(itemsData) ? itemsData : []);
+            setSedes(Array.isArray(sedesData) ? sedesData : []);
+        };
+        cargarItemSedes();
+    }, []);
+
+    const itemSedesConNombres = itemSedes.map((itemSede) => {
+        const item = items.find((i) => Number(i.id) === Number(itemSede.id_item));
+        const sede = sedes.find((s) => Number(s.sede_id) === Number(itemSede.id_sede));
+        return {
+            ...itemSede,
+            nombre_item: item?.nombre || 'Item no encontrado',
+            nombre_sede: sede?.nombre_sede || 'Sede no encontrada',
+            direccion_sede: sede?.direccion || 'Dirección no encontrada'
+        };
+    });
+
+    const columnasItemSede = [
+        { field: 'id', header: 'ID' },
+        { field: 'nombre_item', header: 'Item', render: (value) => value },
+        { field: 'nombre_sede', header: 'Sede', render: (value) => value },
+        { field: 'direccion_sede', header: 'Dirección', render: (value) => value },
+        { field: 'cantidad', header: 'Cantidad' },
+    ];
     const agruparActivos = (activos) => {
         const grupos = {};
         activos.forEach(activo => {
@@ -110,8 +150,6 @@ const DetallesCliente = () => {
                                         <li key={mov.movimiento_id} style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #f0f0f0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                                                 <span className="fecha-etiqueta">{formatearFecha(mov.fecha)}</span>
-                                                
-                                                {/* 👇 Renderizamos "Último" de forma fija para el primer elemento */}
                                                 {index === 0 && (
                                                     <span className="badge-ultimo">Último</span>
                                                 )}
@@ -132,6 +170,16 @@ const DetallesCliente = () => {
                     </div>
                 </div>
 
+            </div>
+
+            <div className="info-card" style={{ marginTop: '20px' }}>
+                <Table
+                    title="Items por Sede"
+                    data={itemSedesConNombres}
+                    columns={columnasItemSede}
+                    rowKey="id"
+                    emptyMessage="No hay items asignados a sedes."
+                />
             </div>
 
             {/* Modal */}
