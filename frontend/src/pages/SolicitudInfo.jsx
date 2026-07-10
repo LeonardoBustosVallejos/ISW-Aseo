@@ -5,6 +5,7 @@ import { Modal } from '@components/Modal';
 import useGetStockBodega from '@hooks/solicitudes/useGetStockBodega.jsx';
 import { updateSolicitud } from '@services/solicitud.service.js';
 import { getItemById, updateItem } from '@services/item.service.js';
+import { createItemSede } from '@services/itemSede.service.js';
 import { asignarActivos } from '../services/activofijo.service';
 import { useAuth } from '../context/AuthContext';
 import '@styles/resolverSolicitud.css'; 
@@ -15,6 +16,13 @@ const ResolverSolicitud = () => {
     const { user } = useAuth();
 
     const idTrabajador = user?.id;
+    const rolRaw = user?.rol;
+    const userRole = typeof rolRaw === 'string'
+        ? rolRaw
+        : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
+    const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
+    const isAdministrador = String(userRole).toLowerCase() === 'administrador' || roleId === 1;
+    const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 3;
 
     const [modalActivosOpen, setModalActivosOpen] = useState(false);
     const [modalInsumosOpen, setModalInsumosOpen] = useState(false);
@@ -140,6 +148,13 @@ const ResolverSolicitud = () => {
                 ...item,
                 disponibilidadActual: nuevaDisponibilidad
             });
+            
+            const itemSedeResponse = await createItemSede({
+                id_item: datosSolicitud.id_item_solicitud,
+                id_sede: datosSolicitud.id_sede_solicitud,
+                cantidad: datosSolicitud.cantidad_solicitud
+            });
+            if (!itemSedeResponse?.success) throw new Error('No se pudo registrar el item en la sede');
 
             setEstadoSolicitud('Aceptada');
             setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
@@ -202,7 +217,7 @@ const ResolverSolicitud = () => {
                 <>
                     {datosSolicitud.nombre_cliente || 'Sin Cliente'}
                     <strong>{' | '}</strong>
-                    {datosSolicitud.ubicacion || 'Sin Ubicación'}
+                    {datosSolicitud.nombre_sede || datosSolicitud.ubicacion || 'Sin Ubicación'}
                     <div className="resolver-estado-badge">Estado: {estadoSolicitud || datosSolicitud.estado_solicitud}</div>
                 </>}>
             </Header>
@@ -214,8 +229,16 @@ const ResolverSolicitud = () => {
                     <h3>Requerimiento Original</h3>
                     <ul className="resolver-lista">
                         <li>
-                            <span className="resolver-etiqueta">ID Solicitante</span>
-                            <strong>{datosSolicitud.id_solicitante}</strong>
+                            <span className="resolver-etiqueta">Solicitante</span>
+                            <strong>
+                                {datosSolicitud.nombre_solicitante
+                                    ? `${datosSolicitud.nombre_solicitante} ${datosSolicitud.apellido_paterno_solicitante || ''}`.trim()
+                                    : datosSolicitud.id_solicitante}
+                            </strong>
+                        </li>
+                        <li>
+                            <span className="resolver-etiqueta">Sede</span>
+                            <strong>{datosSolicitud.nombre_sede || datosSolicitud.ubicacion}</strong>
                         </li>
                         <li>
                             <span className="resolver-etiqueta">Item Solicitado (ID)</span>
@@ -238,7 +261,7 @@ const ResolverSolicitud = () => {
 
                 {/* Columna derecha. segun rol */}
                 
-                {idTrabajador === 1 && (
+                {isAdministrador && (
                     <div className="resolver-card">
                         <h3>Resolución Rápida</h3>
 
@@ -326,7 +349,7 @@ const ResolverSolicitud = () => {
                     </div>
                 )}
 
-                {idTrabajador === 3 && (
+                {isSupervisor && (
                     <div className="resolver-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <div style={{ fontSize: '40px', marginBottom: '10px' }}>🏢</div>
