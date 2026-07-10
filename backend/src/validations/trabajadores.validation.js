@@ -111,6 +111,12 @@ export const createTrabajadorBodyValidation = Joi.object({
             "string.empty": "La foto de perfil no puede estar vacía.",
             "any.required": "La URL de la foto de perfil es requerida.",
         }),
+    foto_url: Joi.string()
+            .uri()
+            .optional()
+            .messages({
+                "string.uri": "La foto de perfil debe ser una URL válida."
+            }),
     cv_url: Joi.string()
         .uri()
         .required()

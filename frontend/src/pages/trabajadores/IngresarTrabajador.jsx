@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Header from "@components/misc/Header.jsx";
 import { useGetGrupos } from "@hooks/trabajadores/useGetGrupos.jsx";
 import { useCreateTrabajador } from "@hooks/trabajadores/useCreateTrabajadores.jsx";
+import { useCompetencias } from "@hooks/trabajadores/useCompetencias.jsx"
+import useItems from "@hooks/items/useGetItems.jsx"
 import { useIngresarTrabajadorForm } from "@components/trabajadores/useIngresarTrabajadorForm.jsx";
 import Acordeon from "@components/acordeon";
 import "@styles/ingresarTrabajador.css";
@@ -10,6 +12,7 @@ export default function IngresarTrabajador() {
   // Consumimos el hook de grupos
   const { grupos, loadingGrupos, errorGrupos } = useGetGrupos();
   const { executeCreate, loadingCreate } = useCreateTrabajador();
+  const { items, loadingItems, setItems } = useItems();
   
   // Consumimos el hook del formulario
   const {
@@ -21,6 +24,14 @@ export default function IngresarTrabajador() {
     handleChange,
     handleSubmit
   } = useIngresarTrabajadorForm((formData, resetForm) => executeCreate(formData, resetForm));
+
+  const { 
+  listaCompetencias, 
+  competenciaActual, 
+  setCompetenciaActual, 
+  handleAdd, 
+  handleRemove 
+} = useCompetencias(items, handleChange);
 
   // Estado para controlar qué sección del acordeón está abierta
   const [openSection, setOpenSection] = useState("infoPersonal");
@@ -43,7 +54,7 @@ export default function IngresarTrabajador() {
             required={true}
             onToggle={() => toggleSection("infoPersonal")}
             content={
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px 0" }}>
+              <div className="form-section-content">
                 <label htmlFor="nombres">Nombres</label>
                 <input id="nombres" name="nombres" value={form.nombres} onChange={handleChange} placeholder="Juan Antonio" required />
                 
@@ -54,7 +65,7 @@ export default function IngresarTrabajador() {
                 <input id="apellidoMaterno" name="apellidoMaterno" value={form.apellidoMaterno} onChange={handleChange} placeholder="García" required />
                 
                 <label htmlFor="rut">Rut.</label>
-                <input id="rut" name="rut" value={form.rut} onChange={handleChange} placeholder="12.345.678-9" required />
+                <input id="rut" name="rut" value={form.rut} onChange={handleChange} placeholder="12345678-9" required />
                 
                 <label htmlFor="sexo">Sexo</label>
                 <select id="sexo" name="sexo" value={form.sexo} onChange={handleChange} required>
@@ -77,7 +88,7 @@ export default function IngresarTrabajador() {
             required={true}
             onToggle={() => toggleSection("contacto")}
             content={
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px 0" }}>
+              <div className="form-section-content">
                 <label htmlFor="telefono">Teléfono</label>
                 <input id="telefono" name="telefono" value={form.telefono} onChange={handleChange} placeholder="+56123456789" />
                 
@@ -95,17 +106,39 @@ export default function IngresarTrabajador() {
             required={false}
             onToggle={() => toggleSection("competencias")}
             content={
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px 0" }}>
-                <label htmlFor="competencias">Competencias</label>
-                <select id="competencias" name="competencias" value={form.competencias} onChange={handleChange}>
-                  <option value="">{loadingGrupos ? "Cargando grupos..." : "Seleccione una competencia"}</option>
-                  {/* Nota: Asegúrate de mapear las competencias reales si tu backend las provee por separado */}
-                  {!loadingGrupos && grupos.map((item) => (
-                    <option key={item.grupo_id} value={item.grupo_id}>
-                      {item.nombre}
-                    </option>
-                  ))}
-                </select>
+              <div className="form-section-content">
+                <label htmlFor="competenciasIds">Competencias</label>
+                <div className="competencias-input-group">
+                  <select 
+                    className="select-competencias"
+                    value={competenciaActual} 
+                    onChange={(e) => setCompetenciaActual(e.target.value)}
+                  >
+                    <option value="">{loadingItems ? "Cargando..." : "Seleccione una competencia"}</option>
+                    {!loadingItems && items
+                      .filter(item => !listaCompetencias.includes(item.id.toString()))
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.nombre}
+                        </option>
+                      ))}
+                  </select>
+                  <button className="btn-add-competencia" onClick={handleAdd}>+</button>
+                </div>
+
+                {listaCompetencias.length > 0 && (
+                  <div className="tags-container">
+                    {listaCompetencias.map(id => {
+                      const comp = items.find(i => i.id.toString() === id.toString());
+                      return (
+                        <div key={id} className="competencia-tag">
+                          <span>{comp ? comp.nombre : id}</span>
+                          <button className="btn-remove-tag" onClick={(e) => handleRemove(id, e)}>x</button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             } 
           />
@@ -115,10 +148,10 @@ export default function IngresarTrabajador() {
             title="Documentos" 
             level={0} 
             isOpen={openSection === "documentos"}
-            required={false}
+            required={true}
             onToggle={() => toggleSection("documentos")}
             content={
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px 0" }}>
+              <div className="form-section-content">
                 <label htmlFor="foto">Foto del empleado.</label>
                 <input id="foto" name="foto" type="file" ref={fotoRef} />
                 
@@ -136,36 +169,40 @@ export default function IngresarTrabajador() {
             title="Rol y Grupos" 
             level={0} 
             isOpen={openSection === "rolYGrupos"}
-            required={true}
+            required={false}
             onToggle={() => toggleSection("rolYGrupos")}
             content={
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px 0" }}>
+              <div className="form-section-content">
                 <label htmlFor="rol">Rol.</label>
                 <select id="rol" name="rol" value={form.rol} onChange={handleChange} required >
                     <option value="">Seleccione un Rol</option>            
-                    <option value={3}>Trabajador</option>
-                    <option value={4}>Supervisor</option>
+                    <option value={"Trabajador"}>Trabajador</option>
+                    <option value={"Supervisor"}>Supervisor</option>
                 </select>
 
-                <label htmlFor="grupo_id">Grupo Asignado</label>
-                <select id="grupo_id" name="grupo_id" value={form.grupo_id} onChange={handleChange} required>
-                  <option value="">{loadingGrupos ? "Cargando grupos..." : "Seleccione un grupo"}</option>
-                  {!loadingGrupos && grupos.map((grupo) => (
-                    <option key={grupo.grupo_id} value={grupo.grupo_id}>
-                      {grupo.nombre}
-                    </option>
-                  ))}
-                </select>
-                {errorGrupos && <p style={{ color: "#b91c1c" }}>{errorGrupos}</p>}
+                {form.rol === "Trabajador" && (
+                  <>
+                    <label htmlFor="grupo_id">Grupo Asignado</label>
+                    <select id="grupo_id" name="grupo_id" value={form.grupo_id} onChange={handleChange}>
+                      <option value="">{loadingGrupos ? "Cargando grupos..." : "Seleccione un grupo"}</option>
+                      {!loadingGrupos && grupos.map((grupo) => (
+                        <option key={grupo.grupo_id} value={grupo.grupo_id}>
+                          {grupo.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {errorGrupos && <p className="error-text">{errorGrupos}</p>}
+                  </>
+                )}
               </div>
-            } 
+            }   
           />
 
           {/* BOTÓN DE ENVÍO */}
           <button 
             type="submit" 
+            className="btn-submit"
             disabled={loadingSubmit || loadingCreate}
-            style={{ marginTop: "20px", width: "100%" }}
           >
             {loadingSubmit || loadingCreate ? "Guardando..." : "Guardar"}
           </button>

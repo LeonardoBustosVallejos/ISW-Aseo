@@ -144,6 +144,7 @@ export async function createTrabajadoresController(req, res) {
       if (files.cv && files.cv[0]) {
         body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
       }
+
       if (files.antecedentes && files.antecedentes[0]) {
         body.antecedentes_url = `${req.protocol}://${req.get('host')}/uploads/antecedentes/${files.antecedentes[0].filename}`;
       }
@@ -153,20 +154,21 @@ export async function createTrabajadoresController(req, res) {
       if (body.despedido) {
         body.despedido = body.despedido === "true" || body.despedido === true;
       }
-
       if (body.competenciasIds) {
-      if (typeof body.competenciasIds === "string") {
-        body.competenciasIds = body.competenciasIds.split(",").map(id => parseInt(id.trim(), 10)).filter(Boolean);
-      } else if (Array.isArray(body.competenciasIds)) {
-        body.competenciasIds = body.competenciasIds.map(id => parseInt(id, 10)).filter(Boolean);}
-      } else {
-        body.competenciasIds = [];
+          if (typeof body.competenciasIds === 'string' && body.competenciasIds.trim() === "") {
+              body.competenciasIds = []; 
+          } else {
+              body.competenciasIds = body.competenciasIds.split(',').map(Number);
+          }
       }
-
-    const { error } = createTrabajadorBodyValidation.validate(body);
+      if (!body.competenciasIds) {
+          body.competenciasIds = [];
+      }
+    const { error } = createTrabajadorBodyValidation.validate(body, { abortEarly: false });
 
     if(error) {
-      return handleErrorClient(res, 404, "Error al crear un trabajador", error.message);
+      const errorMessages = error.details.map(err => err.message).join('\n');
+      return handleErrorClient(res, 404, "Error al crear un trabajador", errorMessages);
     }
 
     const edad = calcularEdad(body.nacimiento);
@@ -221,6 +223,10 @@ export async function updateTrabajadorController(req, res) {
     if (files.cv?.[0]) {
       body.cv_url = `${req.protocol}://${req.get('host')}/uploads/cvs/${files.cv[0].filename}`;
     }
+
+    if (files.foto && files.foto[0]) {
+        body.foto_url = `${req.protocol}://${req.get('host')}/uploads/fotos/${files.foto[0].filename}`;
+      }
 
     if (body.competenciasIds) {
       if (typeof body.competenciasIds === "string") {
