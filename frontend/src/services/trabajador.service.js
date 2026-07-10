@@ -101,11 +101,7 @@ export async function updateTrabajador (id, body) {
  * @param {FormData} formData 
  */
 export async function createTrabajador(formData) {
-  // 1. Depuración: Imprimimos la URL y el contenido del FormData
-  console.log("--- DEBUG DE PETICIÓN (createTrabajador) ---");
-  console.log("URL de destino:", axios.defaults.baseURL + "/trabajadores/create/");
-  
-  console.log("Contenido del FormData:");
+
   for (let [key, value] of formData.entries()) {
     console.log(`  [${key}]:`, value);
   }
@@ -115,22 +111,18 @@ export async function createTrabajador(formData) {
       headers: { "Content-Type": "multipart/form-data" }
     });
     
-    console.log("Respuesta exitosa del servidor:", res.data);
     return { 
           success: true, 
           data: res.data 
     };
   } catch (error) {
-    console.error("Error en servicio createTrabajador:", error);
-    
-    // 2. Depuración adicional en caso de error
-    if (error.response) {
-      console.error("Detalles del error (Backend):", error.response.data);
-    }
-    
+    const backendMessage = error.response?.data?.details 
+                        || error.response?.data?.message 
+                        || error.response?.data?.error 
+                        || "Error al intentar crear el trabajador.";
     return { 
       success: false, 
-      message: error.response?.data?.message || "Error al intentar crear el trabajador.", 
+      message: backendMessage, 
     };
   }
 }

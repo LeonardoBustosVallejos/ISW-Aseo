@@ -163,10 +163,11 @@ export async function createTrabajadoresController(req, res) {
       if (!body.competenciasIds) {
           body.competenciasIds = [];
       }
-    const { error } = createTrabajadorBodyValidation.validate(body);
+    const { error } = createTrabajadorBodyValidation.validate(body, { abortEarly: false });
 
     if(error) {
-      return handleErrorClient(res, 404, "Error al crear un trabajador", error.message);
+      const errorMessages = error.details.map(err => err.message).join('\n');
+      return handleErrorClient(res, 404, "Error al crear un trabajador", errorMessages);
     }
 
     const edad = calcularEdad(body.nacimiento);
