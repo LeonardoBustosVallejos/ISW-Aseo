@@ -10,6 +10,8 @@ import Trabajador from "../entity/trabajador.entity.js";
 import { AppDataSource } from "./configDb.js";
 import { encryptPassword } from "../helpers/bcrypt.helper.js";
 import { HOST, PORT } from "./configEnv.js";
+import ActivoFijo from "../entity/activofijo.entity.js";
+import { registrarNuevoActivo } from "../services/activofijo.service.js";
 
 async function createRoles() {
   try {
@@ -229,7 +231,6 @@ async function createTrabajadores() {
         email: "carlos.munoz@gmail.cl",
         rol: 4, 
         sexo: "M",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Limpieza de oficinas, manejo de insumos",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Carlos_Andres.jpg`,
@@ -246,7 +247,6 @@ async function createTrabajadores() {
         email: "maria.soto@gmail.cl",
         rol: 4,
         sexo: "F",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Atención al cliente, orden de bodega",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Maria_Fernanda.jpg`,
@@ -263,7 +263,6 @@ async function createTrabajadores() {
         email: "luis.gonzalez@gmail.cl",
         rol: 4,
         sexo: "M",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Manejo de maquinaria, logística",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Luis_Alberto.png`,
@@ -280,7 +279,6 @@ async function createTrabajadores() {
         email: "camila.herrera@gmail.cl",
         rol: 4,
         sexo: "F",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Recepción, atención telefónica",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Camila_Andrea.png`,
@@ -297,7 +295,6 @@ async function createTrabajadores() {
         email: "jorge.araya@gmail.cl",
         rol: 4,
         sexo: "M",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Mantención, electricidad básica",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Jorge_Luis.jpg`,
@@ -314,7 +311,6 @@ async function createTrabajadores() {
         email: "daniela.contreras@gmail.cl",
         rol: 4,
         sexo: "F",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Inventario, control de stock",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Daniela_Paz.jpg`,
@@ -331,7 +327,6 @@ async function createTrabajadores() {
         email: "ricardo.vega@gmail.cl",
         rol: 4,
         sexo: "M",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Seguridad, supervisión",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Ricardo_Antonio.jpg`,
@@ -348,7 +343,6 @@ async function createTrabajadores() {
         email: "valentina.rios@gmail.cl",
         rol: 4,
         sexo: "F",
-        password: await encryptPassword("trabajador1234"),
         competencias: "Caja, atención de público",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Valentina_Ignacia.png`,
@@ -365,7 +359,6 @@ async function createTrabajadores() {
         email: "sebastian.fuentes@gmail.cl",
         rol: 3,
         sexo: "M",
-        password: await encryptPassword("supervisor1234"),
         competencias: "Transporte, distribución",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Sebastian_Eduardo.jpg`,
@@ -382,12 +375,12 @@ async function createTrabajadores() {
         email: "paula.vargas@gmail.cl",
         rol: 3,
         sexo: "F",
-        password: await encryptPassword("supervisor1234"),
         competencias: "Administración, archivo",
         despedido: false,
         foto_url: `http://${HOST}:${PORT}/uploads/fotos/Paula_Andrea.jpg`,
         cv_url: `http://${HOST}:${PORT}/uploads/cvs/Paula_Andrea.pdf`,
         antecedentes_url: `http://${HOST}:${PORT}/uploads/antecedentes/Paula_Andrea.pdf`,
+        password: await encryptPassword("supervisor1234")
       },
     ];
 
@@ -503,4 +496,77 @@ async function createSolicitudes() {
   }
 }
 
-export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes };
+async function createActivosFijos() {
+  try {
+    const activoRepository = AppDataSource.getRepository(ActivoFijo); 
+    const count = await activoRepository.count();
+    if (count > 0) return;
+
+    const activosData = [
+      {
+        codigo_inventario: "LBL-001",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-002",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-003",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "LBL-004",
+        nombre: "Lavadora Industrial 20kg",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-001",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-002",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-003",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+      {
+        codigo_inventario: "HLR-004",
+        nombre: "Carro Estrujador de 20Lts",
+        estado: "Buen Estado",
+        recepcion_confirmada: false,
+        fecha_ingreso: "2026-07-10"
+      },
+    ];
+
+    await activoRepository.save(activoRepository.create(activosData));
+    console.log("* => Activos Fijos creados exitosamente");
+
+  } catch (error) {
+    console.error("Error al crear activos fijos", error);
+  }
+}
+
+export { createUsers, createClientes, createRoles, createTrabajadores, createContactos, createSedes, createItems, createSolicitudes, createActivosFijos};

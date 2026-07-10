@@ -12,7 +12,6 @@ router
 router
     .post('/register/contactos/:sede_id', authorizeRoles(['Administrador']), registerContactos)
     .patch('/update/contactos', authorizeRoles(['Administrador']), updateContactos)
-    .get('/sedes', getSedes)
 
 
 
