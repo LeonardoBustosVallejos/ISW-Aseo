@@ -24,7 +24,7 @@ const Bodega = () => {
     ? rolRaw
     : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
   const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
-  const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 2;
+  const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 3;
   const isAdministrador = String(userRole).toLowerCase() === 'administrador' || roleId === 1;
 
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
