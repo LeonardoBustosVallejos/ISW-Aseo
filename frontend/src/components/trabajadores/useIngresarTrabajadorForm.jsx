@@ -10,7 +10,7 @@ const initialForm = {
   email: "",
   rol: "",
   sexo: "",
-  competencias: "",
+  competenciasIds: "",
   grupo_id: ""
 };
 
@@ -38,6 +38,7 @@ export function useIngresarTrabajadorForm(onSubmit) {
   };
 
   const handleSubmit = async (e) => {
+console.log("Datos que se están enviando al servidor:", form);
     e.preventDefault();
     setLoadingSubmit(true);
 

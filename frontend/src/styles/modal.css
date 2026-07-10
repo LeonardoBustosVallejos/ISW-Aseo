@@ -100,7 +100,7 @@
     padding: 11px 14px;
     border: none;
     border-radius: 10px;
-    background-color: var(--ubb-azul-principal);
+    background-color: var(--ubb-azul-secundario);
     color: var(--ubb-texto);
     font-weight: 600;
     cursor: pointer;

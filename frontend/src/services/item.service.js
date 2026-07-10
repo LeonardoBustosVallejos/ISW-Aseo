@@ -11,6 +11,18 @@ export async function getItems() {
     }
 }
 
+/*export async function getItems() {
+    try {
+        const response = await axios.get('/item/');
+        // Verifica si la respuesta trae un objeto 'data' o si es el array directo
+        const items = response.data.data || response.data; 
+        return items.map(formatItemData);
+    } catch (error) {
+        console.error("Error al obtener items:", error);
+        return []; // Retorna un array vacío para que el componente no explote
+    }
+} */
+
 export async function getItemById(id) {
     try {
         const { data } = await axios.get('/item/');

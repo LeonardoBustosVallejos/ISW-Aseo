@@ -44,11 +44,6 @@ form select:focus {
   background: #fff;
 }
 
-form input[type="file"] {
-  padding: 8px;
-  background: #eef5fb;
-}
-
 form button {
   margin-top: 12px;
   padding: 11px 14px;
@@ -62,6 +57,119 @@ form button {
 
 form button:hover {
   background: #004a99;
+}
+
+/* 1. El cuadro general (donde va el texto "Ningún archivo seleccionado") */
+form input[type="file"] {
+  padding: 6px;
+  background: #ffffff; 
+  border: 1px solid #bfd0e0;
+  border-radius: 10px;
+  color: #003366;
+  font-size: 0.98rem;
+}
+
+/* 2. El estilo del botón "Seleccionar archivo" */
+form input[type="file"]::file-selector-button {
+  background: #eef5fb; 
+  border: 1px solid #bfd0e0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #003366;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 12px; 
+  transition: background 0.2s ease-in-out;
+}
+
+/* 3. Un efecto sutil al pasar el mouse sobre el botón */
+form input[type="file"]::file-selector-button:hover {
+  background: #d5e5f5; 
+}
+
+/* ========================================================
+   CLASES EXTRAÍDAS DEL JSX
+   ======================================================== */
+
+.form-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.error-text {
+  color: #b91c1c;
+  margin-top: 5px;
+}
+
+.btn-submit {
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* ========================================================
+   NUEVAS CLASES PARA COMPETENCIAS MULTIPLES
+   ======================================================== */
+
+.competencias-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.select-competencias {
+  flex: 1;
+}
+
+.btn-add-competencia {
+  margin-top: 0 !important; /* Anula el margin-top del button general */
+  padding: 0 16px;
+  background: #003366;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.competencia-tag {
+  background: #eef5fb;
+  color: #003366;
+  border: 1px solid #bfd0e0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-remove-tag {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent;
+  color: #b91c1c;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-remove-tag:hover {
+  background: transparent !important;
+  color: #ff0000 !important;
+  transform: scale(1.1);
 }
 
 @media (max-width: 600px) {

@@ -242,7 +242,6 @@ export async function updateTrabajadorService(id, body) {
         if (Object.prototype.hasOwnProperty.call(body, "grupo_id")) {
             const sedeRepository = AppDataSource.getRepository(Sede);
 
-            // 1. Si el trabajador YA tenía un grupo y una sede, le RESTAMOS 1 a esa sede vieja porque se va
             if (trabajadorFound.grupoAsignado && trabajadorFound.grupoAsignado.sedeAsignada) {
                 const sedeVieja = trabajadorFound.grupoAsignado.sedeAsignada;
                 sedeVieja.personalAsignado = Math.max(0, sedeVieja.personalAsignado - 1);
@@ -257,7 +256,6 @@ export async function updateTrabajadorService(id, body) {
                 
                 trabajadorFound.grupoAsignado = grupoObj;
 
-                // 2. Si el NUEVO grupo tiene una sede asignada, le SUMAMOS 1 al contador de esa sede nueva
                 if (grupoObj.sedeAsignada) {
                     const sedeNueva = grupoObj.sedeAsignada;
                     sedeNueva.personalAsignado = (sedeNueva.personalAsignado || 0) + 1;
@@ -270,7 +268,7 @@ export async function updateTrabajadorService(id, body) {
             const nuevosItems = await itemRepository.findByIds(body.competenciasIds);
             trabajadorFound.competencias = nuevosItems;
         }
-        //if (body.foto_url) trabajadorFound.foto_url = body.foto_url;
+        if (body.foto_url) trabajadorFound.foto_url = body.foto_url;
         if (body.antecedentes_url) trabajadorFound.antecedentes_url = body.antecedentes_url;
         if (body.cv_url) trabajadorFound.cv_url = body.cv_url;
 
@@ -426,10 +424,14 @@ export async function createTrabajadoresService(trabajadoresData) {
         const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: email }] })
         if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
 
-        //verificar si los items existen
+        // verificar si los items existen
         let asignarItems = [];
         if (competenciasIds && competenciasIds.length > 0) {
             asignarItems = await itemRepository.findByIds(competenciasIds);
+
+            if (asignarItems.length !== competenciasIds.length) {
+                return [null, "Una o más competencias especificadas no existen en el sistema."];
+            }
         }
 
         const newTrabajador = TrabajadoresRepository.create({
@@ -756,7 +758,6 @@ export async function deleteGrupoService(grupo_id) {
                 }
                 await manager.save(Trabajador, grupo.miembros);
 
-                // 3. Devolvemos los cupos liberados a la sede correspondiente
                 if (grupo.sedeAsignada) {
                     const sede = grupo.sedeAsignada;
                     sede.personalAsignado = Math.max(0, sede.personalAsignado - cantidadMiembrosALiberar);
@@ -764,7 +765,6 @@ export async function deleteGrupoService(grupo_id) {
                 }
             }
 
-            // 4. Finalmente, eliminamos el grupo de forma física o lógica según tu esquema
             await gruposRepoTx.remove(grupo);
         });
 

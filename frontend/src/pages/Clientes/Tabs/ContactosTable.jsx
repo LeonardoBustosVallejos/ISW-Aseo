@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ContactRound, UserRoundPlus } from "lucide-react";
 import { formatDate, formatDateTime } from "../../../helpers/formatDate";
 
-export default function ContactosTable({ contactos }) {
+export default function ContactosTable({ contactos, noTitle = false }) {
     const [open, setOpen] = useState(false)
     const [selected, setSelected] = useState(
         {
@@ -21,7 +21,7 @@ export default function ContactosTable({ contactos }) {
     return (
 
         <Table
-            title='Contactos'
+            title={noTitle ? '' : 'Contactos'}
             emptyMessage="No existen contactos"
             rowKey={'contacto_id'}
             data={contactos}

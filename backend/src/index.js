@@ -21,6 +21,7 @@ import {
         createSolicitudes,
        } from "./config/initialSetup.js";
 import { passportJwtSetup } from "./auth/passport.auth.js";
+import { iniciarCronContratos } from "./cron/contratoCron.js";
 
 
 
@@ -88,6 +89,7 @@ async function setupServer() {
 async function setupAPI() {
   try {
     await connectDB();
+    await iniciarCronContratos();
     await setupServer();
     await createRoles();
     await createClientes();

@@ -1,0 +1,502 @@
+/* ==========================================================================
+   Contenedor Principal y Títulos
+   ========================================================================== */
+.contenido-asignacion {
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #333333;
+  background-color: #ffffff;
+}
+
+.contenido-asignacion h2 {
+  font-size: 1.8rem;
+  margin-bottom: 24px;
+  color: var(--ubb-azul-principal);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 10px;
+}
+
+/* Filtros y Búsqueda */
+.filtros-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+/* ==========================================================================
+   Layout de Dos Columnas (Estructura Base)
+   ========================================================================== */
+.columnas-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.columna-lista-trabajadores {
+  flex: 1;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.columna-detalle {
+  flex: 1;
+  position: sticky;
+  top: 20px;
+}
+
+/* ==========================================================================
+   Lista y Tarjetas de Trabajadores (Izquierda)
+   ========================================================================== */
+.lista-trabajadores {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tarjeta-trabajador {
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease-in-out;
+}
+
+.tarjeta-trabajador:hover {
+  border-color: var(--ubb-azul-hover);
+  background-color: var(--ubb-fondo);
+  transform: translateY(-1px);
+}
+
+.tarjeta-trabajador.seleccionado {
+  border-color: var(--ubb-azul-principal);
+  background-color: #eef7ff;
+  box-shadow: 0 0 0 1px var(--ubb-azul-principal), 0 4px 6px -1px rgba(0, 51, 102, 0.1);
+}
+
+.tarjeta-trabajador p {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #555555;
+  margin: 4px 0 0 0;
+}
+
+.tarjeta-trabajador p:first-child {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--ubb-azul-principal);
+  margin-top: 0;
+}
+
+/* ==========================================================================
+   Ficha de Detalle e Inputs (Derecha)
+   ========================================================================== */
+.ficha-trabajador {
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.ficha-trabajador p {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #444444;
+}
+
+.ficha-trabajador p strong {
+  color: var(--ubb-azul-active);
+}
+
+/* Foto de perfil */
+.contenedor-foto-perfil {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.foto-perfil-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 10%;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ccc;
+}
+
+.foto-perfil-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 10%;
+  background-color: #eee;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+/* Campos del Formulario Modales e Inputs */
+.campo-editable {
+  margin-top: 18px;
+}
+
+.campo-editable label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ubb-azul-active);
+  font-size: 0.9rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #444444;
+  background-color: var(--ubb-fondo);
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--ubb-azul-principal);
+  background-color: #ffffff;
+}
+
+/* Documentos */
+.documentosAdjuntos {
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 5px;
+}
+
+.documento-item {
+  margin-bottom: 10px;
+}
+
+.documento-item-sm {
+  margin-bottom: 5px;
+}
+
+.documento-label {
+  font-weight: bold;
+  display: block;
+}
+
+/* Historial Desvinculaciones */
+.historial-container {
+  padding: 10px;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historial-item {
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border-left: 4px solid #0011ff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.historial-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.historial-item-title {
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.historial-item-date {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.historial-item-text {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.historial-item-link-container {
+  margin-top: 8px;
+}
+
+.historial-item-link {
+  font-size: 0.85rem;
+  color: #162a55;
+  text-decoration: underline;
+}
+
+.historial-no-records {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Botones de acción del sistema */
+.contenedor-boton-editar {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.btn-editar-trabajador {
+  padding: 8px 16px;
+  background-color: #0011ff; /* Sustituido por el valor inline para mantener apariencia */
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-editar-trabajador:hover {
+  background-color: var(--ubb-azul-hover);
+}
+
+.btn-documento {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 6px 12px;
+  background-color: var(--ubb-azul-secundario);
+  color: var(--ubb-texto);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.btn-documento:hover {
+  background-color: var(--ubb-azul-hover);
+}
+
+/* Acciones Flotantes (Botones inferior derecha) */
+.contenedor-acciones-flotantes {
+  position: absolute;
+  bottom: 3px;
+  right: 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-despedir {
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-despedir:hover {
+  transform: scale(1.15);
+}
+
+.btn-recontratar {
+  background: transparent;
+  border: none;
+  color: #16a34a;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-recontratar:hover {
+  transform: scale(1.15);
+}
+
+/* Botones y contenedores de Paginación */
+.paginacion-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+  padding: 10px;
+}
+
+.paginacion-controles {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.paginacion-btn {
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  background-color: transparent;
+  color: #333;
+  font-weight: normal;
+  transition: all 0.2s ease;
+}
+
+.paginacion-btn.activa {
+  background-color: #dbdbdb !important;
+  color: #333 !important;
+  font-weight: bold;
+}
+
+.paginacion-btn:hover:not(:disabled) {
+  background-color: #eee; /* Añadido pequeño hover para accesibilidad */
+}
+
+.paginacion-flecha {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px 8px;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.paginacion-flecha:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Modales (Formularios internos)
+   ========================================================================== */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+.modal-form-despedir {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 15px;
+}
+
+.modal-label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.modal-textarea {
+  width: 100%;
+  height: 100px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+
+.modal-file-input {
+  width: 100%;
+  padding: 4px;
+}
+
+.modal-error {
+  color: red;
+  margin: 0;
+}
+
+.modal-success {
+  color: green;
+  margin: 0;
+}
+
+.modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-cancelar {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: transparent;
+  cursor: pointer;
+}
+
+.btn-guardar {
+  padding: 6px 12px;
+  background-color: #0011ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-confirmar-despido {
+  padding: 6px 12px;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Estados Informativos (Carga, Errores, Mensaje Inicial)
+   ========================================================================== */
+.sin-seleccion {
+  text-align: center;
+  color: #666666;
+  font-style: italic;
+  padding: 40px 20px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background-color: var(--ubb-fondo);
+  margin: 0;
+}
+
+.error-msg {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}

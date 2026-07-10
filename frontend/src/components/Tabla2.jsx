@@ -11,7 +11,7 @@ import { formatDate, formatDateTime } from "../helpers/formatDate";
  * @param {*} param0 
  * @returns 
  */
-export function Table({ emptyMessage, rowKey, title, columns, data, renderExpanded, actions }) {
+export function Table({ emptyMessage, rowKey, title, columns, data, renderExpanded, actions, noExpand = false, selectable = false, selectedRows = [], onSelectionChange }) {
     const [expanded, setExpanded] = useState(null);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -54,7 +54,46 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
         }
 
     }
+    const isRowSelected = (row) => {
+        const selected = selectedRows.some(
+            selected => selected[rowKey] === row[rowKey]
+        );
 
+
+        return selected;
+    };
+
+    const handleSelectRow = (row) => {
+        if (!onSelectionChange) return;
+
+        const alreadySelected = isRowSelected(row);
+        let newSelection;
+
+        if (alreadySelected) {
+            newSelection = selectedRows.filter(selected => selected[rowKey] !== row[rowKey]);
+        } else {
+            newSelection = [...selectedRows, row];
+        }
+
+        onSelectionChange(newSelection);
+    };
+
+    const handleSelectAllPage = (pageData) => {
+        if (!onSelectionChange) return;
+
+        const allPageSelected = pageData.every(row => isRowSelected(row));
+        let newSelection;
+
+        if (allPageSelected) {
+            const pageKeys = pageData.map(row => row[rowKey]);
+            newSelection = selectedRows.filter(selected => !pageKeys.includes(selected[rowKey]));
+        } else {
+            const missingRows = pageData.filter(row => !isRowSelected(row));
+            newSelection = [...selectedRows, ...missingRows];
+        }
+
+        onSelectionChange(newSelection);
+    };
     const filteredData = data.filter(row => {
 
         const matchesSearch = columns.some(col =>
@@ -112,6 +151,10 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
             (page - 1) * rowsPerPage,
             page * rowsPerPage
         );
+
+    const isAllPageSelected = paginatedData.length > 0 && paginatedData.every(row => isRowSelected(row));
+
+
     return (
         <div className="table-card">
             <Header title={title}>
@@ -131,6 +174,15 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
                     <thead>
 
                         <tr className="table-head">
+                            {selectable && (
+                                <th style={{ width: '40px', textAlignment: 'center' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllPageSelected}
+                                        onChange={() => handleSelectAllPage(paginatedData)}
+                                    />
+                                </th>
+                            )}
                             <th></th>
                             {columns.map((col) => (
                                 <th
@@ -181,76 +233,88 @@ export function Table({ emptyMessage, rowKey, title, columns, data, renderExpand
                         ) :
 
 
-                            (paginatedData.map(row => (
+                            (paginatedData.map(row => {
 
-                                <Fragment key={row[rowKey]}>
-                                    <tr>
-                                        <td>
-                                            <ChevronRightCircle
-                                                className={
-                                                    expanded === row[rowKey]
-                                                        ? "table-arrow open"
-                                                        : "table-arrow"
-                                                }
-                                                onClick={() =>
-                                                    setExpanded(
-                                                        expanded === row[rowKey]
-                                                            ? null
-                                                            : row[rowKey]
-                                                    )
-                                                }
-                                            />
+                                return (
 
-                                        </td>
-
-                                        {columns.map(col => (
-
-                                            <td key={col.field}>
-                                                {col.render
-                                                    ? col.render(row[col.field], row)
-                                                    :
-
-                                                    esFecha(row[col.field]) ? formatDateTime(row[col.field])
-                                                        : row[col.field]
-                                                }
-                                            </td>
-
-                                        ))}
-                                        {actions && (
-
+                                    <Fragment key={row[rowKey]}>
+                                        <tr>
+                                            {selectable && (
+                                                <td style={{ textAlignment: 'center' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isRowSelected(row)}
+                                                        onChange={() => handleSelectRow(row)}
+                                                    />
+                                                </td>
+                                            )}
                                             <td>
-
-                                                {actions?.(row)}
+                                                <ChevronRightCircle
+                                                    className={
+                                                        `${expanded === row[rowKey]
+                                                            ? "table-arrow open"
+                                                            : "table-arrow"} ${noExpand && 'oculto'}`
+                                                    }
+                                                    onClick={() =>
+                                                        setExpanded(
+                                                            expanded === row[rowKey] && !noExpand
+                                                                ? null
+                                                                : row[rowKey]
+                                                        )
+                                                    }
+                                                />
 
                                             </td>
-                                        )}
-                                    </tr>
 
-                                    {expanded === row[rowKey] && (
+                                            {columns.map(col => (
 
-                                        <tr className="expanded-row">
+                                                <td key={col.field}>
+                                                    {col.render
+                                                        ? col.render(row[col.field], row)
+                                                        :
 
-                                            <td className="expanded-cell"
-                                                colSpan={
-                                                    columns.length +
-                                                    1 +
-                                                    (actions ? 1 : 0)
-                                                }>
+                                                        esFecha(row[col.field]) ? formatDateTime(row[col.field])
+                                                            : row[col.field]
+                                                    }
+                                                </td>
 
-                                                <div className="expanded-content">
+                                            ))}
+                                            {actions && (
 
-                                                    {renderExpanded?.(row)}
+                                                <td>
 
-                                                </div>
-                                            </td>
+                                                    {actions?.(row)}
 
+                                                </td>
+                                            )}
                                         </tr>
 
-                                    )}
+                                        {expanded === row[rowKey] && (
 
-                                </Fragment>
+                                            <tr className="expanded-row">
 
-                            )))
+                                                <td className="expanded-cell"
+                                                    colSpan={
+                                                        columns.length +
+                                                        1 +
+                                                        (actions ? 1 : 0)
+                                                    }>
+
+                                                    <div className="expanded-content">
+
+                                                        {renderExpanded?.(row)}
+
+                                                    </div>
+                                                </td>
+
+                                            </tr>
+
+                                        )}
+
+                                    </Fragment>
+
+                                )
+                            }))
 
                         }
 

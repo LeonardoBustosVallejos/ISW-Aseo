@@ -101,18 +101,28 @@ export async function updateTrabajador (id, body) {
  * @param {FormData} formData 
  */
 export async function createTrabajador(formData) {
+
+  for (let [key, value] of formData.entries()) {
+    console.log(`  [${key}]:`, value);
+  }
+
   try {
     const res = await axios.post("/trabajadores/create", formData, {
       headers: { "Content-Type": "multipart/form-data" }
     });
+    
     return { 
           success: true, 
-          data: res.data };
+          data: res.data 
+    };
   } catch (error) {
-    console.error("Error en servicio createTrabajador:", error);
+    const backendMessage = error.response?.data?.details 
+                        || error.response?.data?.message 
+                        || error.response?.data?.error 
+                        || "Error al intentar crear el trabajador.";
     return { 
       success: false, 
-      message: error.response?.data?.message || "Error al intentar crear el trabajador." 
+      message: backendMessage, 
     };
   }
 }
