@@ -56,7 +56,7 @@ const TrabajadorSchema = new EntitySchema({
       type: "varchar",
       length: 255,
       nullable: true,
-    },*/
+    },
     foto_url: {
       type: "varchar",
       length: 255,
