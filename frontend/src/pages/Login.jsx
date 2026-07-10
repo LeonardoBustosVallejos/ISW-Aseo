@@ -115,7 +115,7 @@ const LoginForm = () => {
                 >
                     Ingresar
                 </button>
-                <button
+                {/*<button
                     type="submit"
                     className="login-button"
                     style={{ backgroundColor: 'gold' }}
@@ -125,7 +125,7 @@ const LoginForm = () => {
                     }}
                 >
                     Ingresar como Administrador
-                </button>
+                </button>*/}
             </form>
         </main>
     );
