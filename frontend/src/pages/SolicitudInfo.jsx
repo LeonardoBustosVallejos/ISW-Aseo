@@ -5,6 +5,7 @@ import { Modal } from '@components/Modal';
 import useGetStockBodega from '@hooks/solicitudes/useGetStockBodega.jsx';
 import { updateSolicitud, marcarSolicitudComoRecibida } from '@services/solicitud.service.js';
 import { getItemById, updateItem } from '@services/item.service.js';
+import { createItemSede } from '@services/itemSede.service.js';
 import { asignarActivos, confirmarRecepcion, getHistorialSede } from '../services/activofijo.service.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import '@styles/resolverSolicitud.css'; 
@@ -15,8 +16,7 @@ const ResolverSolicitud = () => {
     const { user } = useAuth();
 
     const idTrabajador = user?.id;
-    const rolId = Number(user?.rol_id || user?.rol?.id);
-    const datosSolicitud = location.state?.datosSolicitud;
+
     const [modalActivosOpen, setModalActivosOpen] = useState(false);
     const [modalInsumosOpen, setModalInsumosOpen] = useState(false);
     const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
@@ -142,6 +142,38 @@ const ResolverSolicitud = () => {
         setModalActivosOpen(false);
     };
 
+    const handleAcceptSolicitud = async () => {
+        if (!datosSolicitud?.id_solicitud) return;
+        setIsSubmitting(true);
+        setActionMessage({ type: '', text: '' });
+
+        try {
+            const solicitudResponse = await updateSolicitud(datosSolicitud.id_solicitud, {
+                ...datosSolicitud,
+                estado_solicitud: 'Aceptada'
+            });
+
+            if (!solicitudResponse?.success) throw new Error('No se pudo aceptar la solicitud');
+
+            const itemResponse = await getItemById(datosSolicitud.id_item_solicitud);
+            if (!itemResponse?.success) throw new Error('No se pudo obtener el item');
+
+            const item = itemResponse.data;
+            const nuevaDisponibilidad = Math.max(0, item.disponibilidadActual - datosSolicitud.cantidad_solicitud);
+            await updateItem(datosSolicitud.id_item_solicitud, {
+                ...item,
+                disponibilidadActual: nuevaDisponibilidad
+            });
+
+            setEstadoSolicitud('Aceptada');
+            setActionMessage({ type: 'success', text: 'Solicitud aceptada correctamente.' });
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleRejectSolicitud = async () => {
         if (!datosSolicitud?.id_solicitud) return;
         setIsSubmitting(true);
@@ -223,7 +255,7 @@ const ResolverSolicitud = () => {
                 <>
                     {datosSolicitud.nombre_cliente || 'Sin Cliente'}
                     <strong>{' | '}</strong>
-                    {datosSolicitud.ubicacion || 'Sin Ubicación'}
+                    {datosSolicitud.nombre_sede || datosSolicitud.ubicacion || 'Sin Ubicación'}
                     <div className="resolver-estado-badge">Estado: {estadoSolicitud || datosSolicitud.estado_solicitud}</div>
                 </>}>
             </Header>
@@ -234,8 +266,16 @@ const ResolverSolicitud = () => {
                     <h3>Requerimiento Original</h3>
                     <ul className="resolver-lista">
                         <li>
-                            <span className="resolver-etiqueta">ID Solicitante</span>
-                            <strong>{datosSolicitud.id_solicitante}</strong>
+                            <span className="resolver-etiqueta">Solicitante</span>
+                            <strong>
+                                {datosSolicitud.nombre_solicitante
+                                    ? `${datosSolicitud.nombre_solicitante} ${datosSolicitud.apellido_paterno_solicitante || ''}`.trim()
+                                    : datosSolicitud.id_solicitante}
+                            </strong>
+                        </li>
+                        <li>
+                            <span className="resolver-etiqueta">Sede</span>
+                            <strong>{datosSolicitud.nombre_sede || datosSolicitud.ubicacion}</strong>
                         </li>
                         <li>
                             <span className="resolver-etiqueta">Item Solicitado (ID)</span>
@@ -256,8 +296,9 @@ const ResolverSolicitud = () => {
                     </ul>
                 </div>
 
-                {/* Columna derecha (ADMIN) */}
-                {rolId === 1 && (
+                {/* Columna derecha. segun rol */}
+                
+                {idTrabajador === 1 && (
                     <div className="resolver-card">
                         <h3>Resolución Rápida</h3>
 
@@ -343,8 +384,7 @@ const ResolverSolicitud = () => {
                     </div>
                 )}
 
-                {/* Columna derecha (SUPERVISOR) */}
-                {rolId === 3 && (
+                {idTrabajador === 3 && (
                     <div className="resolver-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <div style={{ fontSize: '40px', marginBottom: '10px' }}>🏢</div>
