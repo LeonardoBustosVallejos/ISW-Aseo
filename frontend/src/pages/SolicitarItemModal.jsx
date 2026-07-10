@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import '@styles/AgregarItemModal.css';
+import { getUsers } from '../services/user.service.js';
+import { getSedes } from '../services/clientes.service.js';
 
 const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
   const [cantidad, setCantidad] = useState('');
@@ -7,7 +9,10 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
   const [detalleSolicitud, setDetalleSolicitud] = useState('');
   const [idSedeSolicitud, setIdSedeSolicitud] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [administradores, setAdministradores] = useState([]);
+  const [sedes, setSedes] = useState([]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -17,6 +22,69 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
       setIdSedeSolicitud('');
       setMessage({ type: '', text: '' });
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    const cargarOpciones = async () => {
+      setIsLoadingOptions(true);
+      try {
+        const [usuariosResponse, sedesResponse] = await Promise.all([
+          getUsers(),
+          getSedes()
+        ]);
+
+        if (!isMounted) return;
+
+        const usuarios = Array.isArray(usuariosResponse)
+          ? usuariosResponse
+          : usuariosResponse?.data || usuariosResponse?.data?.data || [];
+
+        const usuariosParaSeleccion = (Array.isArray(usuarios) ? usuarios : [])
+                  .filter((usuario) => {
+            const rolRaw = usuario?.rol;
+            const rolNombre = typeof rolRaw === 'string'
+              ? rolRaw
+              : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || usuario?.rolNombre || usuario?.nombreRol || '';
+            const rolId = Number(
+              rolRaw?.id ?? rolRaw?.rol_id ?? rolRaw?.role_id ?? usuario?.rol_id ?? usuario?.role_id ?? usuario?.rolId ?? 0
+            );
+            return String(rolNombre).trim().toLowerCase() === 'administrador' || rolId === 1;
+          })
+          .map((usuario) => ({
+            id: usuario?.id,
+            nombre: usuario?.nombreCompleto || usuario?.nombre || usuario?.email || `Usuario ${usuario?.id}`
+          }))
+          .filter((usuario) => usuario.id)
+          .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
+
+        setAdministradores(usuariosParaSeleccion);
+
+        const sedesList = (Array.isArray(sedesResponse) ? sedesResponse : [])
+          .map((sede) => ({
+            id: sede?.sede_id ?? sede?.id,
+            nombre: sede?.nombre_sede || sede?.nombre || sede?.name || `Sede ${sede?.sede_id ?? sede?.id}`
+          }))
+          .filter((sede) => sede.id)
+          .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' }));
+
+        setSedes(sedesList);
+      } catch (error) {
+        console.error('Error cargando opciones del modal:', error);
+        setAdministradores([]);
+        setSedes([]);
+      } finally {
+        if (isMounted) setIsLoadingOptions(false);
+      }
+    };
+
+    cargarOpciones();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -54,7 +122,7 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
     try {
       const result = await onSubmit({
         cantidad: cantidadNumerica,
-        dministrador: idAdministradorNumerico,
+        administrador: idAdministradorNumerico,
         detalle_solicitud: detalleTrim,
         sede: idSedeNumerica
       });
@@ -99,18 +167,21 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
               style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             />
 
-            <label htmlFor="administrador-solicitud">ID administrador</label>
-            <input
+            <label htmlFor="administrador-solicitud">Administrador</label>
+            <select
               id="administrador-solicitud"
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Ingrese el id del administrador"
               value={idAdministradorSolicitud}
               onChange={(e) => setIdAdministradorSolicitud(e.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || isLoadingOptions}
               style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-            />
+            >
+              <option value="">Seleccione un administrador</option>
+              {administradores.map((administrador) => (
+                <option key={administrador.id} value={administrador.id}>
+                  {administrador.nombre}
+                </option>
+              ))}
+            </select>
 
             <label htmlFor="detalle-solicitud">Detalle de la solicitud</label>
             <textarea
@@ -123,18 +194,21 @@ const SolicitarItemModal = ({ isOpen, onClose, onSubmit, item }) => {
               style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', resize: 'vertical' }}
             />
 
-            <label htmlFor="sede-solicitud">ID sede</label>
-            <input
+            <label htmlFor="sede-solicitud">Sede</label>
+            <select
               id="sede-solicitud"
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Ingrese el id de la sede"
               value={idSedeSolicitud}
               onChange={(e) => setIdSedeSolicitud(e.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || isLoadingOptions}
               style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-            />
+            >
+              <option value="">Seleccione una sede</option>
+              {sedes.map((sede) => (
+                <option key={sede.id} value={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               <button type="submit" className="btn btn-primary" disabled={isLoading}>

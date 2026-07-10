@@ -35,7 +35,7 @@ export async function getUserService(query, manager = null) {
       return [null, "Debe proporcionar al menos un criterio de búsqueda"];
     }
 
-    const userFound = await userRepository.findOne({ where });
+    const userFound = await userRepository.findOne({ where, relations: ["rol"] });
 
     if (!userFound) return [null, "Usuario no encontrado"];
 
@@ -72,7 +72,7 @@ export async function getUserByService(query, manager = null) {
       return [null, "Debe proporcionar al menos un criterio de búsqueda"];
     }
 
-    const userFound = await userRepository.findOne({ where });
+    const userFound = await userRepository.findOne({ where, relations: ["rol"] });
 
     if (!userFound) return [null, "Usuario no encontrado"];
 
@@ -90,7 +90,7 @@ export async function getUsersService(manager = null) {
     const userRepository = manager ?
       manager.getRepository(User) : AppDataSource.getRepository(User);
 
-    const users = await userRepository.find();
+    const users = await userRepository.find({ relations: ["rol"] });
 
     if (!users || users.length === 0) return [null, "No hay usuarios"];
 

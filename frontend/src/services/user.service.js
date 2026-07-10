@@ -4,10 +4,12 @@ import { formatUserData } from '@helpers/formatData.js';
 export async function getUsers() {
     try {
         const { data } = await axios.get('/user/');
-        const formattedData = data.data.map(formatUserData);
-        return formattedData;
+        const payload = Array.isArray(data) ? data : data?.data ?? [];
+        const users = Array.isArray(payload) ? payload : [];
+        return users.map(formatUserData);
     } catch (error) {
-        return error.response.data;
+        console.error('Error al obtener usuarios:', error);
+        return [];
     }
 }
 
