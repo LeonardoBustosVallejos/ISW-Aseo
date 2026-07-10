@@ -35,15 +35,17 @@ const Bodega = () => {
   const [itemIdToDelete, setItemIdToDelete] = useState('');
 
   //tabla que muestra los datos de los items que existen en bodega
+  const mostrarValor = (valor) => (valor === null || valor === undefined || valor === '' ? '-' : valor);
+
   const columns = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombre', header: 'Nombre' },
-    { field: 'codigo', header: 'Código' },
-    { field: 'tipo', header: 'Tipo' },
+    { field: 'id', header: 'ID', render: (value) => mostrarValor(value) },
+    { field: 'nombre', header: 'Nombre', render: (value) => mostrarValor(value) },
+    { field: 'codigo', header: 'Código', render: (value) => mostrarValor(value) },
+    { field: 'tipo', header: 'Tipo', render: (value) => mostrarValor(value) },
     {
       field: 'disponibilidadActual',
       header: 'Disponibles',
-      render: (_, row) => `${row?.disponibilidadActual ?? ''}/${row?.disponibilidadTotal ?? ''}`,
+      render: (_, row) => `${mostrarValor(row?.disponibilidadActual)}/${mostrarValor(row?.disponibilidadTotal)}`,
     },
   ];
   
