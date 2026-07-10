@@ -18,6 +18,14 @@ const Bodega = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, fetchItems, setItems } = useItems();
+
+  const rolRaw = user?.rol;
+  const userRole = typeof rolRaw === 'string'
+    ? rolRaw
+    : rolRaw?.nombre || rolRaw?.rol || rolRaw?.nombreRol || rolRaw?.role || '';
+  const roleId = Number(rolRaw?.id || rolRaw?.rol_id || rolRaw?.role_id || rolRaw);
+  const isSupervisor = String(userRole).toLowerCase() === 'supervisor' || roleId === 2;
+
   const [AgregarItemOpen, setAgregarItemOpen] = useState(false);
   const [isSolicitarModalOpen, setIsSolicitarModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -213,15 +221,17 @@ const Bodega = () => {
           emptyMessage='No hay items registrados.'
           actions={(row) => (
             <div className='bodega-row-actions'>
-              <button
-                className='btn-view-solicitud'
-                onClick={() => {
-                  setSelectedItem(row);
-                  setIsSolicitarModalOpen(true);
-                }}
-              >
-                Solicitar
-              </button>
+              {isSupervisor && (
+                <button
+                  className='btn-view-solicitud'
+                  onClick={() => {
+                    setSelectedItem(row);
+                    setIsSolicitarModalOpen(true);
+                  }}
+                >
+                  Solicitar
+                </button>
+              )}
               <button
                 className='btn-view-solicitud'
                 onClick={() => {
