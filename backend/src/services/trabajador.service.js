@@ -426,10 +426,14 @@ export async function createTrabajadoresService(trabajadoresData) {
         const existingContactoEmail = await contactoRepository.findOne({ where: [{ email: email }] })
         if (existingEmail || existingContactoEmail) return [null, "Email ya en uso"]
 
-        //verificar si los items existen
+        // verificar si los items existen
         let asignarItems = [];
         if (competenciasIds && competenciasIds.length > 0) {
             asignarItems = await itemRepository.findByIds(competenciasIds);
+
+            if (asignarItems.length !== competenciasIds.length) {
+                return [null, "Una o más competencias especificadas no existen en el sistema."];
+            }
         }
 
         const newTrabajador = TrabajadoresRepository.create({

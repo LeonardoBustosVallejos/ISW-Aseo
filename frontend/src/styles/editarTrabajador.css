@@ -7,13 +7,14 @@
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: #333333;
+  background-color: #ffffff;
 }
 
 .contenido-asignacion h2 {
   font-size: 1.8rem;
   margin-bottom: 24px;
-  color: #1e293b;
-  border-bottom: 2px solid #e2e8f0;
+  color: var(--ubb-azul-principal); /* Consistencia de color principal */
+  border-bottom: 2px solid var(--border);
   padding-bottom: 10px;
 }
 
@@ -28,17 +29,17 @@
 
 /* Columna Izquierda: Lista de Trabajadores */
 .columna-lista-trabajadores {
-  flex: 1; /* Ocupa el 50% del ancho */
-  max-height: 75vh; /* Evita que crezca infinitamente hacia abajo */
-  overflow-y: auto;  /* Si hay demasiados trabajadores, añade scroll interno */
+  flex: 1;
+  max-height: 75vh;
+  overflow-y: auto;
   padding-right: 8px;
 }
 
 /* Columna Derecha: Ficha de Detalle */
 .columna-detalle {
-  flex: 1; /* Ocupa el otro 50% del ancho */
+  flex: 1;
   position: sticky;
-  top: 20px; /* Se queda fijo arriba si haces scroll en la lista */
+  top: 20px;
 }
 
 /* ==========================================================================
@@ -55,45 +56,40 @@
 
 .tarjeta-trabajador {
   background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px; /* Adaptado al radio de .table-card */
   padding: 16px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease-in-out;
 }
 
 .tarjeta-trabajador:hover {
-  border-color: #3b82f6;
-  background-color: #f8fafc;
+  border-color: var(--ubb-azul-hover);
+  background-color: var(--ubb-fondo);
   transform: translateY(-1px);
 }
 
-/* Estilo dinámico cuando la tarjeta está seleccionada mediante el clic */
+/* Estilo cuando la tarjeta está seleccionada */
 .tarjeta-trabajador.seleccionado {
-  border-color: #2563eb;
-  background-color: #eff6ff;
-  box-shadow: 0 0 0 1px #2563eb, 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+  border-color: var(--ubb-azul-principal);
+  background-color: #eef7ff; /* Tono celeste claro tomado de la navbar activa */
+  box-shadow: 0 0 0 1px var(--ubb-azul-principal), 0 4px 6px -1px rgba(0, 51, 102, 0.1);
 }
 
 .tarjeta-trabajador p {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.85rem;
-  color: #64748b;
+  color: #555555;
+  margin: 4px 0 0 0;
 }
 
 /* Resaltamos el nombre del trabajador */
 .tarjeta-trabajador p:first-child {
   font-weight: 600;
   font-size: 1.1rem;
-  color: #1e293b;
-}
-
-/* El rol y rut con un tono más suave */
-.tarjeta-trabajador p:nth-child(2),
-.tarjeta-trabajador p:nth-child(3) {
-  color: #64748b;
-  font-size: 0.85rem;
+  color: var(--ubb-azul-principal);
+  margin-top: 0;
 }
 
 /* ==========================================================================
@@ -101,131 +97,144 @@
    ========================================================================== */
 .ficha-trabajador {
   background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
 .ficha-trabajador p {
   margin: 0 0 12px 0;
   font-size: 1rem;
-  color: #334155;
+  color: #444444;
 }
 
 .ficha-trabajador p strong {
-  color: #0f172a;
+  color: var(--ubb-azul-active);
 }
 
-/* Campos del Formulario (Inputs y Textareas) */
+/* Campos del Formulario Modales e Inputs */
 .campo-editable {
   margin-top: 18px;
 }
 
 .campo-editable label {
   display: block;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 6px;
-  color: #475569;
+  color: var(--ubb-azul-active);
   font-size: 0.9rem;
 }
 
-.campo-editable input[type="text"],
-.campo-editable textarea {
+input[type="text"],
+input[type="email"],
+input[type="url"],
+select,
+textarea {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.95rem;
-  color: #334155;
-  background-color: #ffffff;
+  color: #444444;
+  background-color: var(--ubb-fondo);
   box-sizing: border-box;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: all 0.2s;
 }
 
-.campo-editable input[type="text"]:focus,
-.campo-editable textarea:focus {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--ubb-azul-principal);
+  background-color: #ffffff;
 }
 
-.campo-editable textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
+/* Botones de acción del sistema */
+.btn-editar-trabajador {
+  padding: 8px 16px;
+  background-color: var(--ubb-azul-principal);
+  color: var(--ubb-texto);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
 }
 
-/* Box del Historial de Desvinculaciones (TypeORM Relation) */
-.historial-box {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.historial-box h4 {
-  margin: 0 0 12px 0;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.historial-box ul {
-  padding-left: 20px;
-  margin: 0;
-}
-
-.historial-box li {
-  font-size: 0.9rem;
-  color: #475569;
-  margin-bottom: 6px;
-}
-
-.documentosAdjuntos {
-  display: flex;
-  flex-direction: column;
-  justify-content:flex-start;
-}
-
-.documentosAdjuntos h4 {
-  font-size: 1.2rem;
-}
-
-.documentosAdjuntos div{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.btn-editar-trabajador:hover {
+  background-color: var(--ubb-azul-hover);
 }
 
 .btn-documento {
   display: inline-block;
   margin-top: 5px;
   padding: 6px 12px;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--ubb-azul-secundario);
+  color: var(--ubb-texto);
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.9em;
+  font-weight: 500;
   transition: background-color 0.2s ease;
 }
 
 .btn-documento:hover {
-  background-color: #0056b3;
+  background-color: var(--ubb-azul-hover);
 }
 
+/* Botones de Paginación */
+.paginacion-btn {
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background-color: transparent;
+  color: #444444;
+  font-weight: normal;
+  transition: all 0.2s ease;
+}
+
+.paginacion-btn.activa {
+  background-color: var(--ubb-azul-principal) !important;
+  color: var(--ubb-texto) !important;
+  font-weight: bold;
+}
+
+.paginacion-btn:hover:not(:disabled) {
+  background-color: var(--ubb-fondo);
+}
+
+.paginacion-flecha {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px 8px;
+  color: var(--ubb-azul-principal);
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.paginacion-flecha:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
 
 /* ==========================================================================
    Estados Informativos (Carga, Errores, Mensaje Inicial)
    ========================================================================== */
 .sin-seleccion {
   text-align: center;
-  color: #94a3b8;
+  color: #666666;
   font-style: italic;
   padding: 40px 20px;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--border);
   border-radius: 12px;
-  background-color: #f8fafc;
+  background-color: var(--ubb-fondo);
   margin: 0;
 }
 
@@ -234,7 +243,7 @@
   background-color: #fef2f2;
   border: 1px solid #fee2e2;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
   margin-bottom: 16px;
 }

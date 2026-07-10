@@ -1,0 +1,82 @@
+.table-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between; /* Esto empuja la paginación a la izquierda y el select a la derecha */
+    align-items: center;
+    padding: 16px 24px;
+    gap: 16px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pagination button {
+    min-width: 120px; /* Usamos min-width en lugar de anchos fijos contradictorios */
+    height: 34px;
+    padding: 0 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* Separación entre el ícono y el texto */
+    border: none;
+    border-radius: 8px;
+    background: var(--ubb-azul-principal);
+    color: var(--ubb-texto);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Selector corregido para el hover */
+.pagination button:hover:not(:disabled) {
+    background: var(--ubb-azul-hover);
+}
+
+/* Estilo adicional para los botones deshabilitados */
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination button.active {
+    background: var(--ubb-azul-principal);
+    color: white;
+}
+
+.table-actions {
+    display: flex;
+    height: 48px;
+    gap: 2px;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+}
+
+.table-actions button {
+    width: 48px;
+    height: 48px;
+}
+
+
+.pages {
+    border: var(--border) solid;
+    border-radius: 6px;
+    height: 34px;
+    padding: 0 12px;
+    width: auto; /* ¡Esta es la clave! Evita que el selector tome el 100% del ancho */
+    min-width: 80px; /* Un ancho mínimo para que se vea bien */
+    cursor: pointer;
+}
+
+.pages:focus {
+    border-color: var(--ubb-azul-principal);
+    outline: none;
+}
+
+.pages:hover,
+.pages:focus {
+    background-color: var(--ubb-fondo);
+}

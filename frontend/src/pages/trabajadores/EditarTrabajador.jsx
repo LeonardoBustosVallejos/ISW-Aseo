@@ -10,9 +10,9 @@ import Header from "@components/misc/Header.jsx";
 import TrabajadorFilters from "@components/trabajadores/TrabajadorFilters.jsx";
 import { Modal }  from "@components/Modal.jsx";
 import { Trash2, RotateCcwKey  } from "lucide-react";
-import "@styles/asignarTrabajador.css";
+import "@styles/root.css";
+import "@styles/EditarTrabajador.css";
 import "@styles/modal.css";
-
 
 const filtrosPorDefecto = {
   sexo: "",
@@ -268,7 +268,7 @@ export default function Trabajadores() {
             <div style={{ textAlign: "center", marginBottom: "15px" }}>
               <button 
                 onClick={handleOpenEditModal} 
-                className="btn-editar-trabajador" // Puedes darle estilos en asignarTrabajador.css
+                className="btn-editar-trabajador" // Puedes darle estilos en EditarTrabajador.css
                 style={{ padding: "8px 16px", backgroundColor: "#0011ff", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
                 >
                   Editar Datos
@@ -506,7 +506,7 @@ export default function Trabajadores() {
                                 )}
                   <div style={{
                     position: "absolute",
-                    bottom: "15px",
+                    bottom: "3px",
                     right: "20px",
                     display: "flex",
                     justifyContent: "flex-end",

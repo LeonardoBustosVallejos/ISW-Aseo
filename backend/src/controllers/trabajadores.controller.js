@@ -153,16 +153,16 @@ export async function createTrabajadoresController(req, res) {
       if (body.despedido) {
         body.despedido = body.despedido === "true" || body.despedido === true;
       }
-
       if (body.competenciasIds) {
-      if (typeof body.competenciasIds === "string") {
-        body.competenciasIds = body.competenciasIds.split(",").map(id => parseInt(id.trim(), 10)).filter(Boolean);
-      } else if (Array.isArray(body.competenciasIds)) {
-        body.competenciasIds = body.competenciasIds.map(id => parseInt(id, 10)).filter(Boolean);}
-      } else {
-        body.competenciasIds = [];
+          if (typeof body.competenciasIds === 'string' && body.competenciasIds.trim() === "") {
+              body.competenciasIds = []; 
+          } else {
+              body.competenciasIds = body.competenciasIds.split(',').map(Number);
+          }
       }
-
+      if (!body.competenciasIds) {
+          body.competenciasIds = [];
+      }
     const { error } = createTrabajadorBodyValidation.validate(body);
 
     if(error) {

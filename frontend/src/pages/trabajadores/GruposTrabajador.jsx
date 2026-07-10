@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table } from "../../components/Tabla2"; 
 import { getGrupos, createGrupo, updateGrupo, deleteGrupo, getTrabajadores } from '@services/trabajador.service';
 import { Plus, Trash2, Save, UserPlus, X } from 'lucide-react';
+import "@styles/gruposTrabajador.css"
 
 export default function GruposCrud() {
   const [grupos, setGrupos] = useState([]);
@@ -232,7 +233,6 @@ export default function GruposCrud() {
     return (
       <div className="p-6 bg-slate-50/80 rounded-xl border border-slate-200 m-2 text-sm">
         <div className="border-b border-slate-200 pb-2.5 mb-4">
-          <h4 className="font-bold text-slate-800">Gestionar Miembros e Información</h4>
           <p className="text-xs text-slate-500 mt-0.5">Modifique los integrantes o el supervisor del grupo.</p>
         </div>
 
@@ -342,8 +342,7 @@ export default function GruposCrud() {
 
   return (
     <div className="container mx-auto p-4 adaptive-view">
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-bold text-gray-800">Gestión de Cuadrillas y Grupos</h2>
+      <div className="flex justify-end mb-5">
         <button 
           onClick={() => setShowCreate(!showCreate)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold hover:bg-blue-700 shadow-sm"
