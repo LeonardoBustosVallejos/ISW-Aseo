@@ -526,4 +526,4 @@ const ResolverSolicitud = () => {
     );
 };
 
-export default ResolverSolicitud;
+export default Solicitudes;
