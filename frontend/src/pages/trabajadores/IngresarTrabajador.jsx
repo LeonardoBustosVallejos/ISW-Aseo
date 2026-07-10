@@ -180,16 +180,20 @@ export default function IngresarTrabajador() {
                     <option value={"Supervisor"}>Supervisor</option>
                 </select>
 
-                <label htmlFor="grupo_id">Grupo Asignado</label>
-                <select id="grupo_id" name="grupo_id" value={form.grupo_id} onChange={handleChange} required>
-                  <option value="">{loadingGrupos ? "Cargando grupos..." : "Seleccione un grupo"}</option>
-                  {!loadingGrupos && grupos.map((grupo) => (
-                    <option key={grupo.grupo_id} value={grupo.grupo_id}>
-                      {grupo.nombre}
-                    </option>
-                  ))}
-                </select>
-                {errorGrupos && <p className="error-text">{errorGrupos}</p>}
+                {form.rol === "Trabajador" && (
+                  <>
+                    <label htmlFor="grupo_id">Grupo Asignado</label>
+                    <select id="grupo_id" name="grupo_id" value={form.grupo_id} onChange={handleChange}>
+                      <option value="">{loadingGrupos ? "Cargando grupos..." : "Seleccione un grupo"}</option>
+                      {!loadingGrupos && grupos.map((grupo) => (
+                        <option key={grupo.grupo_id} value={grupo.grupo_id}>
+                          {grupo.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {errorGrupos && <p className="error-text">{errorGrupos}</p>}
+                  </>
+                )}
               </div>
             }   
           />
