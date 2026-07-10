@@ -1243,14 +1243,23 @@ export async function getInfoClienteService(clienteData, manager = null) {
             .getMany();
 
         // 5. Aplanar Documentos/Anexos y CALCULAR EL ESTADO ACTUAL
+        const prioridadEstados = [
+            "VIGENTE",
+            "SUSPENDIDO",
+            "ESPERA",
+            "ATRASADO",
+            "CANCELADO",
+            "TERMINADO"
+        ];
+
+
         let estadoActual = "TERMINADO";
 
-        if (data.contratos.some(c => c.estado === "VIGENTE")) {
-            estadoActual = "VIGENTE";
-        } else if (data.contratos.some(c => c.estado === "SUSPENDIDO")) {
-            estadoActual = "SUSPENDIDO";
-        } else if (data.contratos.some(c => c.estado === "ESPERA")) {
-            estadoActual = "ESPERA";
+        for (const estado of prioridadEstados) {
+            if (data.contratos.some(c => c.estado === estado)) {
+                estadoActual = estado;
+                break;
+            }
         }
 
         data.estado = estadoActual;
@@ -1849,7 +1858,7 @@ export async function updateRelacionesContratoYAnexoService(
                 }
 
                 const res = await anexoRepository.save(anexos);
-                console.log('=>Anexos actualizadas');
+                console.log('=>Anexos actualizados');
                 //console.log(res);
 
             }

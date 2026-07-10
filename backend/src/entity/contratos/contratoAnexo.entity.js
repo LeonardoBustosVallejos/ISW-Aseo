@@ -44,7 +44,16 @@ const ContratoAnexoSchema = new EntitySchema({
 
         tipoAnexo: {
             type: "enum",
-            enum: ["RENOVACION", "AUMENTO_PERSONAL", "REDUCCION_PERSONAL", "CAMBIO_MONTO", "SERVICIO_ADICIONAL", "OTRO"],
+            enum: ["RENOVACION",
+                "AUMENTO_PERSONAL",
+                "REDUCCION_PERSONAL",
+                "CAMBIO_MONTO",
+                "SERVICIO_ADICIONAL",
+                'REMOVER_SEDES',
+                "TERMINO",
+                'SUSPENCION',
+                'REANUDACION',
+                "OTRO"],
             default: "OTRO"
         },
         cantidadMaxTrabajadores: {

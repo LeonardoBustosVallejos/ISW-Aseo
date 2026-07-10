@@ -23,7 +23,7 @@ export async function createNuevoContrato(cliente_id, body) {
             }
 
         });
-        console.log(body);
+
         for (const [key, value] of formData.entries()) {
             console.log(key, value);
         }
@@ -42,3 +42,53 @@ export async function createNuevoContrato(cliente_id, body) {
     }
 }
 
+export async function createNuevoAnexo(idContrato, body) {
+    try {
+
+        const formData = new FormData();
+
+        const payload = structuredClone(body);
+
+        payload.anexos = payload.anexos.map(anexo => ({
+            ...anexo,
+            documentos: anexo.documentos.map(doc => {
+                const { file, ...rest } = doc;
+                return rest;
+            })
+        }));
+
+        formData.append(
+            "body",
+            JSON.stringify(payload)
+        );
+
+        body.anexos.forEach(anexo => {
+            anexo.documentos.forEach(doc => {
+
+                if (doc.file) {
+                    formData.append(
+                        doc.fileKey,
+                        doc.file
+                    );
+                }
+
+            });
+        });
+        console.log(body);
+        for (const [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        const response = await axios.post(`/contratos/comercial/register/${idContrato}/anexos`, formData);
+
+        return response.data;
+
+    } catch (error) {
+
+        console.error(error);
+
+        return error.response?.data || {
+            message: "Error de conexión"
+        };
+
+    }
+}

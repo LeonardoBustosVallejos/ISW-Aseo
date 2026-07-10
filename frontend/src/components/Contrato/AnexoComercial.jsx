@@ -74,12 +74,16 @@ export default function AnexoRow({ anexo, index, setFormData, removeAnexo, contr
                                         required
                                     >
                                         <option value="">Seleccionar</option>
-                                        <option value="RENOVACION">RENOVACIÓN</option>
-                                        <option value="AUMENTO_PERSONAL">AUMENTO PERSONAL</option>
-                                        <option value="REDUCCION_PERSONAL">REDUCCIÓN PERSONAL</option>
-                                        <option value="CAMBIO_MONTO">CAMBIO MONTO</option>
-                                        <option value="SERVICIO_ADICIONAL">SERVICIO ADICIONAL</option>
-                                        <option value="OTRO">OTRO</option>
+                                        <option value="RENOVACION">1. RENOVACIÓN</option>
+                                        <option value="AUMENTO_PERSONAL">2. AUMENTO PERSONAL</option>
+                                        <option value="REDUCCION_PERSONAL">3. REDUCCIÓN PERSONAL</option>
+                                        <option value="CAMBIO_MONTO">4. CAMBIO MONTO</option>
+                                        <option value="SERVICIO_ADICIONAL">5. SERVICIO ADICIONAL</option>
+                                        <option value="REMOVER_SEDES" className={`${isUpdate ? '' : 'hidden'}`}>6. REMOVER SEDE(S)</option>
+                                        <option value="SUSPENCION">{isUpdate ? '7' : '6'}. SUSPENCION</option>
+                                        <option value="REANUDACION" className={`${isUpdate ? '' : 'hidden'}`}>8. REANUDACIÓN</option>
+                                        <option value="TERMINO" className={`${isUpdate ? '' : 'hidden'}`}>9. TÉRMINO</option>
+                                        <option value="OTRO">{isUpdate ? '10' : '7'}. OTRO</option>
 
                                     </select>
 
@@ -411,6 +415,7 @@ export function AnexosArray({ anexos, setFormData, anexosPath = ['anexos'], cont
         )}
         {/*Botón de agregar anexo */}
         <AddButton
+            hidden={isUpdate}
             onClick={addAnexo}
             text={'Agregar Anexo'}
         />

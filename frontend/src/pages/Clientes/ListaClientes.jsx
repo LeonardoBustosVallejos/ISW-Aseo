@@ -95,10 +95,12 @@ const ListaClientes = () => {
                     onChange={(e) => setEstadoFiltro(e.target.value)}
                 >
                     <option value="">Todos los estados</option>
+                    <option value="ATRASADO">Atrasado</option>
+                    <option value="CANCELADO">Cancelado</option>
                     <option value="ESPERA">Espera</option>
-                    <option value="VIGENTE">Vigente</option>
                     <option value="SUSPENDIDO">Suspendido</option>
                     <option value="TERMINADO">Terminado</option>
+                    <option value="VIGENTE">Vigente</option>
                 </select>
 
                 <select

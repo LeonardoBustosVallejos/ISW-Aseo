@@ -59,7 +59,10 @@ export const contratoAnexoValidation = Joi.object({
 
     numeroAnexo: Joi.string()
         .max(50)
-        .required(),
+        .required()
+        .messages({
+            'string.empty': 'Entregue un numero de anexo, único para el contrato'
+        }),
 
     fechaInicio: Joi.date()
         .required(),
@@ -108,7 +111,16 @@ export const contratoAnexoValidation = Joi.object({
         ).messages({ "any.only": "El tamaño de instalación inválido." }),
     tipoAnexo: Joi.string()
         .valid(
-            "RENOVACION", "AUMENTO_PERSONAL", "REDUCCION_PERSONAL", "CAMBIO_MONTO", "SERVICIO_ADICIONAL", "OTRO"
+            "RENOVACION",
+            "AUMENTO_PERSONAL",
+            "REDUCCION_PERSONAL",
+            "CAMBIO_MONTO",
+            "SERVICIO_ADICIONAL",
+            'REMOVER_SEDES',
+            'SUSPENCION',
+            "REANUDACION",
+            'TERMINO',
+            "OTRO"
         ).messages({
             "any.only": "El tipo de anexo inválido."
         })

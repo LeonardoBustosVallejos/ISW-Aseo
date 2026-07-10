@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import SedesSelector from "../../../components/Clientes/SedesSelector";
 import { useErrors } from "../../../hooks/errors";
 import DataClienteOFilial from "../../../components/Clientes/DataClienteOFilialForm";
-import { createNuevoContrato } from "../../../services/contratoComercial.service";
+import { createNuevoAnexo, createNuevoContrato } from "../../../services/contratoComercial.service";
 import { showSuccessAlert, showErrorAlert } from '@helpers/sweetAlert.js';
 
 export function puedeAgregarAnexo(estado) { return ["VIGENTE", "SUSPENDIDO", "ESPERA", "ATRASADO"].includes(estado) }
@@ -79,7 +79,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
     const FILIAL_BASE = {
         cliente: {
             nombreCliente: "",
-            rutCliente: ""
+            rutCliente: cliente.rutCliente
         },
 
         sedes: [
@@ -236,7 +236,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
 
 
     const closeModal = () => {
-
+        cleanObject()
         setModal(null);
         setSelectedContrato(null);
 
@@ -251,7 +251,6 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
         setFilialesForm([]);
         setNewFiliales([]);
 
-        setOpenSelectSedes(false);
         setOpenNewSedes(false);
 
         setOpenSelectFiliales(false);
@@ -278,7 +277,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
         setOpenVerifModal(null)
     }
 
-    const submitNewContrato = async () => {
+    const submitNewContrato = async (e) => {
         try {
 
             const body = {
@@ -317,8 +316,9 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
             const response = await createNuevoContrato(body.cliente_id, body)
 
             if (response.status === 'Success') {
-                showSuccessAlert('¡Registrado!', 'Usuario registrado exitosamente.');
+                showSuccessAlert('¡Agregado!', 'Contrato agregado exitosamente.');
                 setTimeout(3000)
+                closeModal()
             } else if (response.status === 'Client error') {
                 console.log(response);
 
@@ -329,7 +329,53 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
         } catch (error) {
 
             console.error(error);
-            showErrorAlert('Cancelado', 'Ocurrió un error al registrarse.');
+            showErrorAlert('Cancelado', 'Ocurrió un error al agregar.');
+        }
+    }
+
+    const submitNewAnexo = async () => {
+        try {
+            const body = {
+
+                contrato_id: selectedContrato.id_contrato_comercial,
+
+                anexos: newAnexos,
+
+                sedesSeleccionadas: selectedSedes.map(s => s.sede_id),
+
+                nuevasSedes: newSedes,
+
+                filiales: filialesForm.map(f => ({
+
+                    cliente_id: f.cliente_id,
+
+                    sedesSeleccionadas: f.selectedSedes.map(s => s.sede_id),
+
+                    nuevasSedes: f.newSedes
+
+                })),
+
+                nuevasFiliales: newFiliales
+
+            };
+
+
+            const response = await createNuevoAnexo(body.contrato_id, body)
+
+            if (response.status === 'Success') {
+                showSuccessAlert('¡Agregado !', 'Usuario registrado exitosamente.');
+                setTimeout(3000)
+                closeModal()
+            } else if (response.status === 'Client error') {
+                console.log(response);
+
+                setErrors(response)
+            }
+
+
+        } catch (error) {
+            console.error(error);
+            showErrorAlert('Cancelado', 'Ocurrió un error al agregar.');
         }
     }
 
@@ -435,12 +481,12 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                                     <div>
 
                                         {/* BOTÓN CONDICIONAL */}
-                                        {["VIGENTE", "SUSPENDIDO", "ATRASADO"].includes(row.estado) && (
+                                        {["VIGENTE", "SUSPENDIDO", "ESPERA", "ATRASADO"].includes(row.estado) && (
                                             <div style={{ marginBottom: 10 }}>
                                                 <AddButton
                                                     text="Agregar anexo"
                                                     onClick={() => abrirModalAnexo(row)}
-                                                    disabled={!puedeAgregarAnexo(row.estado)}
+                                                    disabled={!puedeAgregarAnexo(row.estado) || cliente.tipoCliente !== 'EMPRESA'}
                                                 />
                                             </div>
                                         )}
@@ -546,7 +592,8 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
 
             {/*Agregar Anexo */}
             <Modal
-                title={`Nuevo Anexo ${selectedContrato ? `- ${selectedContrato.codigoContrato}` : ""}`}
+                title={`Nuevo Anexo `}
+                subtitle={`${selectedContrato ? `${selectedContrato.codigoContrato}` : ""}`}
                 open={modal === "anexo"}
                 onClose={closeModal}
                 isForm
@@ -565,7 +612,7 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                     />
                     {/*SELECCIONAR SEDES */}
                     <Acordeon
-                        title={`Seleccionar Sedes? (${newContrato.sedesSeleccionadas?.length ?? 0} de ${sedesRepresentante?.length} seleccionadas)`}
+                        title={`Seleccionar Sedes? (${selectedSedes.length} de ${sedesRepresentante.length} seleccionadas)`}
                         isOpen={openSelectSedes}
                         onToggle={() => setOpenSelecSedes(!openSelectSedes)}
                         content={
@@ -657,7 +704,6 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                                                         });
                                                     }}
                                                     sedesPath={[]}
-                                                    level={2}
                                                 />
                                             </>
                                         }
@@ -732,7 +778,12 @@ export default function ContratosTable({ contratos, cliente = null, sedes = null
                 title={'AVISO'}
                 onClose={(e) => closeVerifModal(e)}
                 isForm={true}
-                onAcept={openVerifModal === 'newContrato' ? submitNewContrato : undefined}
+                onAcept={(e) => {
+                    openVerifModal === 'newContrato' ? submitNewContrato(e) :
+                        openVerifModal === 'newAnexo' ? submitNewAnexo(e) : undefined
+
+                    closeVerifModal(e)
+                }}
             >
                 <br />
                 <br />

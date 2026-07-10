@@ -1,7 +1,7 @@
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
-import { createAnexosYDocumentos, createContratoClienteExistenteService, createContratoComercialService, getVistaContratosService } from "../services/contrato.service.js";
+import { createAnexoClienteExistenteService, createAnexosYDocumentos, createContratoClienteExistenteService, createContratoComercialService, getVistaContratosService } from "../services/contrato.service.js";
 import { uploadAnexoValidation, uploadContratoValidation } from "../validations/contratos.validation.js";
-import { createContratoClienteExistenteValidation } from "../validations/nuevoContrato.validations.js";
+import { createAnexoClienteExistenteValidation, createContratoClienteExistenteValidation } from "../validations/nuevoContrato.validations.js";
 
 export async function createContratoYArchivo(req, res) {
     try {
@@ -143,17 +143,40 @@ export async function createNuevoContratoExistente(req, res) {
 
     } catch (error) {
 
-        if (Array.isArray(error)) {
-            console.error(error[1]);
-            if (manager) throw error
-            return error
+        console.error(error)
+        return handleErrorServer(res, 500, error.message)
+
+    }
+}
+
+
+export async function createNuevoAnexoExistente(req, res) {
+    try {
+        const body = JSON.parse(req.body.body);
+
+        for (const anexo of (body.anexos ?? [])) {
+            anexo.documentos = (anexo.documentos || []).map(doc => ({
+                file: req.files?.[doc.fileKey]?.[0],
+                fileKey: doc.fileKey,
+                nombrePersonalizado: doc.nombrePersonalizado,
+                tipoDocumento: doc.tipoDocumento
+            }));
         }
 
+        const { id_contrato_comercial } = req.params
+        body.contrato_id = Number(id_contrato_comercial);
+
+        const { error } = createAnexoClienteExistenteValidation.validate(body);
+        if (error) return handleErrorClient(res, 400, "Error de validación", error.message);
+
+
+        const [data, err] = await createAnexoClienteExistenteService(body, body.contrato_id, null);
+        if (err) return handleErrorClient(res, 400, "Error registrando", err);
+
+
+        return handleSuccess(res, 201, "Anexo y documentación registrados con éxito", data);
+    } catch (error) {
         console.error(error)
-
-        if (manager) throw error
-
-        return [null, "Error interno del servidor"]
-
+        return handleErrorServer(res, 500, error.message)
     }
 }
